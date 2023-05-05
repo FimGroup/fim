@@ -46,7 +46,7 @@ func TestNewDataTypeDefinitions(t *testing.T) {
 	AssertTypeOfPath(t, def, "user/login/lastLoginTime", DataTypeArray, DataTypeInt)
 	AssertTypeOfPath(t, def, "user/risk/matrix[0]/sub_matrix", DataTypeArray, DataTypeFloat)
 	AssertTypeOfPath(t, def, "user/risk/matrix[0]/sub_matrix[0]", DataTypeFloat, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/risk/matrix[0]", DataTypeArray, DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/risk/matrix[0]", DataTypeObject, DataTypeUnavailable)
 	AssertTypeOfPath(t, def, "user/risk/matrix", DataTypeArray, DataTypeUnavailable)
 }
 

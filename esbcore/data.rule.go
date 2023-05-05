@@ -14,6 +14,15 @@ type templateFlowModel struct {
 
 type DataType int
 
+var primitiveType = map[DataType]struct{}{}
+
+func init() {
+	primitiveType[DataTypeInt] = struct{}{}
+	primitiveType[DataTypeString] = struct{}{}
+	primitiveType[DataTypeBool] = struct{}{}
+	primitiveType[DataTypeFloat] = struct{}{}
+}
+
 const (
 	DataTypeUnavailable DataType = 0
 	DataTypeInt         DataType = 1
@@ -183,11 +192,18 @@ func (d *DataTypeDefinitions) TypeOfPath(path string) (DataType, DataType, error
 		dtd = subDtd
 	}
 
+	// handling last level if it is array related level
 	dataType := dtd.DataType
 	pDataType := dtd.PrimitiveArrayElementType
 	if isAccessArrElem {
-		dataType = pDataType
-		pDataType = DataTypeUnavailable
+		_, isPrimitive := primitiveType[pDataType]
+		if isPrimitive {
+			dataType = pDataType
+			pDataType = DataTypeUnavailable
+		} else {
+			dataType = DataTypeObject
+			pDataType = DataTypeUnavailable
+		}
 	}
 
 	return dataType, pDataType, nil
