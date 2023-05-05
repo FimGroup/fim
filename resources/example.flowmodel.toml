@@ -1,0 +1,14 @@
+[model]
+# path -> type(primitive type only)
+"global_name" = "string"
+"user/user_id" = "int"
+"user/username" = "string"
+"user/password" = "string"
+"user/nickname" = "string"
+"user/is_login" = "bool"
+"user/risk/rating_core" = "float"
+"user/phone[]/country_code" = "string"
+"user/phone[]/area_code" = "string"
+"user/phone[]/phone_number" = "string"
+"user/login/lastLoginTime[]" = "int"
+"user/risk/matrix[]/sub_matrix[]" = "float"

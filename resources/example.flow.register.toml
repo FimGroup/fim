@@ -1,0 +1,23 @@
+[in]
+# flowmodels -> local parameters
+# parameters that are not existing here will be ignored
+"user/user_id" = "user_id"
+"user/username" = "username"
+"user/password" = "password"
+"user/nickname" = "nickname"
+
+[out]
+# local parameters -> flowmodels
+# "@remove" command will remove the given value from the flowmodels
+# other possible paths: "user/username", "user/phone", "user/phone[1]" which are ALL valid paths(not valid path of definition)
+"@remove" = "user"
+"user_id" = "user/user_id"
+"username" = "user/username"
+"nickname" = "user/nickname"
+
+[flow]
+[[flow.steps]]
+# assign clause - local parameter name = value
+# invoke function - "@function" = [ parameter list ]
+"user_id" = 123
+
