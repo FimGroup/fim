@@ -23,5 +23,8 @@
 "steps" = [
     # invoke function - "@function" = [ parameter list ]
     { "@assign" = ["user_id", 123] }
+    # invoke user defined function
+    # invoke flow(e.g. subflow/module)
+    # trigger event
 ]
 
