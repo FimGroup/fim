@@ -107,7 +107,7 @@ func (f *Flow) AddIn(source, local string) error {
 func (f *Flow) inConv() func(source, local *ModelInst) error {
 	return func(source, local *ModelInst) error {
 		for s, dStruct := range f.localInMapping {
-			if err := source.transferTo(local, s, dStruct.ModelFieldPath, ByRight); err != nil {
+			if err := source.transferTo(local, dStruct.ModelFieldPath, s, ByLeft); err != nil {
 				return err
 			}
 		}
