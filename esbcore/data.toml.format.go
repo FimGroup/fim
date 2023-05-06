@@ -51,12 +51,16 @@ func ValidateFullPathOfDefinition(in string) bool {
 }
 
 func SplitFullPath(in string) []string {
-	return strings.Split(in, "/")
+	return strings.Split(in, PathSeparator)
 }
 
 func IsPathArray(in string) bool {
 	_, idx := ExtractArrayPath(in)
 	return idx >= 0
+}
+
+func ConcatFullPath(paths []string) string {
+	return strings.Join(paths, PathSeparator)
 }
 
 func ExtractArrayPath(in string) (string, int) {

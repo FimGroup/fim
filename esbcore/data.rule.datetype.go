@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/pelletier/go-toml/v2"
 )
@@ -29,8 +30,12 @@ const (
 	DataTypeString      DataType = 2
 	DataTypeBool        DataType = 3
 	DataTypeFloat       DataType = 4
-	DataTypeArray       DataType = 11
-	DataTypeObject      DataType = 12
+	DataTypeArray       DataType = 51
+	DataTypeObject      DataType = 52
+)
+
+const (
+	PathSeparator = "/"
 )
 
 type DataTypeDefinitions struct {
@@ -179,15 +184,19 @@ func (d *DataTypeDefinitions) TypeOfPath(path string) (DataType, DataType, error
 	}
 
 	splits := SplitFullPath(path)
+	return d.typeOfPaths(splits)
+}
+
+func (d *DataTypeDefinitions) typeOfPaths(paths []string) (DataType, DataType, error) {
 	dtd := d
 	isAccessArrElem := false
-	for _, pLv := range splits {
+	for _, pLv := range paths {
 		lvName, arrIdx := ExtractArrayPath(pLv) //FIXME need to identify primitive type or object/array type
 		isAccessArrElem = arrIdx != -1
 		pLv = lvName
 		subDtd, ok := dtd.dataTypeMap[pLv]
 		if !ok {
-			return DataTypeUnavailable, DataTypeUnavailable, errors.New(fmt.Sprintf("path:%s not found", path))
+			return DataTypeUnavailable, DataTypeUnavailable, errors.New(fmt.Sprintf("path:%s not found", strings.Join(paths, PathSeparator)))
 		}
 		dtd = subDtd
 	}

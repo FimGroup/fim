@@ -18,9 +18,17 @@ var flowModelFileContent = `
 "user/risk/matrix[]/sub_matrix[]" = "float"
 `
 
-func TestNewDataTypeDefinitions(t *testing.T) {
+func loadDef() (*DataTypeDefinitions, error) {
 	def := NewDataTypeDefinitions()
 	if err := def.MergeToml(flowModelFileContent); err != nil {
+		return nil, err
+	}
+	return def, nil
+}
+
+func TestNewDataTypeDefinitions(t *testing.T) {
+	def, err := loadDef()
+	if err != nil {
 		t.Fatal(err)
 	}
 	t.Log(def)

@@ -6,18 +6,20 @@
 "user/password" = "password"
 "user/nickname" = "nickname"
 
+[pre_out]
+# "@remove" command will remove the given value from the flowmodels
+"@remove" = "user"
+
 [out]
 # local parameters -> flowmodels
-# "@remove" command will remove the given value from the flowmodels
-# other possible paths: "user/username", "user/phone", "user/phone[1]" which are ALL valid paths(not valid path of definition)
-"@remove" = "user"
+# possible paths: "user/username", "user/phone", "user/phone[1]" which are ALL valid paths(not valid path of definition)
 "user_id" = "user/user_id"
 "username" = "user/username"
 "nickname" = "user/nickname"
 
 [flow]
-[[flow.steps]]
-# assign clause - local parameter name = value
-# invoke function - "@function" = [ parameter list ]
-"user_id" = 123
+"steps" = [
+    # invoke function - "@function" = [ parameter list ]
+    { "@assign" = ["user_id", 123] }
+]
 
