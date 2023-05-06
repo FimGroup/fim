@@ -26,7 +26,7 @@ type Flow struct {
 		DataType       DataType
 	}
 	localPreOutOperations map[string]struct {
-		ModelFieldPath string
+		Operation string
 	}
 
 	fnList []Fn
@@ -44,6 +44,7 @@ func NewFlow(dtd *DataTypeDefinitions) *Flow {
 			ModelFieldPath string
 			DataType       DataType
 		}{},
+		localPreOutOperations: map[string]struct{ Operation string }{},
 	}
 }
 
@@ -61,6 +62,11 @@ func (f *Flow) MergeToml(data string) error {
 	}
 	for local, path := range tf.Out {
 		if err := f.AddOut(local, path); err != nil {
+			return err
+		}
+	}
+	for op, path := range tf.PreOut {
+		if err := f.AddPreOut(op, path); err != nil {
 			return err
 		}
 	}
@@ -136,14 +142,14 @@ func (f *Flow) AddOut(local, out string) error {
 func (f *Flow) outConv() func(local, out *ModelInst) error {
 	return func(local, out *ModelInst) error {
 		// process pre_out
-		for op, s := range f.localPreOutOperations {
-			switch op {
+		for s, op := range f.localPreOutOperations {
+			switch op.Operation {
 			case "@remove":
-				if err := out.deleteField(s.ModelFieldPath); err != nil {
+				if err := out.deleteField(s); err != nil {
 					return err
 				}
 			default:
-				return errors.New("unknown pre_out operation:" + op)
+				return errors.New("unknown pre_out operation:" + op.Operation)
 			}
 		}
 
@@ -224,5 +230,30 @@ func (f *Flow) validateLocalParameters() error {
 			}
 		}
 	}
+	return nil
+}
+
+func (f *Flow) AddPreOut(op string, path string) error {
+	_, ok := f.localPreOutOperations[path]
+	if ok {
+		return errors.New("path registered:" + path)
+	}
+
+	if !ValidateFullPath(path) {
+		return errors.New("path invalid:" + path)
+	}
+
+	if dt, _, err := f.dtd.TypeOfPath(path); err != nil {
+		return err
+	} else if dt == DataTypeUnavailable {
+		return errors.New("cannot find path:" + path)
+	} else {
+		f.localPreOutOperations[path] = struct {
+			Operation string
+		}{
+			Operation: op,
+		}
+	}
+
 	return nil
 }

@@ -24,6 +24,12 @@ const (
 type ModelInst struct {
 	dtd        *DataTypeDefinitions
 	ElementMap ElementMap
+
+	// Document:
+	// Field operations provided by ModelInst need to satisfy the following data
+	// * Path(primitives/object/array/array element) is the leaf node
+	// * Path is not the leaf node
+	// * Path doesn't exist
 }
 
 func NewModelInst(def *DataTypeDefinitions) *ModelInst {
@@ -80,11 +86,55 @@ func (m *ModelInst) addOrUpdateField(path string, value interface{}) error {
 }
 
 func (m *ModelInst) deleteField(path string) error {
-	panic(_IMPLEMENT_ME)
+	splits := SplitFullPath(path)
+
+	var result ElementMap = m.ElementMap
+	for _, pLv := range splits[:len(splits)-1] { // 0 to second last level
+		pathName, idx := ExtractArrayPath(pLv)
+		isArrAccess := idx >= 0
+		elemMap := result
+		elem, ok := elemMap[pathName]
+		if ok {
+			result = elem.(ElementMap)
+		} else {
+			elem = ElementMap{}
+			elemMap[pathName] = elem
+			result = elem.(ElementMap)
+		}
+		// additional: process arr access
+		if isArrAccess {
+			elem, ok := result[fmt.Sprint(idx)]
+			if !ok {
+				elem = ElementMap{}
+				result[fmt.Sprint(idx)] = elem
+			}
+			result = elem.(ElementMap)
+		}
+	}
+
+	// last level
+	{
+		pathName, idx := ExtractArrayPath(splits[len(splits)-1])
+		isArrAccess := idx >= 0
+		if !isArrAccess {
+			delete(result, pathName)
+		} else {
+			arr, ok := result[pathName]
+			if !ok {
+				arr = ElementMap{}
+				result[pathName] = arr
+			}
+			delete(arr.(ElementMap), fmt.Sprint(idx))
+		}
+	}
+
+	return nil
 }
 
 func (m *ModelInst) getField(path string) interface{} {
 	splits := SplitFullPath(path)
+
+	//FIXME should handle default value for non-existing field
 
 	var result interface{} = m.ElementMap
 	for _, pLv := range splits {

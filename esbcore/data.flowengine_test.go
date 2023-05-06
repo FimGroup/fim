@@ -35,6 +35,23 @@ func TestSyncFlowEngineExample(t *testing.T) {
 	}
 }
 
+func BenchmarkSyncFlowEngineExample(b *testing.B) {
+	flow, def, err := loadFlow()
+	if err != nil {
+		b.Fatal(err)
+	}
+	var modelInst = NewModelInst(def)
+	if err := modelInst.addOrUpdateField("user/password", "password1"); err != nil {
+		b.Fatal(err)
+	}
+
+	for i := 0; i < b.N; i++ {
+		if err := flow.FlowFn()(modelInst); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
 func TestAsyncFlowEngineExample(t *testing.T) {
 	panic(_IMPLEMENT_ME)
 }
