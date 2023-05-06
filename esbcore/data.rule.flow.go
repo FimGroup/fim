@@ -19,14 +19,19 @@ type Flow struct {
 
 	localInMapping map[string]struct {
 		ModelFieldPath string
+		SplitPath      []string
 		DataType       DataType
+		KeySplitPath   []string
 	}
 	localOutMapping map[string]struct {
 		ModelFieldPath string
+		SplitPath      []string
 		DataType       DataType
+		KeySplitPath   []string
 	}
 	localPreOutOperations map[string]struct {
 		Operation string
+		SplitPath []string
 	}
 
 	fnList []Fn
@@ -38,13 +43,20 @@ func NewFlow(dtd *DataTypeDefinitions) *Flow {
 
 		localInMapping: map[string]struct {
 			ModelFieldPath string
+			SplitPath      []string
 			DataType       DataType
+			KeySplitPath   []string
 		}{},
 		localOutMapping: map[string]struct {
 			ModelFieldPath string
+			SplitPath      []string
 			DataType       DataType
+			KeySplitPath   []string
 		}{},
-		localPreOutOperations: map[string]struct{ Operation string }{},
+		localPreOutOperations: map[string]struct {
+			Operation string
+			SplitPath []string
+		}{},
 	}
 }
 
@@ -97,8 +109,10 @@ func (f *Flow) AddIn(source, local string) error {
 	} else {
 		f.localInMapping[local] = struct {
 			ModelFieldPath string
+			SplitPath      []string
 			DataType       DataType
-		}{ModelFieldPath: source, DataType: dt}
+			KeySplitPath   []string
+		}{ModelFieldPath: source, SplitPath: SplitFullPath(source), DataType: dt, KeySplitPath: SplitFullPath(local)}
 	}
 
 	return nil
@@ -106,8 +120,8 @@ func (f *Flow) AddIn(source, local string) error {
 
 func (f *Flow) inConv() func(source, local *ModelInst) error {
 	return func(source, local *ModelInst) error {
-		for s, dStruct := range f.localInMapping {
-			if err := source.transferTo(local, dStruct.ModelFieldPath, s, ByLeft); err != nil {
+		for _, dStruct := range f.localInMapping {
+			if err := source.transferTo(local, dStruct.SplitPath, dStruct.KeySplitPath, ByLeft); err != nil {
 				return err
 			}
 		}
@@ -132,8 +146,10 @@ func (f *Flow) AddOut(local, out string) error {
 	} else {
 		f.localOutMapping[local] = struct {
 			ModelFieldPath string
+			SplitPath      []string
 			DataType       DataType
-		}{ModelFieldPath: out, DataType: dt}
+			KeySplitPath   []string
+		}{ModelFieldPath: out, SplitPath: SplitFullPath(out), DataType: dt, KeySplitPath: SplitFullPath(local)}
 	}
 
 	return nil
@@ -142,10 +158,10 @@ func (f *Flow) AddOut(local, out string) error {
 func (f *Flow) outConv() func(local, out *ModelInst) error {
 	return func(local, out *ModelInst) error {
 		// process pre_out
-		for s, op := range f.localPreOutOperations {
+		for _, op := range f.localPreOutOperations {
 			switch op.Operation {
 			case "@remove":
-				if err := out.deleteField(s); err != nil {
+				if err := out.deleteField(op.SplitPath); err != nil {
 					return err
 				}
 			default:
@@ -154,8 +170,8 @@ func (f *Flow) outConv() func(local, out *ModelInst) error {
 		}
 
 		// process out
-		for s, dStruct := range f.localOutMapping {
-			if err := local.transferTo(out, s, dStruct.ModelFieldPath, ByRight); err != nil {
+		for _, dStruct := range f.localOutMapping {
+			if err := local.transferTo(out, dStruct.KeySplitPath, dStruct.SplitPath, ByRight); err != nil {
 				return err
 			}
 		}
@@ -250,8 +266,10 @@ func (f *Flow) AddPreOut(op string, path string) error {
 	} else {
 		f.localPreOutOperations[path] = struct {
 			Operation string
+			SplitPath []string
 		}{
 			Operation: op,
+			SplitPath: SplitFullPath(path),
 		}
 	}
 

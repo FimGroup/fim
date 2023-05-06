@@ -39,8 +39,8 @@ func NewModelInst(def *DataTypeDefinitions) *ModelInst {
 	}
 }
 
-func (m *ModelInst) addOrUpdateField(path string, value interface{}) error {
-	splits := SplitFullPath(path)
+func (m *ModelInst) addOrUpdateField(paths []string, value interface{}) error {
+	splits := paths
 
 	var result ElementMap = m.ElementMap
 	for _, pLv := range splits[:len(splits)-1] { // 0 to second last level
@@ -85,8 +85,8 @@ func (m *ModelInst) addOrUpdateField(path string, value interface{}) error {
 	return nil
 }
 
-func (m *ModelInst) deleteField(path string) error {
-	splits := SplitFullPath(path)
+func (m *ModelInst) deleteField(paths []string) error {
+	splits := paths
 
 	var result ElementMap = m.ElementMap
 	for _, pLv := range splits[:len(splits)-1] { // 0 to second last level
@@ -131,8 +131,8 @@ func (m *ModelInst) deleteField(path string) error {
 	return nil
 }
 
-func (m *ModelInst) getField(path string) interface{} {
-	splits := SplitFullPath(path)
+func (m *ModelInst) getField(paths []string) interface{} {
+	splits := paths
 
 	//FIXME should handle default value for non-existing field
 
@@ -166,22 +166,22 @@ func (m *ModelInst) ExtractTo(o interface{}) error {
 	panic(_IMPLEMENT_ME)
 }
 
-func (m *ModelInst) transferTo(dest *ModelInst, sourcePath, destPath string, defaultTypeRefBy refBy) error {
-	val := m.getField(sourcePath)
+func (m *ModelInst) transferTo(dest *ModelInst, sourcePaths, destPaths []string, defaultTypeRefBy refBy) error {
+	val := m.getField(sourcePaths)
 	if val != nil {
-		return dest.addOrUpdateField(destPath, val)
+		return dest.addOrUpdateField(destPaths, val)
 	} else {
 		// default value handling when not existing
 		var d DataType
 		switch defaultTypeRefBy {
 		case ByLeft:
-			dt, _, err := m.dtd.TypeOfPath(sourcePath)
+			dt, _, err := m.dtd.typeOfPaths(sourcePaths)
 			if err != nil {
 				return err
 			}
 			d = dt
 		case ByRight:
-			dt, _, err := m.dtd.TypeOfPath(destPath)
+			dt, _, err := m.dtd.typeOfPaths(destPaths)
 			if err != nil {
 				return err
 			}
@@ -191,17 +191,17 @@ func (m *ModelInst) transferTo(dest *ModelInst, sourcePath, destPath string, def
 		}
 		switch d {
 		case DataTypeInt:
-			return dest.addOrUpdateField(destPath, 0)
+			return dest.addOrUpdateField(destPaths, 0)
 		case DataTypeString:
-			return dest.addOrUpdateField(destPath, "")
+			return dest.addOrUpdateField(destPaths, "")
 		case DataTypeFloat:
-			return dest.addOrUpdateField(destPath, 0.0)
+			return dest.addOrUpdateField(destPaths, 0.0)
 		case DataTypeBool:
-			return dest.addOrUpdateField(destPath, false)
+			return dest.addOrUpdateField(destPaths, false)
 		case DataTypeObject:
-			return dest.deleteField(destPath)
+			return dest.deleteField(destPaths)
 		case DataTypeArray:
-			return dest.deleteField(destPath)
+			return dest.deleteField(destPaths)
 		}
 	}
 	//FIXME use deep copy instead of setting reference to avoid modification issue
