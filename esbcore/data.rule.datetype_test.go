@@ -4,6 +4,15 @@ import "testing"
 
 var flowModelFileContent = `
 [model]
+# path -> type(primitive type only)
+# primitive type default value
+# * string = ""
+# * int = 0
+# * bool = false
+# * float = 0.0
+# compound type default value
+# * object = (not exist)
+# * array = (not exist)
 "global_name" = "string"
 "user/user_id" = "int"
 "user/username" = "string"
@@ -16,6 +25,7 @@ var flowModelFileContent = `
 "user/phone[]/phone_number" = "string"
 "user/login/lastLoginTime[]" = "int"
 "user/risk/matrix[]/sub_matrix[]" = "float"
+
 `
 
 func loadDef() (*DataTypeDefinitions, error) {
