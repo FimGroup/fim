@@ -202,6 +202,29 @@ func (f *Flow) FlowFn() func(global *ModelInst) error {
 	}
 }
 
+func (f *Flow) FlowFnNoResp() func(global *ModelInst) error {
+	local := NewModelInst(f.dtd)
+	return func(global *ModelInst) error {
+		if err := f.inConv()(global, local); err != nil {
+			return err
+		}
+		// process flow
+		{
+			for _, fn := range f.fnList {
+				if err := fn(local); err != nil {
+					return err
+				}
+			}
+		}
+		dummy := NewModelInst(f.dtd)
+		if err := f.outConv()(local, dummy); err != nil {
+			return err
+		}
+
+		return nil
+	}
+}
+
 func (f *Flow) addFlow(tf *templateFlow) error {
 	steps := tf.Flow["steps"]
 	var fList []Fn
