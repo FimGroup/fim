@@ -1,6 +1,8 @@
 package esbcore
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestSyncFlowEngineExample(t *testing.T) {
 	flow, def, err := loadFlow()

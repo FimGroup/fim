@@ -25,7 +25,11 @@ const flowFileContent = `
 [flow]
 "steps" = [
     # invoke function - "@function" = [ parameter list ]
-    { "@assign" = ["user_id", 123] }
+    { "@assign" = ["user_id", 123] },
+    # invoke user defined function
+    { "#print_obj" = ["user_id"] },
+    # invoke flow(e.g. subflow/module)
+    # trigger event
 ]
 
 `

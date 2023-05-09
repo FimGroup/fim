@@ -68,31 +68,31 @@ func (f *Flow) MergeToml(data string) error {
 	}
 
 	for path, local := range tf.In {
-		if err := f.AddIn(path, local); err != nil {
+		if err := f.addIn(path, local); err != nil {
 			return err
 		}
 	}
 	for local, path := range tf.Out {
-		if err := f.AddOut(local, path); err != nil {
+		if err := f.addOut(local, path); err != nil {
 			return err
 		}
 	}
 	for op, path := range tf.PreOut {
-		if err := f.AddPreOut(op, path); err != nil {
+		if err := f.addPreOut(op, path); err != nil {
 			return err
 		}
 	}
 	if err := f.validateLocalParameters(); err != nil {
 		return err
 	}
-	if err := f.AddFlow(tf); err != nil {
+	if err := f.addFlow(tf); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (f *Flow) AddIn(source, local string) error {
+func (f *Flow) addIn(source, local string) error {
 	_, ok := f.localInMapping[local]
 	if ok {
 		return errors.New("local parameter registered:" + local)
@@ -129,7 +129,7 @@ func (f *Flow) inConv() func(source, local *ModelInst) error {
 	}
 }
 
-func (f *Flow) AddOut(local, out string) error {
+func (f *Flow) addOut(local, out string) error {
 	_, ok := f.localOutMapping[local]
 	if ok {
 		return errors.New("local parameter registered:" + local)
@@ -202,7 +202,7 @@ func (f *Flow) FlowFn() func(global *ModelInst) error {
 	}
 }
 
-func (f *Flow) AddFlow(tf *templateFlow) error {
+func (f *Flow) addFlow(tf *templateFlow) error {
 	steps := tf.Flow["steps"]
 	var fList []Fn
 	for _, step := range steps {
@@ -211,7 +211,18 @@ func (f *Flow) AddFlow(tf *templateFlow) error {
 				//builtin function
 				fngen, ok := builtinGenFnMap[fn]
 				if !ok {
-					return errors.New("function not found:" + fn)
+					return errors.New("builtin function not found:" + fn)
+				}
+				fnInst, err := fngen(params)
+				if err != nil {
+					return err
+				}
+				fList = append(fList, fnInst)
+			} else if fn[0] == '#' {
+				//user defined function
+				fngen, ok := customGenFnMap[fn]
+				if !ok {
+					return errors.New("user defined function not found:" + fn)
 				}
 				fnInst, err := fngen(params)
 				if err != nil {
@@ -249,7 +260,7 @@ func (f *Flow) validateLocalParameters() error {
 	return nil
 }
 
-func (f *Flow) AddPreOut(op string, path string) error {
+func (f *Flow) addPreOut(op string, path string) error {
 	_, ok := f.localPreOutOperations[path]
 	if ok {
 		return errors.New("path registered:" + path)

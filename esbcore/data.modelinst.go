@@ -158,6 +158,10 @@ func (m *ModelInst) getField(paths []string) interface{} {
 	return result
 }
 
+func (m *ModelInst) GetFieldUnsafe(paths []string) interface{} {
+	return m.getField(paths)
+}
+
 func (m *ModelInst) FillInFrom(o interface{}) error {
 	panic(_IMPLEMENT_ME)
 }
