@@ -131,11 +131,11 @@ func (p *Pipeline) RunPipeline() error {
 	// start source connector
 	process := p.toPipelineFn()
 	for _, f := range p.connectorInitFuncs {
-		go func() {
-			if err := f(process); err != nil {
+		go func(fn func(pipelineProcess PipelineProcess) error) {
+			if err := fn(process); err != nil {
 				log.Fatalln(err)
 			}
-		}()
+		}(f)
 	}
 	log.Println("RunPipeline done.")
 	return nil

@@ -2,7 +2,6 @@ package esbcore
 
 import (
 	"testing"
-	"time"
 )
 
 var pipelineContent = `
@@ -70,5 +69,4 @@ func TestNewPipeline(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	time.Sleep(10 * time.Hour)
 }
