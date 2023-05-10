@@ -1,5 +1,7 @@
 package esbcore
 
+import "esbconcept/components"
+
 const flowFileContent = `
 [in]
 # flowmodels -> local parameters
@@ -31,12 +33,16 @@ const flowFileContent = `
 `
 
 func loadFlow() (*Flow, *DataTypeDefinitions, error) {
+	container := NewContainer()
+	if err := components.InitComponent(container); err != nil {
+		return nil, nil, err
+	}
 	def, err := loadDef()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	flow := NewFlow(def)
+	flow := NewFlow(def, container)
 	if err := flow.MergeToml(flowFileContent); err != nil {
 		return nil, nil, err
 	}

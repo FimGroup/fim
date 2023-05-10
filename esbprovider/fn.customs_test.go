@@ -1,8 +1,10 @@
 package esbprovider
 
 import (
-	"esbconcept/esbcore"
 	"testing"
+
+	"esbconcept/components"
+	"esbconcept/esbcore"
 )
 
 func init() {
@@ -38,12 +40,16 @@ var flowModelFileContent = `
 `
 
 func loadFlow() (*esbcore.Flow, *esbcore.DataTypeDefinitions, error) {
+	container := esbcore.NewContainer()
+	if err := components.InitComponent(container); err != nil {
+		return nil, nil, err
+	}
 	def, err := loadDef()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	flow := esbcore.NewFlow(def)
+	flow := esbcore.NewFlow(def, container)
 	if err := flow.MergeToml(flowFileContent); err != nil {
 		return nil, nil, err
 	}
