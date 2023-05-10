@@ -39,6 +39,10 @@ func NewModelInst(def *DataTypeDefinitions) *ModelInst {
 	}
 }
 
+func (m *ModelInst) AddOrUpdateField0(paths []string, value interface{}) error {
+	return m.addOrUpdateField(paths, value)
+}
+
 func (m *ModelInst) addOrUpdateField(paths []string, value interface{}) error {
 	splits := paths
 

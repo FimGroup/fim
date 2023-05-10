@@ -20,6 +20,8 @@ func NewContainer() *Container {
 
 		pipelineMap:        map[string]*Pipeline{},
 		pipelineRawContent: map[string]struct{ PipelineTomlRaw []byte }{},
+
+		builtinGenFnMap: map[string]func(params []interface{}) (Fn, error){},
 	}
 }
 
@@ -36,6 +38,8 @@ type Container struct {
 		PipelineTomlRaw []byte
 	}
 	pipelineMap map[string]*Pipeline
+
+	builtinGenFnMap map[string]func(params []interface{}) (Fn, error)
 }
 
 func (c *Container) LoadFlowModel(tomlContent string) error {
@@ -54,7 +58,7 @@ func (c *Container) LoadFlow(flowName, tomlContent string) error {
 		return errors.New(fmt.Sprint("flow exists:", flowName))
 	}
 
-	flow := NewFlow(c.flowModel)
+	flow := NewFlow(c.flowModel, c)
 	if err := flow.MergeToml(tomlContent); err != nil {
 		return err
 	}

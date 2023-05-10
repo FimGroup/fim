@@ -15,7 +15,8 @@ type templateFlow struct {
 }
 
 type Flow struct {
-	dtd *DataTypeDefinitions
+	dtd       *DataTypeDefinitions
+	container *Container
 
 	localInMapping map[string]struct {
 		ModelFieldPath string
@@ -37,9 +38,10 @@ type Flow struct {
 	fnList []Fn
 }
 
-func NewFlow(dtd *DataTypeDefinitions) *Flow {
+func NewFlow(dtd *DataTypeDefinitions, c *Container) *Flow {
 	return &Flow{
-		dtd: dtd,
+		dtd:       dtd,
+		container: c,
 
 		localInMapping: map[string]struct {
 			ModelFieldPath string
@@ -232,7 +234,7 @@ func (f *Flow) addFlow(tf *templateFlow) error {
 		for fn, params := range step {
 			if fn[0] == '@' {
 				//builtin function
-				fngen, ok := builtinGenFnMap[fn]
+				fngen, ok := f.container.builtinGenFnMap[fn]
 				if !ok {
 					return errors.New("builtin function not found:" + fn)
 				}
