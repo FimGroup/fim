@@ -17,6 +17,9 @@ func NewContainer() *Container {
 		flowRawMap:           flowRawMap,
 		flowMap:              flowMap,
 		flowModel:            flowModelMap,
+
+		pipelineMap:        map[string]*Pipeline{},
+		pipelineRawContent: map[string]struct{ PipelineTomlRaw []byte }{},
 	}
 }
 
@@ -28,6 +31,11 @@ type Container struct {
 
 	flowModelRawContents [][]byte
 	flowModel            *DataTypeDefinitions
+
+	pipelineRawContent map[string]struct {
+		PipelineTomlRaw []byte
+	}
+	pipelineMap map[string]*Pipeline
 }
 
 func (c *Container) LoadFlowModel(tomlContent string) error {
@@ -56,4 +64,30 @@ func (c *Container) LoadFlow(flowName, tomlContent string) error {
 	}
 
 	return nil
+}
+
+func (c *Container) LoadPipeline(pipelineName, tomlContent string) error {
+	_, ok := c.pipelineMap[pipelineName]
+	if ok {
+		return errors.New(fmt.Sprintf("pipeline exists:%s", pipelineName))
+	}
+
+	p, err := NewPipeline(tomlContent, c)
+	if err != nil {
+		return err
+	}
+	c.pipelineRawContent[pipelineName] = struct{ PipelineTomlRaw []byte }{PipelineTomlRaw: []byte(tomlContent)}
+	c.pipelineMap[pipelineName] = p
+
+	return nil
+}
+
+func (c *Container) RunPipelines() {
+	for _, p := range c.pipelineMap {
+		go func() {
+			if err := p.RunPipeline(); err != nil {
+				panic(err)
+			}
+		}()
+	}
 }
