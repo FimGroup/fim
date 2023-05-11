@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 
+	"esbconcept/esbapi"
+
 	"github.com/pelletier/go-toml/v2"
 )
 
@@ -35,7 +37,7 @@ type Flow struct {
 		SplitPath []string
 	}
 
-	fnList []Fn
+	fnList []esbapi.Fn
 }
 
 func NewFlow(dtd *DataTypeDefinitions, c *Container) *Flow {
@@ -229,7 +231,7 @@ func (f *Flow) FlowFnNoResp() func(global *ModelInst) error {
 
 func (f *Flow) addFlow(tf *templateFlow) error {
 	steps := tf.Flow["steps"]
-	var fList []Fn
+	var fList []esbapi.Fn
 	for _, step := range steps {
 		for fn, params := range step {
 			if fn[0] == '@' {

@@ -1,10 +1,13 @@
 package fn
 
-import "esbconcept/esbcore"
+import (
+	"esbconcept/esbapi"
+	"esbconcept/esbcore"
+)
 
 func InitFn(container *esbcore.Container) error {
 
-	if err := registerFn(container, map[string]func(params []interface{}) (esbcore.Fn, error){
+	if err := registerFn(container, map[string]esbapi.FnGen{
 		"@assign": FnAssign,
 	}); err != nil {
 		return err
@@ -13,7 +16,7 @@ func InitFn(container *esbcore.Container) error {
 	return nil
 }
 
-func registerFn(container *esbcore.Container, m map[string]func(params []interface{}) (esbcore.Fn, error)) error {
+func registerFn(container *esbcore.Container, m map[string]esbapi.FnGen) error {
 	for name, fn := range m {
 		if err := container.RegisterBuiltinFn(name, fn); err != nil {
 			return err

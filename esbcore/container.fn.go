@@ -1,10 +1,12 @@
 package esbcore
 
-import "errors"
+import (
+	"errors"
 
-type Fn func(m *ModelInst) error
+	"esbconcept/esbapi"
+)
 
-func (c *Container) RegisterBuiltinFn(methodName string, fg func(params []interface{}) (Fn, error)) error {
+func (c *Container) RegisterBuiltinFn(methodName string, fg esbapi.FnGen) error {
 	_, ok := c.builtinGenFnMap[methodName]
 	if ok {
 		return errors.New("method already registered:" + methodName)

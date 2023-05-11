@@ -1,14 +1,18 @@
 package esbcore
 
-import "errors"
+import (
+	"errors"
 
-var customGenFnMap map[string]func(params []interface{}) (Fn, error)
+	"esbconcept/esbapi"
+)
+
+var customGenFnMap map[string]func(params []interface{}) (esbapi.Fn, error)
 
 func init() {
-	customGenFnMap = map[string]func(params []interface{}) (Fn, error){}
+	customGenFnMap = map[string]func(params []interface{}) (esbapi.Fn, error){}
 }
 
-func RegisterCustomGeneratorFunc(name string, fn func(params []interface{}) (Fn, error)) error {
+func RegisterCustomGeneratorFunc(name string, fn func(params []interface{}) (esbapi.Fn, error)) error {
 	_, ok := customGenFnMap[name]
 	if ok {
 		return errors.New("custom function already exists:" + name)

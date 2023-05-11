@@ -3,6 +3,8 @@ package esbcore
 import (
 	"errors"
 	"fmt"
+
+	"esbconcept/esbapi"
 )
 
 func NewContainer() *Container {
@@ -21,7 +23,7 @@ func NewContainer() *Container {
 		pipelineMap:        map[string]*Pipeline{},
 		pipelineRawContent: map[string]struct{ PipelineTomlRaw []byte }{},
 
-		builtinGenFnMap: map[string]func(params []interface{}) (Fn, error){},
+		builtinGenFnMap: map[string]func(params []interface{}) (esbapi.Fn, error){},
 	}
 }
 
@@ -39,7 +41,7 @@ type Container struct {
 	}
 	pipelineMap map[string]*Pipeline
 
-	builtinGenFnMap map[string]func(params []interface{}) (Fn, error)
+	builtinGenFnMap map[string]func(params []interface{}) (esbapi.Fn, error)
 }
 
 func (c *Container) LoadFlowModel(tomlContent string) error {
