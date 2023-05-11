@@ -1,10 +1,14 @@
 package esbcore
 
-import "log"
+import (
+	"log"
+
+	"esbconcept/esbapi"
+)
 
 var targetConnectorGenMap map[string]TargetConnectorGenerator
 
-type TargetConnectorGenerator func(options map[string]string) (func(source, dest *ModelInst) error, error)
+type TargetConnectorGenerator func(options map[string]string) (func(source, dest esbapi.Model) error, error)
 
 func init() {
 	targetConnectorGenMap = map[string]TargetConnectorGenerator{}
@@ -12,8 +16,8 @@ func init() {
 	targetConnectorGenMap["&http"] = targetConnectorHttp
 }
 
-func targetConnectorHttp(options map[string]string) (func(s, d *ModelInst) error, error) {
-	return func(s, d *ModelInst) error {
+func targetConnectorHttp(options map[string]string) (func(s, d esbapi.Model) error, error) {
+	return func(s, d esbapi.Model) error {
 		//TODO do http request
 		log.Println("invoke targetConnectorHttp")
 		return nil

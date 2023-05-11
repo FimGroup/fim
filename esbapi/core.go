@@ -35,3 +35,5 @@ type Container interface {
 	RegisterBuiltinFn(name string, fnGen FnGen) error
 	RegisterCustomFn(name string, fnGen FnGen) error
 }
+
+type PipelineProcess func(m Model) error

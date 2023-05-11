@@ -5,9 +5,11 @@ import (
 	"log"
 	"net"
 	"net/http"
+
+	"esbconcept/esbapi"
 )
 
-type SourceConnectorGenerator func(options map[string]string, container *ContainerInst) (func(PipelineProcess) error, error)
+type SourceConnectorGenerator func(options map[string]string, container *ContainerInst) (func(esbapi.PipelineProcess) error, error)
 
 var sourceConnectorGenMap map[string]SourceConnectorGenerator
 
@@ -17,7 +19,7 @@ func init() {
 	sourceConnectorGenMap["http"] = sourceConnectorHttp
 }
 
-func sourceConnectorHttp(options map[string]string, container *ContainerInst) (func(PipelineProcess) error, error) {
+func sourceConnectorHttp(options map[string]string, container *ContainerInst) (func(esbapi.PipelineProcess) error, error) {
 
 	ls, ok := options["http.listen"]
 	if !ok {
@@ -28,7 +30,7 @@ func sourceConnectorHttp(options map[string]string, container *ContainerInst) (f
 		return nil, errors.New("need provide http.path for http")
 	}
 
-	return func(fn PipelineProcess) error {
+	return func(fn esbapi.PipelineProcess) error {
 		// mux
 		mux := http.NewServeMux()
 		mux.HandleFunc(path, func(writer http.ResponseWriter, request *http.Request) {

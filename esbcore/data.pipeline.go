@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
-)
 
-type PipelineProcess func(m *ModelInst) error
+	"esbconcept/esbapi"
+)
 
 type ConnectorDataMapping map[string]string
 
@@ -29,8 +29,8 @@ type Pipeline struct {
 	} `toml:"connector_mapping"`
 
 	container          *ContainerInst
-	connectorInitFuncs []func(PipelineProcess) error
-	steps              []func() func(global *ModelInst) error
+	connectorInitFuncs []func(esbapi.PipelineProcess) error
+	steps              []func() func(global esbapi.Model) error
 }
 
 func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error) {
@@ -88,14 +88,14 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 					return nil, err
 				}
 				if okS {
-					p.steps = append(p.steps, func() func(g *ModelInst) error {
-						return func(g *ModelInst) error {
+					p.steps = append(p.steps, func() func(g esbapi.Model) error {
+						return func(g esbapi.Model) error {
 							return f(g, g)
 						}
 					})
 				} else {
-					p.steps = append(p.steps, func() func(g *ModelInst) error {
-						return func(g *ModelInst) error {
+					p.steps = append(p.steps, func() func(g esbapi.Model) error {
+						return func(g esbapi.Model) error {
 							return f(g, NewModelInst(p.container.flowModel))
 						}
 					})
@@ -121,8 +121,8 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 	return p, nil
 }
 
-func (p *Pipeline) toPipelineFn() PipelineProcess {
-	return func(m *ModelInst) error {
+func (p *Pipeline) toPipelineFn() esbapi.PipelineProcess {
+	return func(m esbapi.Model) error {
 		for _, fn := range p.steps {
 			f := fn()
 			if err := f(m); err != nil {
@@ -137,7 +137,7 @@ func (p *Pipeline) RunPipeline() error {
 	// start source connector
 	process := p.toPipelineFn()
 	for _, f := range p.connectorInitFuncs {
-		go func(fn func(pipelineProcess PipelineProcess) error) {
+		go func(fn func(pipelineProcess esbapi.PipelineProcess) error) {
 			if err := fn(process); err != nil {
 				log.Fatalln(err)
 			}

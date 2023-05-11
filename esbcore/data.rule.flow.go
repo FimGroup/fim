@@ -185,10 +185,10 @@ func (f *Flow) outConv() func(local, out *ModelInst) error {
 	}
 }
 
-func (f *Flow) FlowFn() func(global *ModelInst) error {
+func (f *Flow) FlowFn() func(global esbapi.Model) error {
 	local := NewModelInst(f.dtd)
-	return func(global *ModelInst) error {
-		if err := f.inConv()(global, local); err != nil {
+	return func(global esbapi.Model) error {
+		if err := f.inConv()(global.(*ModelInst), local); err != nil {
 			return err
 		}
 		// process flow
@@ -199,7 +199,7 @@ func (f *Flow) FlowFn() func(global *ModelInst) error {
 				}
 			}
 		}
-		if err := f.outConv()(local, global); err != nil {
+		if err := f.outConv()(local, global.(*ModelInst)); err != nil {
 			return err
 		}
 
@@ -207,10 +207,10 @@ func (f *Flow) FlowFn() func(global *ModelInst) error {
 	}
 }
 
-func (f *Flow) FlowFnNoResp() func(global *ModelInst) error {
+func (f *Flow) FlowFnNoResp() func(global esbapi.Model) error {
 	local := NewModelInst(f.dtd)
-	return func(global *ModelInst) error {
-		if err := f.inConv()(global, local); err != nil {
+	return func(global esbapi.Model) error {
+		if err := f.inConv()(global.(*ModelInst), local); err != nil {
 			return err
 		}
 		// process flow
