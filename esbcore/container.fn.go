@@ -14,3 +14,12 @@ func (c *Container) RegisterBuiltinFn(methodName string, fg esbapi.FnGen) error 
 	c.builtinGenFnMap[methodName] = fg
 	return nil
 }
+
+func (c *Container) RegisterCustomFn(name string, fn esbapi.FnGen) error {
+	_, ok := c.customGenFnMap[name]
+	if ok {
+		return errors.New("custom function already exists:" + name)
+	}
+	c.customGenFnMap[name] = fn
+	return nil
+}

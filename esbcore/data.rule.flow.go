@@ -247,7 +247,7 @@ func (f *Flow) addFlow(tf *templateFlow) error {
 				fList = append(fList, fnInst)
 			} else if fn[0] == '#' {
 				//user defined function
-				fngen, ok := customGenFnMap[fn]
+				fngen, ok := f.container.customGenFnMap[fn]
 				if !ok {
 					return errors.New("user defined function not found:" + fn)
 				}

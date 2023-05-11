@@ -7,12 +7,6 @@ import (
 	"esbconcept/esbcore"
 )
 
-func init() {
-	if err := esbcore.RegisterCustomGeneratorFunc("#print_obj", FnPrintObject); err != nil {
-		panic(err)
-	}
-}
-
 var flowModelFileContent = `
 [model]
 # path -> type(primitive type only)
@@ -41,6 +35,9 @@ var flowModelFileContent = `
 
 func loadFlow() (*esbcore.Flow, *esbcore.DataTypeDefinitions, error) {
 	container := esbcore.NewContainer()
+	if err := container.RegisterCustomFn("#print_obj", FnPrintObject); err != nil {
+		panic(err)
+	}
 	if err := components.InitComponent(container); err != nil {
 		return nil, nil, err
 	}

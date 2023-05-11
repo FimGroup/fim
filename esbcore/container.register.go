@@ -23,7 +23,8 @@ func NewContainer() *Container {
 		pipelineMap:        map[string]*Pipeline{},
 		pipelineRawContent: map[string]struct{ PipelineTomlRaw []byte }{},
 
-		builtinGenFnMap: map[string]func(params []interface{}) (esbapi.Fn, error){},
+		builtinGenFnMap: map[string]esbapi.FnGen{},
+		customGenFnMap:  map[string]esbapi.FnGen{},
 	}
 }
 
@@ -41,7 +42,8 @@ type Container struct {
 	}
 	pipelineMap map[string]*Pipeline
 
-	builtinGenFnMap map[string]func(params []interface{}) (esbapi.Fn, error)
+	builtinGenFnMap map[string]esbapi.FnGen
+	customGenFnMap  map[string]esbapi.FnGen
 }
 
 func (c *Container) LoadFlowModel(tomlContent string) error {
