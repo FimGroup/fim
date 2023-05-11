@@ -30,3 +30,8 @@ func (c *ContainerInst) RegisterCustomFn(name string, fn esbapi.FnGen) error {
 	c.customGenFnMap[name] = fn
 	return nil
 }
+
+func (c *ContainerInst) RegisterSourceConnectorGen(name string, connGen esbapi.SourceConnectorGenerator) error {
+	c.registerSourceConnectorGen[name] = connGen
+	return nil
+}

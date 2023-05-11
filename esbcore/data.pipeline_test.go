@@ -70,7 +70,7 @@ func TestNewPipeline(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Log(p)
-	if err := p.RunPipeline(); err != nil {
+	if err := p.setupPipeline(); err != nil {
 		t.Fatal(err)
 	}
 

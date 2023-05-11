@@ -8,16 +8,12 @@ import (
 )
 
 func NewContainer() *ContainerInst {
-	flowRawMap := map[string]struct{ FlowTomlRaw []byte }{}
-	flowMap := map[string]*Flow{}
-
-	var flowModelRawMap [][]byte
 	var flowModelMap = NewDataTypeDefinitions()
 
 	return &ContainerInst{
-		flowModelRawContents: flowModelRawMap,
-		flowRawMap:           flowRawMap,
-		flowMap:              flowMap,
+		flowModelRawContents: [][]byte{},
+		flowRawMap:           map[string]struct{ FlowTomlRaw []byte }{},
+		flowMap:              map[string]*Flow{},
 		flowModel:            flowModelMap,
 
 		pipelineMap:        map[string]*Pipeline{},
@@ -25,6 +21,9 @@ func NewContainer() *ContainerInst {
 
 		builtinGenFnMap: map[string]esbapi.FnGen{},
 		customGenFnMap:  map[string]esbapi.FnGen{},
+
+		connectorMap:               map[string]esbapi.Connector{},
+		registerSourceConnectorGen: map[string]esbapi.SourceConnectorGenerator{},
 	}
 }
 
@@ -44,6 +43,9 @@ type ContainerInst struct {
 
 	builtinGenFnMap map[string]esbapi.FnGen
 	customGenFnMap  map[string]esbapi.FnGen
+
+	connectorMap               map[string]esbapi.Connector
+	registerSourceConnectorGen map[string]esbapi.SourceConnectorGenerator
 }
 
 func (c *ContainerInst) LoadFlowModel(tomlContent string) error {
@@ -90,12 +92,35 @@ func (c *ContainerInst) LoadPipeline(pipelineName, tomlContent string) error {
 	return nil
 }
 
-func (c *ContainerInst) RunPipelines() {
+func (c *ContainerInst) StartContainer() error {
+	// setup pipelines
 	for _, p := range c.pipelineMap {
-		go func() {
-			if err := p.RunPipeline(); err != nil {
-				panic(err)
-			}
-		}()
+		if err := p.setupPipeline(); err != nil {
+			return err
+		}
 	}
+
+	allInit := false
+	defer func() {
+		if !allInit {
+			for _, c := range c.connectorMap {
+				if err := c.Stop(); err != nil {
+					// omit error
+				}
+			}
+		}
+	}()
+	// last step: start connectors to accept requests
+	for _, c := range c.connectorMap {
+		if err := c.Start(); err != nil {
+			return err
+		}
+	}
+	allInit = true
+
+	return nil
+}
+
+func (c *ContainerInst) NewModel() esbapi.Model {
+	return NewModelInst(c.flowModel)
 }

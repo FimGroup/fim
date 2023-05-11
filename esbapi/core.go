@@ -34,6 +34,28 @@ type Model interface {
 type Container interface {
 	RegisterBuiltinFn(name string, fnGen FnGen) error
 	RegisterCustomFn(name string, fnGen FnGen) error
+	RegisterSourceConnectorGen(name string, connGen SourceConnectorGenerator) error
+
+	NewModel() Model
 }
 
+type DataMapping map[string]string
+
 type PipelineProcess func(m Model) error
+type MappingDefinition struct {
+	In  DataMapping
+	Out DataMapping
+}
+type ConnectorProcessEntryPoint func(PipelineProcess, *MappingDefinition) error
+
+type Connector interface {
+	Start() error
+	Stop() error
+	Reload() error
+}
+
+type SourceConnectorGenerator func(options map[string]string, container Container) (struct {
+	Connector
+	ConnectorProcessEntryPoint
+	InstanceName string
+}, error)

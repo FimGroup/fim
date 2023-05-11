@@ -163,11 +163,11 @@ func (m *ModelInst) GetFieldUnsafe(paths []string) interface{} {
 }
 
 func (m *ModelInst) FillInFrom(o interface{}) error {
-	panic(_IMPLEMENT_ME)
+	panic(esbapi.IMPLEMENT_ME)
 }
 
 func (m *ModelInst) ExtractTo(o interface{}) error {
-	panic(_IMPLEMENT_ME)
+	panic(esbapi.IMPLEMENT_ME)
 }
 
 func (m *ModelInst) transferTo(dest *ModelInst, sourcePaths, destPaths []string, defaultTypeRefBy refBy) error {

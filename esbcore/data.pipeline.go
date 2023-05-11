@@ -11,8 +11,6 @@ import (
 	"esbconcept/esbapi"
 )
 
-type ConnectorDataMapping map[string]string
-
 type Pipeline struct {
 	Parameter struct {
 		Inputs     []string            `toml:"inputs"`
@@ -24,13 +22,16 @@ type Pipeline struct {
 		SourceConnectors []map[string]string `toml:"source_connectors"`
 	} `toml:"pipeline"`
 	ConnectorMapping map[string]struct {
-		In  ConnectorDataMapping `toml:"in"`
-		Out ConnectorDataMapping `toml:"out"`
+		In  esbapi.DataMapping `toml:"in"`
+		Out esbapi.DataMapping `toml:"out"`
 	} `toml:"connector_mapping"`
 
 	container          *ContainerInst
-	connectorInitFuncs []func(esbapi.PipelineProcess) error
-	steps              []func() func(global esbapi.Model) error
+	connectorInitFuncs []struct {
+		esbapi.ConnectorProcessEntryPoint
+		*esbapi.MappingDefinition
+	}
+	steps []func() func(global esbapi.Model) error
 }
 
 func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error) {
@@ -50,14 +51,33 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 			if !ok {
 				return nil, errors.New("no @connector defined")
 			}
-			gen, ok := sourceConnectorGenMap[connectorName]
+
+			// connector mapping
+			connInstName, ok := v["@mapping"]
+			if !ok {
+				return nil, errors.New("no @mapping defined")
+			}
+			s, ok := p.ConnectorMapping[connInstName]
+			if !ok {
+				return nil, errors.New("connect mapping cannot be found:" + connInstName)
+			}
+			mappdingDef := &esbapi.MappingDefinition{
+				In:  s.In,
+				Out: s.Out,
+			}
+
+			gen, ok := container.registerSourceConnectorGen[connectorName]
 			if !ok {
 				return nil, errors.New("source connector generator cannot be found:" + connectorName)
 			}
 			if f, err := gen(v, p.container); err != nil {
 				return nil, err
 			} else {
-				p.connectorInitFuncs = append(p.connectorInitFuncs, f)
+				container.connectorMap[f.InstanceName] = f.Connector
+				p.connectorInitFuncs = append(p.connectorInitFuncs, struct {
+					esbapi.ConnectorProcessEntryPoint
+					*esbapi.MappingDefinition
+				}{ConnectorProcessEntryPoint: f.ConnectorProcessEntryPoint, MappingDefinition: mappdingDef})
 			}
 		}
 	}
@@ -83,6 +103,19 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 				if !ok {
 					return nil, errors.New("target connector cannot be found:" + flow)
 				}
+
+				// connector mapping
+				connInstName, ok := v["@mapping"]
+				if !ok {
+					return nil, errors.New("no @mapping defined")
+				}
+				s, ok := p.ConnectorMapping[connInstName]
+				if !ok {
+					return nil, errors.New("connect mapping cannot be found:" + connInstName)
+				}
+				//FIXME support parameter data mapping for target connector
+				var _ = s
+
 				f, err := g(v)
 				if err != nil {
 					return nil, err
@@ -133,16 +166,15 @@ func (p *Pipeline) toPipelineFn() esbapi.PipelineProcess {
 	}
 }
 
-func (p *Pipeline) RunPipeline() error {
+func (p *Pipeline) setupPipeline() error {
 	// start source connector
 	process := p.toPipelineFn()
 	for _, f := range p.connectorInitFuncs {
-		go func(fn func(pipelineProcess esbapi.PipelineProcess) error) {
-			if err := fn(process); err != nil {
-				log.Fatalln(err)
-			}
-		}(f)
+		if err := f.ConnectorProcessEntryPoint(process, f.MappingDefinition); err != nil {
+			return err
+		}
 	}
-	log.Println("RunPipeline done.")
+
+	log.Println("setupPipeline done.")
 	return nil
 }

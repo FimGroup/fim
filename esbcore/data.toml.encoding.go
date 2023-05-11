@@ -1,9 +1,11 @@
 package esbcore
 
+import "esbconcept/esbapi"
+
 func FillIn(destObj interface{}) error {
-	panic(_IMPLEMENT_ME)
+	panic(esbapi.IMPLEMENT_ME)
 }
 
 func From(srcObj interface{}) error {
-	panic(_IMPLEMENT_ME)
+	panic(esbapi.IMPLEMENT_ME)
 }
