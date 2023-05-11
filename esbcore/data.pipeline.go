@@ -11,6 +11,8 @@ import (
 
 type PipelineProcess func(m *ModelInst) error
 
+type ConnectorDataMapping map[string]string
+
 type Pipeline struct {
 	Parameter struct {
 		Inputs     []string            `toml:"inputs"`
@@ -21,6 +23,10 @@ type Pipeline struct {
 		Steps            []map[string]string `toml:"steps"`
 		SourceConnectors []map[string]string `toml:"source_connectors"`
 	} `toml:"pipeline"`
+	ConnectorMapping map[string]struct {
+		In  ConnectorDataMapping `toml:"in"`
+		Out ConnectorDataMapping `toml:"out"`
+	} `toml:"connector_mapping"`
 
 	container          *ContainerInst
 	connectorInitFuncs []func(PipelineProcess) error
