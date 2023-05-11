@@ -2,6 +2,8 @@ package esbcore
 
 import (
 	"testing"
+
+	"esbconcept/components"
 )
 
 var pipelineContent = `
@@ -50,6 +52,9 @@ var pipelineContent = `
 
 func TestNewPipeline(t *testing.T) {
 	container := NewContainer()
+	if err := components.InitComponent(container); err != nil {
+		t.Fatal(err)
+	}
 	if err := container.LoadFlowModel(flowModelFileContent); err != nil {
 		t.Fatal(err)
 	}

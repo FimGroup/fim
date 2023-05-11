@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-type SourceConnectorGenerator func(options map[string]string, container *Container) (func(PipelineProcess) error, error)
+type SourceConnectorGenerator func(options map[string]string, container *ContainerInst) (func(PipelineProcess) error, error)
 
 var sourceConnectorGenMap map[string]SourceConnectorGenerator
 
@@ -17,7 +17,7 @@ func init() {
 	sourceConnectorGenMap["http"] = sourceConnectorHttp
 }
 
-func sourceConnectorHttp(options map[string]string, container *Container) (func(PipelineProcess) error, error) {
+func sourceConnectorHttp(options map[string]string, container *ContainerInst) (func(PipelineProcess) error, error) {
 
 	ls, ok := options["http.listen"]
 	if !ok {

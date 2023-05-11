@@ -3,22 +3,18 @@ package esbcore
 import (
 	"errors"
 	"fmt"
+
+	"esbconcept/esbapi"
+	"esbconcept/esbapi/rule"
 )
 
-type TypeOfNode int
 type ElementMap map[string]interface{}
+
 type refBy int
 
 const (
 	ByLeft  refBy = 1
 	ByRight refBy = 2
-)
-
-const (
-	TypeUnknown       TypeOfNode = 0
-	TypeDataNode      TypeOfNode = 1
-	TypeNsNode        TypeOfNode = 2
-	TypeAttributeNode TypeOfNode = 3
 )
 
 type ModelInst struct {
@@ -48,7 +44,7 @@ func (m *ModelInst) addOrUpdateField(paths []string, value interface{}) error {
 
 	var result ElementMap = m.ElementMap
 	for _, pLv := range splits[:len(splits)-1] { // 0 to second last level
-		pathName, idx := ExtractArrayPath(pLv)
+		pathName, idx := rule.ExtractArrayPath(pLv)
 		isArrAccess := idx >= 0
 		elemMap := result
 		elem, ok := elemMap[pathName]
@@ -72,7 +68,7 @@ func (m *ModelInst) addOrUpdateField(paths []string, value interface{}) error {
 
 	// last level
 	{
-		pathName, idx := ExtractArrayPath(splits[len(splits)-1])
+		pathName, idx := rule.ExtractArrayPath(splits[len(splits)-1])
 		isArrAccess := idx >= 0
 		if !isArrAccess {
 			result[pathName] = value
@@ -94,7 +90,7 @@ func (m *ModelInst) deleteField(paths []string) error {
 
 	var result ElementMap = m.ElementMap
 	for _, pLv := range splits[:len(splits)-1] { // 0 to second last level
-		pathName, idx := ExtractArrayPath(pLv)
+		pathName, idx := rule.ExtractArrayPath(pLv)
 		isArrAccess := idx >= 0
 		elemMap := result
 		elem, ok := elemMap[pathName]
@@ -118,7 +114,7 @@ func (m *ModelInst) deleteField(paths []string) error {
 
 	// last level
 	{
-		pathName, idx := ExtractArrayPath(splits[len(splits)-1])
+		pathName, idx := rule.ExtractArrayPath(splits[len(splits)-1])
 		isArrAccess := idx >= 0
 		if !isArrAccess {
 			delete(result, pathName)
@@ -142,7 +138,7 @@ func (m *ModelInst) getField(paths []string) interface{} {
 
 	var result interface{} = m.ElementMap
 	for _, pLv := range splits {
-		pathName, idx := ExtractArrayPath(pLv)
+		pathName, idx := rule.ExtractArrayPath(pLv)
 		isArrAccess := idx >= 0
 		elemMap, ok := result.(ElementMap)
 		if !ok {
@@ -180,7 +176,7 @@ func (m *ModelInst) transferTo(dest *ModelInst, sourcePaths, destPaths []string,
 		return dest.addOrUpdateField(destPaths, val)
 	} else {
 		// default value handling when not existing
-		var d DataType
+		var d esbapi.DataType
 		switch defaultTypeRefBy {
 		case ByLeft:
 			dt, _, err := m.dtd.typeOfPaths(sourcePaths)
@@ -198,17 +194,17 @@ func (m *ModelInst) transferTo(dest *ModelInst, sourcePaths, destPaths []string,
 			return errors.New("unknown refBy:" + fmt.Sprint(defaultTypeRefBy))
 		}
 		switch d {
-		case DataTypeInt:
+		case esbapi.DataTypeInt:
 			return dest.addOrUpdateField(destPaths, 0)
-		case DataTypeString:
+		case esbapi.DataTypeString:
 			return dest.addOrUpdateField(destPaths, "")
-		case DataTypeFloat:
+		case esbapi.DataTypeFloat:
 			return dest.addOrUpdateField(destPaths, 0.0)
-		case DataTypeBool:
+		case esbapi.DataTypeBool:
 			return dest.addOrUpdateField(destPaths, false)
-		case DataTypeObject:
+		case esbapi.DataTypeObject:
 			return dest.deleteField(destPaths)
-		case DataTypeArray:
+		case esbapi.DataTypeArray:
 			return dest.deleteField(destPaths)
 		}
 	}

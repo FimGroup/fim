@@ -1,6 +1,10 @@
-package esbcore
+package rule
 
-import "strings"
+import (
+	"strings"
+
+	"esbconcept/esbapi"
+)
 
 func ValidateFullPath(in string) bool {
 	splits := SplitFullPath(in)
@@ -13,13 +17,13 @@ func ValidateFullPath(in string) bool {
 		if !ok {
 			return false
 		}
-		if typeOfNode == TypeUnknown {
+		if typeOfNode == esbapi.TypeUnknown {
 			return false
 		}
 		switch typeOfNode {
-		case TypeAttributeNode:
+		case esbapi.TypeAttributeNode:
 			fallthrough
-		case TypeNsNode:
+		case esbapi.TypeNsNode:
 			lastLevel = true
 		}
 	}
@@ -37,13 +41,13 @@ func ValidateFullPathOfDefinition(in string) bool {
 		if !ok {
 			return false
 		}
-		if typeOfNode == TypeUnknown {
+		if typeOfNode == esbapi.TypeUnknown {
 			return false
 		}
 		switch typeOfNode {
-		case TypeAttributeNode:
+		case esbapi.TypeAttributeNode:
 			fallthrough
-		case TypeNsNode:
+		case esbapi.TypeNsNode:
 			lastLevel = true
 		}
 	}
@@ -51,7 +55,7 @@ func ValidateFullPathOfDefinition(in string) bool {
 }
 
 func SplitFullPath(in string) []string {
-	return strings.Split(in, PathSeparator)
+	return strings.Split(in, esbapi.PathSeparator)
 }
 
 func IsPathArray(in string) bool {
@@ -60,7 +64,7 @@ func IsPathArray(in string) bool {
 }
 
 func ConcatFullPath(paths []string) string {
-	return strings.Join(paths, PathSeparator)
+	return strings.Join(paths, esbapi.PathSeparator)
 }
 
 func ExtractArrayPath(in string) (string, int) {
@@ -87,26 +91,26 @@ func ExtractArrayPath(in string) (string, int) {
 	}
 }
 
-func checkElementKey(key string, allowedEmptyArrayIndex bool) (TypeOfNode, bool) {
+func checkElementKey(key string, allowedEmptyArrayIndex bool) (esbapi.TypeOfNode, bool) {
 	if len(key) <= 0 {
-		return TypeUnknown, false
+		return esbapi.TypeUnknown, false
 	}
 	first := key[0]
 	var nameKey string
-	var nodeType TypeOfNode
+	var nodeType esbapi.TypeOfNode
 	switch first {
 	case '#':
 		nameKey = key[1:]
-		nodeType = TypeAttributeNode
+		nodeType = esbapi.TypeAttributeNode
 	case '@':
 		nameKey = key[1:]
-		nodeType = TypeNsNode
+		nodeType = esbapi.TypeNsNode
 	default:
 		nameKey = key
-		nodeType = TypeDataNode
+		nodeType = esbapi.TypeDataNode
 	}
 	if len(nameKey) <= 0 {
-		return TypeUnknown, false
+		return esbapi.TypeUnknown, false
 	}
 
 	return nodeType, checkElement(nameKey, allowedEmptyArrayIndex)

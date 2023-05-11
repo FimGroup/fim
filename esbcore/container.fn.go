@@ -6,7 +6,7 @@ import (
 	"esbconcept/esbapi"
 )
 
-func (c *Container) RegisterBuiltinFn(methodName string, fg esbapi.FnGen) error {
+func (c *ContainerInst) RegisterBuiltinFn(methodName string, fg esbapi.FnGen) error {
 	_, ok := c.builtinGenFnMap[methodName]
 	if ok {
 		return errors.New("method already registered:" + methodName)
@@ -15,7 +15,7 @@ func (c *Container) RegisterBuiltinFn(methodName string, fg esbapi.FnGen) error 
 	return nil
 }
 
-func (c *Container) RegisterCustomFn(name string, fn esbapi.FnGen) error {
+func (c *ContainerInst) RegisterCustomFn(name string, fn esbapi.FnGen) error {
 	_, ok := c.customGenFnMap[name]
 	if ok {
 		return errors.New("custom function already exists:" + name)

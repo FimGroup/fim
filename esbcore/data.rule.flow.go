@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"esbconcept/esbapi"
+	"esbconcept/esbapi/rule"
 
 	"github.com/pelletier/go-toml/v2"
 )
@@ -18,18 +19,18 @@ type templateFlow struct {
 
 type Flow struct {
 	dtd       *DataTypeDefinitions
-	container *Container
+	container *ContainerInst
 
 	localInMapping map[string]struct {
 		ModelFieldPath string
 		SplitPath      []string
-		DataType       DataType
+		DataType       esbapi.DataType
 		KeySplitPath   []string
 	}
 	localOutMapping map[string]struct {
 		ModelFieldPath string
 		SplitPath      []string
-		DataType       DataType
+		DataType       esbapi.DataType
 		KeySplitPath   []string
 	}
 	localPreOutOperations map[string]struct {
@@ -40,7 +41,7 @@ type Flow struct {
 	fnList []esbapi.Fn
 }
 
-func NewFlow(dtd *DataTypeDefinitions, c *Container) *Flow {
+func NewFlow(dtd *DataTypeDefinitions, c *ContainerInst) *Flow {
 	return &Flow{
 		dtd:       dtd,
 		container: c,
@@ -48,13 +49,13 @@ func NewFlow(dtd *DataTypeDefinitions, c *Container) *Flow {
 		localInMapping: map[string]struct {
 			ModelFieldPath string
 			SplitPath      []string
-			DataType       DataType
+			DataType       esbapi.DataType
 			KeySplitPath   []string
 		}{},
 		localOutMapping: map[string]struct {
 			ModelFieldPath string
 			SplitPath      []string
-			DataType       DataType
+			DataType       esbapi.DataType
 			KeySplitPath   []string
 		}{},
 		localPreOutOperations: map[string]struct {
@@ -102,21 +103,21 @@ func (f *Flow) addIn(source, local string) error {
 		return errors.New("local parameter registered:" + local)
 	}
 
-	if !ValidateFullPath(source) {
+	if !rule.ValidateFullPath(source) {
 		return errors.New("in parameter path invalid:" + source)
 	}
 
 	if dt, _, err := f.dtd.TypeOfPath(source); err != nil {
 		return err
-	} else if dt == DataTypeUnavailable {
+	} else if dt == esbapi.DataTypeUnavailable {
 		return errors.New("cannot find path:" + source)
 	} else {
 		f.localInMapping[local] = struct {
 			ModelFieldPath string
 			SplitPath      []string
-			DataType       DataType
+			DataType       esbapi.DataType
 			KeySplitPath   []string
-		}{ModelFieldPath: source, SplitPath: SplitFullPath(source), DataType: dt, KeySplitPath: SplitFullPath(local)}
+		}{ModelFieldPath: source, SplitPath: rule.SplitFullPath(source), DataType: dt, KeySplitPath: rule.SplitFullPath(local)}
 	}
 
 	return nil
@@ -139,21 +140,21 @@ func (f *Flow) addOut(local, out string) error {
 		return errors.New("local parameter registered:" + local)
 	}
 
-	if !ValidateFullPath(out) {
+	if !rule.ValidateFullPath(out) {
 		return errors.New("out parameter path invalid:" + out)
 	}
 
 	if dt, _, err := f.dtd.TypeOfPath(out); err != nil {
 		return err
-	} else if dt == DataTypeUnavailable {
+	} else if dt == esbapi.DataTypeUnavailable {
 		return errors.New("cannot find path:" + out)
 	} else {
 		f.localOutMapping[local] = struct {
 			ModelFieldPath string
 			SplitPath      []string
-			DataType       DataType
+			DataType       esbapi.DataType
 			KeySplitPath   []string
-		}{ModelFieldPath: out, SplitPath: SplitFullPath(out), DataType: dt, KeySplitPath: SplitFullPath(local)}
+		}{ModelFieldPath: out, SplitPath: rule.SplitFullPath(out), DataType: dt, KeySplitPath: rule.SplitFullPath(local)}
 	}
 
 	return nil
@@ -293,13 +294,13 @@ func (f *Flow) addPreOut(op string, path string) error {
 		return errors.New("path registered:" + path)
 	}
 
-	if !ValidateFullPath(path) {
+	if !rule.ValidateFullPath(path) {
 		return errors.New("path invalid:" + path)
 	}
 
 	if dt, _, err := f.dtd.TypeOfPath(path); err != nil {
 		return err
-	} else if dt == DataTypeUnavailable {
+	} else if dt == esbapi.DataTypeUnavailable {
 		return errors.New("cannot find path:" + path)
 	} else {
 		f.localPreOutOperations[path] = struct {
@@ -307,7 +308,7 @@ func (f *Flow) addPreOut(op string, path string) error {
 			SplitPath []string
 		}{
 			Operation: op,
-			SplitPath: SplitFullPath(path),
+			SplitPath: rule.SplitFullPath(path),
 		}
 	}
 

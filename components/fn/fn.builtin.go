@@ -4,17 +4,17 @@ import (
 	"errors"
 
 	"esbconcept/esbapi"
-	"esbconcept/esbcore"
+	"esbconcept/esbapi/rule"
 )
 
 func FnAssign(params []interface{}) (esbapi.Fn, error) {
 	var field string = params[0].(string)
-	if !esbcore.ValidateFullPath(field) {
+	if !rule.ValidateFullPath(field) {
 		return nil, errors.New("path invalid:" + field)
 	}
-	fieldPaths := esbcore.SplitFullPath(field)
+	fieldPaths := rule.SplitFullPath(field)
 	var val = params[1]
 	return func(m esbapi.Model) error {
-		return m.(*esbcore.ModelInst).AddOrUpdateField0(fieldPaths, val)
+		return m.AddOrUpdateField0(fieldPaths, val)
 	}, nil
 }

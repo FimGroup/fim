@@ -22,12 +22,12 @@ type Pipeline struct {
 		SourceConnectors []map[string]string `toml:"source_connectors"`
 	} `toml:"pipeline"`
 
-	container          *Container
+	container          *ContainerInst
 	connectorInitFuncs []func(PipelineProcess) error
 	steps              []func() func(global *ModelInst) error
 }
 
-func NewPipeline(tomlContent string, container *Container) (*Pipeline, error) {
+func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error) {
 	p := new(Pipeline)
 	if err := toml.NewDecoder(bytes.NewBufferString(tomlContent)).DisallowUnknownFields().Decode(p); err != nil {
 		return nil, err

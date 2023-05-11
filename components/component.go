@@ -4,10 +4,10 @@ import (
 	"esbconcept/components/connector/source"
 	"esbconcept/components/connector/target"
 	"esbconcept/components/fn"
-	"esbconcept/esbcore"
+	"esbconcept/esbapi"
 )
 
-func InitComponent(container *esbcore.Container) error {
+func InitComponent(container esbapi.Container) error {
 	if err := fn.InitFn(container); err != nil {
 		return err
 	}

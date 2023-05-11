@@ -2,6 +2,8 @@ package esbcore
 
 import (
 	"testing"
+
+	"esbconcept/esbapi/rule"
 )
 
 func TestSyncFlowEngineExample(t *testing.T) {
@@ -11,14 +13,14 @@ func TestSyncFlowEngineExample(t *testing.T) {
 	}
 
 	var modelInst = NewModelInst(def)
-	if err := modelInst.addOrUpdateField(SplitFullPath("user/password"), "password1"); err != nil {
+	if err := modelInst.addOrUpdateField(rule.SplitFullPath("user/password"), "password1"); err != nil {
 		t.Fatal(err)
 	}
 
-	if modelInst.getField(SplitFullPath("user/user_id")) != nil {
+	if modelInst.getField(rule.SplitFullPath("user/user_id")) != nil {
 		t.Fatal("should not obtain any value")
 	}
-	if v, ok := modelInst.getField(SplitFullPath("user/password")).(string); v != "password1" || !ok {
+	if v, ok := modelInst.getField(rule.SplitFullPath("user/password")).(string); v != "password1" || !ok {
 		t.Fatal("value is not expected")
 	}
 
@@ -26,12 +28,12 @@ func TestSyncFlowEngineExample(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	v := modelInst.getField(SplitFullPath("user/user_id"))
+	v := modelInst.getField(rule.SplitFullPath("user/user_id"))
 	if vv, ok := v.(int64); vv != 123 || !ok {
 		t.Log(v)
 		t.Fatal("value is not expected from ModelInst")
 	}
-	if v := modelInst.getField(SplitFullPath("user/password")); v != nil {
+	if v := modelInst.getField(rule.SplitFullPath("user/password")); v != nil {
 		t.Log(v)
 		t.Fatal("value should not exist")
 	}
@@ -43,7 +45,7 @@ func BenchmarkSyncFlowEngineExample(b *testing.B) {
 		b.Fatal(err)
 	}
 	var modelInst = NewModelInst(def)
-	if err := modelInst.addOrUpdateField(SplitFullPath("user/password"), "password1"); err != nil {
+	if err := modelInst.addOrUpdateField(rule.SplitFullPath("user/password"), "password1"); err != nil {
 		b.Fatal(err)
 	}
 
@@ -52,8 +54,4 @@ func BenchmarkSyncFlowEngineExample(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
-}
-
-func TestAsyncFlowEngineExample(t *testing.T) {
-	panic(_IMPLEMENT_ME)
 }

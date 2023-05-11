@@ -7,46 +7,33 @@ import (
 	"strings"
 
 	"github.com/pelletier/go-toml/v2"
+
+	"esbconcept/esbapi"
+	"esbconcept/esbapi/rule"
 )
 
 type templateFlowModel struct {
 	Model map[string]string `toml:"model"`
 }
 
-type DataType int
-
-var primitiveType = map[DataType]struct{}{}
+var primitiveType = map[esbapi.DataType]struct{}{}
 
 func init() {
-	primitiveType[DataTypeInt] = struct{}{}
-	primitiveType[DataTypeString] = struct{}{}
-	primitiveType[DataTypeBool] = struct{}{}
-	primitiveType[DataTypeFloat] = struct{}{}
+	primitiveType[esbapi.DataTypeInt] = struct{}{}
+	primitiveType[esbapi.DataTypeString] = struct{}{}
+	primitiveType[esbapi.DataTypeBool] = struct{}{}
+	primitiveType[esbapi.DataTypeFloat] = struct{}{}
 }
 
-const (
-	DataTypeUnavailable DataType = 0
-	DataTypeInt         DataType = 1
-	DataTypeString      DataType = 2
-	DataTypeBool        DataType = 3
-	DataTypeFloat       DataType = 4
-	DataTypeArray       DataType = 51
-	DataTypeObject      DataType = 52
-)
-
-const (
-	PathSeparator = "/"
-)
-
 type DataTypeDefinitions struct {
-	DataType
-	PrimitiveArrayElementType DataType // exists only when the element data type is primitive
+	esbapi.DataType
+	PrimitiveArrayElementType esbapi.DataType // exists only when the element data type is primitive
 	dataTypeMap               map[string]*DataTypeDefinitions
 }
 
 func NewDataTypeDefinitions() *DataTypeDefinitions {
 	dtd := newInternalDataTypeDefinitions()
-	dtd.DataType = DataTypeObject
+	dtd.DataType = esbapi.DataTypeObject
 	return dtd
 }
 
@@ -73,7 +60,7 @@ func (d *DataTypeDefinitions) MergeToml(data string) error {
 func (d *DataTypeDefinitions) AddTypeDefinitions(m *templateFlowModel) error {
 	// validate
 	for path, dataTypeStr := range m.Model {
-		if !ValidateFullPathOfDefinition(path) {
+		if !rule.ValidateFullPathOfDefinition(path) {
 			return errors.New(fmt.Sprint("path:", path, " illegal"))
 		}
 
@@ -96,28 +83,28 @@ func (d *DataTypeDefinitions) AddTypeDefinitions(m *templateFlowModel) error {
 }
 
 func (d *DataTypeDefinitions) addTypeDefinitionOfPath(path string, dataTypeStr string) error {
-	var dataType DataType
+	var dataType esbapi.DataType
 	switch dataTypeStr {
 	case "string":
-		dataType = DataTypeString
+		dataType = esbapi.DataTypeString
 	case "int":
-		dataType = DataTypeInt
+		dataType = esbapi.DataTypeInt
 	case "float":
-		dataType = DataTypeFloat
+		dataType = esbapi.DataTypeFloat
 	case "bool":
-		dataType = DataTypeBool
+		dataType = esbapi.DataTypeBool
 	default:
 		return errors.New(fmt.Sprint("unknown dataType:", dataTypeStr))
 	}
 
-	paths := SplitFullPath(path)
+	paths := rule.SplitFullPath(path)
 	objMap := d.dataTypeMap
 	// process each level
 	for _, pLv := range paths[:len(paths)-1] {
-		isPathArr := IsPathArray(pLv)
+		isPathArr := rule.IsPathArray(pLv)
 		if isPathArr {
 			// extract path name
-			name, _ := ExtractArrayPath(pLv)
+			name, _ := rule.ExtractArrayPath(pLv)
 			pLv = name
 		}
 		lv, ok := objMap[pLv]
@@ -125,9 +112,9 @@ func (d *DataTypeDefinitions) addTypeDefinitionOfPath(path string, dataTypeStr s
 			// not exist
 			lv := newInternalDataTypeDefinitions()
 			if isPathArr {
-				lv.DataType = DataTypeArray
+				lv.DataType = esbapi.DataTypeArray
 			} else {
-				lv.DataType = DataTypeObject
+				lv.DataType = esbapi.DataTypeObject
 			}
 			objMap[pLv] = lv
 			objMap = lv.dataTypeMap
@@ -135,11 +122,11 @@ func (d *DataTypeDefinitions) addTypeDefinitionOfPath(path string, dataTypeStr s
 		} else {
 			// exist
 			if isPathArr {
-				if lv.DataType != DataTypeArray {
+				if lv.DataType != esbapi.DataTypeArray {
 					return errors.New(fmt.Sprintf("data type of path:%s is not array at level:%s", path, pLv))
 				}
 			} else {
-				if lv.DataType != DataTypeObject {
+				if lv.DataType != esbapi.DataTypeObject {
 					return errors.New(fmt.Sprintf("data type of path:%s is not object at level:%s", path, pLv))
 				}
 			}
@@ -150,10 +137,10 @@ func (d *DataTypeDefinitions) addTypeDefinitionOfPath(path string, dataTypeStr s
 	// last level
 	{
 		lastLv := paths[len(paths)-1]
-		isPathArr := IsPathArray(lastLv)
+		isPathArr := rule.IsPathArray(lastLv)
 		if isPathArr {
 			// extract path name
-			name, _ := ExtractArrayPath(lastLv)
+			name, _ := rule.ExtractArrayPath(lastLv)
 			lastLv = name
 		}
 		dtd, ok := objMap[lastLv]
@@ -161,11 +148,11 @@ func (d *DataTypeDefinitions) addTypeDefinitionOfPath(path string, dataTypeStr s
 			// not exist
 			dtd = newLastLevelDataTypeDefinitions()
 			if isPathArr {
-				dtd.DataType = DataTypeArray
+				dtd.DataType = esbapi.DataTypeArray
 				dtd.PrimitiveArrayElementType = dataType
 			} else {
 				dtd.DataType = dataType
-				dtd.PrimitiveArrayElementType = DataTypeUnavailable
+				dtd.PrimitiveArrayElementType = esbapi.DataTypeUnavailable
 			}
 			objMap[lastLv] = dtd
 		} else {
@@ -178,25 +165,25 @@ func (d *DataTypeDefinitions) addTypeDefinitionOfPath(path string, dataTypeStr s
 }
 
 // TypeOfPath returns the path data type, primitive array element data type and error
-func (d *DataTypeDefinitions) TypeOfPath(path string) (DataType, DataType, error) {
-	if !ValidateFullPath(path) {
-		return DataTypeUnavailable, DataTypeUnavailable, errors.New(fmt.Sprint("path:", path, " illegal"))
+func (d *DataTypeDefinitions) TypeOfPath(path string) (esbapi.DataType, esbapi.DataType, error) {
+	if !rule.ValidateFullPath(path) {
+		return esbapi.DataTypeUnavailable, esbapi.DataTypeUnavailable, errors.New(fmt.Sprint("path:", path, " illegal"))
 	}
 
-	splits := SplitFullPath(path)
+	splits := rule.SplitFullPath(path)
 	return d.typeOfPaths(splits)
 }
 
-func (d *DataTypeDefinitions) typeOfPaths(paths []string) (DataType, DataType, error) {
+func (d *DataTypeDefinitions) typeOfPaths(paths []string) (esbapi.DataType, esbapi.DataType, error) {
 	dtd := d
 	isAccessArrElem := false
 	for _, pLv := range paths {
-		lvName, arrIdx := ExtractArrayPath(pLv) //FIXME need to identify primitive type or object/array type
+		lvName, arrIdx := rule.ExtractArrayPath(pLv) //FIXME need to identify primitive type or object/array type
 		isAccessArrElem = arrIdx != -1
 		pLv = lvName
 		subDtd, ok := dtd.dataTypeMap[pLv]
 		if !ok {
-			return DataTypeUnavailable, DataTypeUnavailable, errors.New(fmt.Sprintf("path:%s not found", strings.Join(paths, PathSeparator)))
+			return esbapi.DataTypeUnavailable, esbapi.DataTypeUnavailable, errors.New(fmt.Sprintf("path:%s not found", strings.Join(paths, esbapi.PathSeparator)))
 		}
 		dtd = subDtd
 	}
@@ -208,10 +195,10 @@ func (d *DataTypeDefinitions) typeOfPaths(paths []string) (DataType, DataType, e
 		_, isPrimitive := primitiveType[pDataType]
 		if isPrimitive {
 			dataType = pDataType
-			pDataType = DataTypeUnavailable
+			pDataType = esbapi.DataTypeUnavailable
 		} else {
-			dataType = DataTypeObject
-			pDataType = DataTypeUnavailable
+			dataType = esbapi.DataTypeObject
+			pDataType = esbapi.DataTypeUnavailable
 		}
 	}
 

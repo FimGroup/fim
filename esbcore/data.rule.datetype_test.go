@@ -1,6 +1,10 @@
 package esbcore
 
-import "testing"
+import (
+	"testing"
+
+	"esbconcept/esbapi"
+)
 
 var flowModelFileContent = `
 [model]
@@ -44,38 +48,38 @@ func TestNewDataTypeDefinitions(t *testing.T) {
 	t.Log(def)
 
 	AssertNonExistOfPath(t, def, "non_exist")
-	AssertTypeOfPath(t, def, "global_name", DataTypeString, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/user_id", DataTypeInt, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/username", DataTypeString, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/password", DataTypeString, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/nickname", DataTypeString, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/is_login", DataTypeBool, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/risk/rating_core", DataTypeFloat, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/phone[0]/country_code", DataTypeString, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/phone[0]/area_code", DataTypeString, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/phone[0]/phone_number", DataTypeString, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/login/lastLoginTime[0]", DataTypeInt, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/risk/matrix[0]/sub_matrix[0]", DataTypeFloat, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user", DataTypeObject, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/risk", DataTypeObject, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/phone[0]", DataTypeObject, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/phone", DataTypeArray, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/login", DataTypeObject, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/login/lastLoginTime", DataTypeArray, DataTypeInt)
-	AssertTypeOfPath(t, def, "user/risk/matrix[0]/sub_matrix", DataTypeArray, DataTypeFloat)
-	AssertTypeOfPath(t, def, "user/risk/matrix[0]/sub_matrix[0]", DataTypeFloat, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/risk/matrix[0]", DataTypeObject, DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/risk/matrix", DataTypeArray, DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "global_name", esbapi.DataTypeString, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/user_id", esbapi.DataTypeInt, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/username", esbapi.DataTypeString, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/password", esbapi.DataTypeString, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/nickname", esbapi.DataTypeString, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/is_login", esbapi.DataTypeBool, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/risk/rating_core", esbapi.DataTypeFloat, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/phone[0]/country_code", esbapi.DataTypeString, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/phone[0]/area_code", esbapi.DataTypeString, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/phone[0]/phone_number", esbapi.DataTypeString, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/login/lastLoginTime[0]", esbapi.DataTypeInt, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/risk/matrix[0]/sub_matrix[0]", esbapi.DataTypeFloat, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user", esbapi.DataTypeObject, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/risk", esbapi.DataTypeObject, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/phone[0]", esbapi.DataTypeObject, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/phone", esbapi.DataTypeArray, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/login", esbapi.DataTypeObject, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/login/lastLoginTime", esbapi.DataTypeArray, esbapi.DataTypeInt)
+	AssertTypeOfPath(t, def, "user/risk/matrix[0]/sub_matrix", esbapi.DataTypeArray, esbapi.DataTypeFloat)
+	AssertTypeOfPath(t, def, "user/risk/matrix[0]/sub_matrix[0]", esbapi.DataTypeFloat, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/risk/matrix[0]", esbapi.DataTypeObject, esbapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/risk/matrix", esbapi.DataTypeArray, esbapi.DataTypeUnavailable)
 }
 
-func AssertTypeOfPath(t *testing.T, def *DataTypeDefinitions, path string, expectedDateType, expectedPrimArrDataType DataType) {
+func AssertTypeOfPath(t *testing.T, def *DataTypeDefinitions, path string, expectedDateType, expectedPrimArrDataType esbapi.DataType) {
 	if dt, pdt, err := def.TypeOfPath(path); err != nil || dt != expectedDateType || pdt != expectedPrimArrDataType {
 		t.Fatalf("type of path:%s failed. context: %d %d %s", path, dt, pdt, err)
 	}
 }
 
 func AssertNonExistOfPath(t *testing.T, def *DataTypeDefinitions, path string) {
-	if dt, pdt, err := def.TypeOfPath(path); err == nil || dt != DataTypeUnavailable || pdt != DataTypeUnavailable {
+	if dt, pdt, err := def.TypeOfPath(path); err == nil || dt != esbapi.DataTypeUnavailable || pdt != esbapi.DataTypeUnavailable {
 		t.Fatalf("type of path:%s should not exist. context: %d %d %s", path, dt, pdt, err)
 	}
 }

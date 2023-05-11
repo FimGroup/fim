@@ -7,14 +7,14 @@ import (
 	"esbconcept/esbapi"
 )
 
-func NewContainer() *Container {
+func NewContainer() *ContainerInst {
 	flowRawMap := map[string]struct{ FlowTomlRaw []byte }{}
 	flowMap := map[string]*Flow{}
 
 	var flowModelRawMap [][]byte
 	var flowModelMap = NewDataTypeDefinitions()
 
-	return &Container{
+	return &ContainerInst{
 		flowModelRawContents: flowModelRawMap,
 		flowRawMap:           flowRawMap,
 		flowMap:              flowMap,
@@ -28,7 +28,7 @@ func NewContainer() *Container {
 	}
 }
 
-type Container struct {
+type ContainerInst struct {
 	flowRawMap map[string]struct {
 		FlowTomlRaw []byte
 	}
@@ -46,7 +46,7 @@ type Container struct {
 	customGenFnMap  map[string]esbapi.FnGen
 }
 
-func (c *Container) LoadFlowModel(tomlContent string) error {
+func (c *ContainerInst) LoadFlowModel(tomlContent string) error {
 
 	if err := c.flowModel.MergeToml(tomlContent); err != nil {
 		return err
@@ -56,7 +56,7 @@ func (c *Container) LoadFlowModel(tomlContent string) error {
 	return nil
 }
 
-func (c *Container) LoadFlow(flowName, tomlContent string) error {
+func (c *ContainerInst) LoadFlow(flowName, tomlContent string) error {
 	_, ok := c.flowMap[flowName]
 	if ok {
 		return errors.New(fmt.Sprint("flow exists:", flowName))
@@ -74,7 +74,7 @@ func (c *Container) LoadFlow(flowName, tomlContent string) error {
 	return nil
 }
 
-func (c *Container) LoadPipeline(pipelineName, tomlContent string) error {
+func (c *ContainerInst) LoadPipeline(pipelineName, tomlContent string) error {
 	_, ok := c.pipelineMap[pipelineName]
 	if ok {
 		return errors.New(fmt.Sprintf("pipeline exists:%s", pipelineName))
@@ -90,7 +90,7 @@ func (c *Container) LoadPipeline(pipelineName, tomlContent string) error {
 	return nil
 }
 
-func (c *Container) RunPipelines() {
+func (c *ContainerInst) RunPipelines() {
 	for _, p := range c.pipelineMap {
 		go func() {
 			if err := p.RunPipeline(); err != nil {
