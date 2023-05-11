@@ -3,6 +3,7 @@ package esbcore
 import (
 	"errors"
 	"fmt"
+	"log"
 
 	"esbconcept/esbapi"
 )
@@ -118,6 +119,7 @@ func (c *ContainerInst) StartContainer() error {
 	}
 	allInit = true
 
+	log.Println("start container success!")
 	return nil
 }
 
