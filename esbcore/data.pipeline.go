@@ -22,8 +22,8 @@ type Pipeline struct {
 		SourceConnectors []map[string]string `toml:"source_connectors"`
 	} `toml:"pipeline"`
 	ConnectorMapping map[string]struct {
-		In  esbapi.DataMapping `toml:"in"`
-		Out esbapi.DataMapping `toml:"out"`
+		Req esbapi.DataMapping `toml:"req"`
+		Res esbapi.DataMapping `toml:"res"`
 	} `toml:"connector_mapping"`
 
 	container          *ContainerInst
@@ -62,8 +62,8 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 				return nil, errors.New("connect mapping cannot be found:" + connInstName)
 			}
 			mappdingDef := &esbapi.MappingDefinition{
-				In:  s.In,
-				Out: s.Out,
+				Req: s.Req,
+				Res: s.Res,
 			}
 
 			gen, ok := container.registerSourceConnectorGen[connectorName]

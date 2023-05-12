@@ -1,16 +1,23 @@
 package source
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
 	"strings"
 
 	"esbconcept/esbapi"
+	"esbconcept/esbapi/rule"
 
 	"github.com/go-chi/chi/v5"
+)
+
+const (
+	ParamHttpBodyPrefix = "http/body/"
 )
 
 var httpServer *HttpServer
@@ -124,11 +131,35 @@ func sourceConnectorHttpRest(options map[string]string, container esbapi.Contain
 
 	entryPoint := func(fn esbapi.PipelineProcess, mappingDef *esbapi.MappingDefinition) error {
 		f := func(writer http.ResponseWriter, request *http.Request) {
+
+			body, err := io.ReadAll(request.Body)
+			if err != nil {
+				writer.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			if len(body) > 0 {
+				contentType := request.Header.Get("Content-Type")
+				if !strings.HasPrefix(contentType, "application/json") {
+					writer.WriteHeader(http.StatusBadRequest)
+					return
+				}
+			}
+
+			// convert request
 			m := container.NewModel()
+			if err := convertRequestModel(request, body, m, mappingDef); err != nil {
+				writer.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
 			// run process
 			if err := fn(m); err != nil {
 				log.Fatalln(err)
 			}
+
+			// convert response
+			panic(esbapi.IMPLEMENT_ME)
 		}
 		if err := httpServer.addHandler(options, f); err != nil {
 			return err
@@ -148,4 +179,50 @@ func sourceConnectorHttpRest(options map[string]string, container esbapi.Contain
 		ConnectorProcessEntryPoint: entryPoint,
 		InstanceName:               "http_rest",
 	}, nil
+}
+
+func convertRequestModel(request *http.Request, body []byte, m esbapi.Model, def *esbapi.MappingDefinition) error {
+	var b interface{}
+	if err := json.Unmarshal(body, &b); err != nil {
+		log.Println(err)
+	}
+
+	for fp, cp := range def.Req {
+		if strings.HasPrefix(cp, ParamHttpBodyPrefix) {
+			// http body
+			val, err := traverseRetrievingFromGenericJson(b, rule.SplitFullPath(cp[len(ParamHttpBodyPrefix):]))
+			if err != nil {
+				return err
+			}
+			if err := m.AddOrUpdateField0(rule.SplitFullPath(fp), val); err != nil {
+				return err
+			}
+		} else {
+			//FIXME support more data access, e.g. headers
+		}
+	}
+	return nil
+}
+
+func traverseRetrievingFromGenericJson(o interface{}, paths []string) (interface{}, error) {
+	if o == nil {
+		return nil, nil
+	}
+	//FIXME need support the following data types: array
+	val, ok := o.(map[string]interface{})[paths[0]]
+	if !ok {
+		return nil, nil
+	}
+	if len(paths) == 1 {
+		switch val.(type) {
+		case map[string]interface{}:
+			return nil, errors.New("source object is not a primitive type but got object")
+		case []interface{}:
+			return nil, errors.New("source object is not a primitive type but got array")
+		}
+		//FIXME should check data type
+		return val, nil
+	} else {
+		return traverseRetrievingFromGenericJson(val, paths[1:])
+	}
 }

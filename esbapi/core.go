@@ -43,8 +43,8 @@ type DataMapping map[string]string
 
 type PipelineProcess func(m Model) error
 type MappingDefinition struct {
-	In  DataMapping
-	Out DataMapping
+	Req DataMapping
+	Res DataMapping
 }
 type ConnectorProcessEntryPoint func(PipelineProcess, *MappingDefinition) error
 
