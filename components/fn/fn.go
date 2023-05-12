@@ -8,6 +8,7 @@ func InitFn(container esbapi.Container) error {
 
 	if err := registerFn(container, map[string]esbapi.FnGen{
 		"@assign": FnAssign,
+		"@uuid":   FnUUID,
 	}); err != nil {
 		return err
 	}
