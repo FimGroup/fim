@@ -148,18 +148,31 @@ func sourceConnectorHttpRest(options map[string]string, container esbapi.Contain
 
 			// convert request
 			m := container.NewModel()
-			if err := convertRequestModel(request, body, m, mappingDef); err != nil {
+			if err := convertJsonRequestModel(request, body, m, mappingDef); err != nil {
 				writer.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 
 			// run process
 			if err := fn(m); err != nil {
-				log.Fatalln(err)
+				log.Println("error processing:", err)
+				writer.WriteHeader(http.StatusInternalServerError)
+				return
 			}
 
 			// convert response
-			panic(esbapi.IMPLEMENT_ME)
+			if data, err := convertJsonResponseModel(m, mappingDef); err != nil {
+				writer.WriteHeader(http.StatusInternalServerError)
+				return
+			} else {
+				writer.Header().Add("Content-Type", "application/json")
+				writer.WriteHeader(http.StatusOK)
+				_, err := writer.Write(data)
+				if err != nil {
+					log.Println("write response error:", err)
+				}
+				return
+			}
 		}
 		if err := httpServer.addHandler(options, f); err != nil {
 			return err
@@ -181,7 +194,39 @@ func sourceConnectorHttpRest(options map[string]string, container esbapi.Contain
 	}, nil
 }
 
-func convertRequestModel(request *http.Request, body []byte, m esbapi.Model, def *esbapi.MappingDefinition) error {
+func convertJsonResponseModel(m esbapi.Model, def *esbapi.MappingDefinition) ([]byte, error) {
+	r := map[string]interface{}{}
+	for fp, cp := range def.Res {
+		val := m.GetFieldUnsafe(rule.SplitFullPath(fp))
+		if val == nil {
+			continue
+		}
+		if strings.HasPrefix(cp, ParamHttpBodyPrefix) {
+			destPaths := rule.SplitFullPath(cp[len(ParamHttpBodyPrefix):])
+			m := r
+			for _, p := range destPaths[:len(destPaths)-1] {
+				//FIXME need support the following data types: array
+				nm, ok := m[p]
+				if !ok {
+					nm = map[string]interface{}{}
+					m[p] = nm
+				}
+				if nmv, ok := nm.(map[string]interface{}); !ok {
+					return nil, errors.New("data type is not object")
+				} else {
+					m = nmv
+				}
+			}
+			lastPath := destPaths[len(destPaths)-1]
+			m[lastPath] = val
+		} else {
+			//FIXME support more data access, e.g. headers
+		}
+	}
+	return json.Marshal(r)
+}
+
+func convertJsonRequestModel(request *http.Request, body []byte, m esbapi.Model, def *esbapi.MappingDefinition) error {
 	var b interface{}
 	if err := json.Unmarshal(body, &b); err != nil {
 		log.Println(err)

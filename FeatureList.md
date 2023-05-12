@@ -19,15 +19,49 @@
     * Out - outputs
     * PreOut - operations before output
     * Flow - steps of the flow
-        * Including: Builtin functions / custom functions / flow / event
-* Pipeline - TODO
+        * Including: Builtin functions / custom functions
+* Pipeline - components:
+    * Pipeline is the top level abstraction for processing a request
+        * Each pipeline defines a usecase of the business
+    * source connector
+        * Req/Res data type mapping
+        * Support options to initialize the connector
+    * steps
+        * Invoke flow/Trigger event
+        * Flow/Target connector
+            * Use FlowModel as input and output models
+            * Support options to initialize the connector
+* Customized components
+    * Used in flow
+        * Builtin functions
+        * Customized functions
+    * Used in pipeline
+        * Flow
+        * Connector: Source connector/Target connector
 
 # 2. TODO List
 
 * Timeout for synchronous flow + timeout accumulation when processing each step of the flow
 * Data constraints: e.g. not empty/greater than/less than/etc.
 * Panic handling: avoid unexpected broken flow
-* Pipeline-Flow options
-* Builtin/custom methods, source/target connector - howto
 * lifecycle of Pipeline/Flow/functions/connector/etc. - e.g. http server connector should be able to shutdown
+* version support - keep a single pipeline stuck to a specific version - can be used for upgrade
+* specific node - run specific connector/flow/etc. - e.g. accessing internet may require few nodes and this requires the
+  flow to be able to run on those nodes other than any node in the cluster
+* Add a resource check - e.g. check tcp binding used/conflict to avoid error
+* FlowModel/Object/protocols transformation
+
+# 3. Work groups
+
+* core - key components and extensibility
+* clustering - support any form and type cluster
+* components - connector/functions/plugin/etc.
+* optimization - performance/operational
+* experience - feedback/improvement
+* research - experimental research
+* observation - operational features
+* usecase - project based
+* security - security
+* interoperability - java/dotnet agent and java/dotnet/etc. service integration
+* tooling - debugging/profiling/logging/etc.
 
