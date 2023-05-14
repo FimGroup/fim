@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ThisIsSun/fim/fimapi"
-	"github.com/ThisIsSun/fim/fimapi/rule"
+	"github.com/ThisIsSun/fim/fimapi/pluginapi"
+	"github.com/ThisIsSun/fim/fimapi/pluginapi/rule"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -123,13 +123,13 @@ func (h *HttpServer) addHandler(options map[string]string, handleFunc http.Handl
 	return nil
 }
 
-func sourceConnectorHttpRest(options map[string]string, container fimapi.Container) (*struct {
-	fimapi.Connector
-	fimapi.ConnectorProcessEntryPoint
+func sourceConnectorHttpRest(options map[string]string, container pluginapi.Container) (*struct {
+	pluginapi.Connector
+	pluginapi.ConnectorProcessEntryPoint
 	InstanceName string
 }, error) {
 
-	entryPoint := func(fn fimapi.PipelineProcess, mappingDef *fimapi.MappingDefinition) error {
+	entryPoint := func(fn pluginapi.PipelineProcess, mappingDef *pluginapi.MappingDefinition) error {
 		f := func(writer http.ResponseWriter, request *http.Request) {
 
 			body, err := io.ReadAll(request.Body)
@@ -184,8 +184,8 @@ func sourceConnectorHttpRest(options map[string]string, container fimapi.Contain
 	}
 
 	return &struct {
-		fimapi.Connector
-		fimapi.ConnectorProcessEntryPoint
+		pluginapi.Connector
+		pluginapi.ConnectorProcessEntryPoint
 		InstanceName string
 	}{
 		Connector:                  httpServer,
@@ -194,7 +194,7 @@ func sourceConnectorHttpRest(options map[string]string, container fimapi.Contain
 	}, nil
 }
 
-func convertJsonResponseModel(m fimapi.Model, def *fimapi.MappingDefinition) ([]byte, error) {
+func convertJsonResponseModel(m pluginapi.Model, def *pluginapi.MappingDefinition) ([]byte, error) {
 	r := map[string]interface{}{}
 	for fp, cp := range def.Res {
 		val := m.GetFieldUnsafe(rule.SplitFullPath(fp))
@@ -226,7 +226,7 @@ func convertJsonResponseModel(m fimapi.Model, def *fimapi.MappingDefinition) ([]
 	return json.Marshal(r)
 }
 
-func convertJsonRequestModel(request *http.Request, body []byte, m fimapi.Model, def *fimapi.MappingDefinition) error {
+func convertJsonRequestModel(request *http.Request, body []byte, m pluginapi.Model, def *pluginapi.MappingDefinition) error {
 	var b interface{}
 	if err := json.Unmarshal(body, &b); err != nil {
 		log.Println(err)

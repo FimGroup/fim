@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ThisIsSun/fim/fimapi"
-	"github.com/ThisIsSun/fim/fimapi/rule"
+	"github.com/ThisIsSun/fim/fimapi/pluginapi"
+	"github.com/ThisIsSun/fim/fimapi/pluginapi/rule"
 )
 
 type ElementMap map[string]interface{}
@@ -163,11 +163,11 @@ func (m *ModelInst) GetFieldUnsafe(paths []string) interface{} {
 }
 
 func (m *ModelInst) FillInFrom(o interface{}) error {
-	panic(fimapi.IMPLEMENT_ME)
+	panic(pluginapi.IMPLEMENT_ME)
 }
 
 func (m *ModelInst) ExtractTo(o interface{}) error {
-	panic(fimapi.IMPLEMENT_ME)
+	panic(pluginapi.IMPLEMENT_ME)
 }
 
 func (m *ModelInst) transferTo(dest *ModelInst, sourcePaths, destPaths []string, defaultTypeRefBy refBy) error {
@@ -176,7 +176,7 @@ func (m *ModelInst) transferTo(dest *ModelInst, sourcePaths, destPaths []string,
 		return dest.addOrUpdateField(destPaths, val)
 	} else {
 		// default value handling when not existing
-		var d fimapi.DataType
+		var d pluginapi.DataType
 		switch defaultTypeRefBy {
 		case ByLeft:
 			dt, _, err := m.dtd.typeOfPaths(sourcePaths)
@@ -194,17 +194,17 @@ func (m *ModelInst) transferTo(dest *ModelInst, sourcePaths, destPaths []string,
 			return errors.New("unknown refBy:" + fmt.Sprint(defaultTypeRefBy))
 		}
 		switch d {
-		case fimapi.DataTypeInt:
+		case pluginapi.DataTypeInt:
 			return dest.addOrUpdateField(destPaths, 0)
-		case fimapi.DataTypeString:
+		case pluginapi.DataTypeString:
 			return dest.addOrUpdateField(destPaths, "")
-		case fimapi.DataTypeFloat:
+		case pluginapi.DataTypeFloat:
 			return dest.addOrUpdateField(destPaths, 0.0)
-		case fimapi.DataTypeBool:
+		case pluginapi.DataTypeBool:
 			return dest.addOrUpdateField(destPaths, false)
-		case fimapi.DataTypeObject:
+		case pluginapi.DataTypeObject:
 			return dest.deleteField(destPaths)
-		case fimapi.DataTypeArray:
+		case pluginapi.DataTypeArray:
 			return dest.deleteField(destPaths)
 		}
 	}

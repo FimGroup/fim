@@ -3,7 +3,7 @@ package fimcore
 import (
 	"testing"
 
-	"github.com/ThisIsSun/fim/fimapi/rule"
+	"github.com/ThisIsSun/fim/fimapi/pluginapi/rule"
 )
 
 func TestSyncFlowEngineExample(t *testing.T) {

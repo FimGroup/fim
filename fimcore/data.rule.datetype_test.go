@@ -3,7 +3,7 @@ package fimcore
 import (
 	"testing"
 
-	"github.com/ThisIsSun/fim/fimapi"
+	"github.com/ThisIsSun/fim/fimapi/pluginapi"
 )
 
 var flowModelFileContent = `
@@ -48,38 +48,38 @@ func TestNewDataTypeDefinitions(t *testing.T) {
 	t.Log(def)
 
 	AssertNonExistOfPath(t, def, "non_exist")
-	AssertTypeOfPath(t, def, "global_name", fimapi.DataTypeString, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/user_id", fimapi.DataTypeInt, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/username", fimapi.DataTypeString, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/password", fimapi.DataTypeString, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/nickname", fimapi.DataTypeString, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/is_login", fimapi.DataTypeBool, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/risk/rating_core", fimapi.DataTypeFloat, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/phone[0]/country_code", fimapi.DataTypeString, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/phone[0]/area_code", fimapi.DataTypeString, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/phone[0]/phone_number", fimapi.DataTypeString, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/login/lastLoginTime[0]", fimapi.DataTypeInt, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/risk/matrix[0]/sub_matrix[0]", fimapi.DataTypeFloat, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user", fimapi.DataTypeObject, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/risk", fimapi.DataTypeObject, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/phone[0]", fimapi.DataTypeObject, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/phone", fimapi.DataTypeArray, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/login", fimapi.DataTypeObject, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/login/lastLoginTime", fimapi.DataTypeArray, fimapi.DataTypeInt)
-	AssertTypeOfPath(t, def, "user/risk/matrix[0]/sub_matrix", fimapi.DataTypeArray, fimapi.DataTypeFloat)
-	AssertTypeOfPath(t, def, "user/risk/matrix[0]/sub_matrix[0]", fimapi.DataTypeFloat, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/risk/matrix[0]", fimapi.DataTypeObject, fimapi.DataTypeUnavailable)
-	AssertTypeOfPath(t, def, "user/risk/matrix", fimapi.DataTypeArray, fimapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "global_name", pluginapi.DataTypeString, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/user_id", pluginapi.DataTypeInt, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/username", pluginapi.DataTypeString, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/password", pluginapi.DataTypeString, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/nickname", pluginapi.DataTypeString, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/is_login", pluginapi.DataTypeBool, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/risk/rating_core", pluginapi.DataTypeFloat, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/phone[0]/country_code", pluginapi.DataTypeString, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/phone[0]/area_code", pluginapi.DataTypeString, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/phone[0]/phone_number", pluginapi.DataTypeString, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/login/lastLoginTime[0]", pluginapi.DataTypeInt, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/risk/matrix[0]/sub_matrix[0]", pluginapi.DataTypeFloat, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user", pluginapi.DataTypeObject, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/risk", pluginapi.DataTypeObject, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/phone[0]", pluginapi.DataTypeObject, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/phone", pluginapi.DataTypeArray, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/login", pluginapi.DataTypeObject, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/login/lastLoginTime", pluginapi.DataTypeArray, pluginapi.DataTypeInt)
+	AssertTypeOfPath(t, def, "user/risk/matrix[0]/sub_matrix", pluginapi.DataTypeArray, pluginapi.DataTypeFloat)
+	AssertTypeOfPath(t, def, "user/risk/matrix[0]/sub_matrix[0]", pluginapi.DataTypeFloat, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/risk/matrix[0]", pluginapi.DataTypeObject, pluginapi.DataTypeUnavailable)
+	AssertTypeOfPath(t, def, "user/risk/matrix", pluginapi.DataTypeArray, pluginapi.DataTypeUnavailable)
 }
 
-func AssertTypeOfPath(t *testing.T, def *DataTypeDefinitions, path string, expectedDateType, expectedPrimArrDataType fimapi.DataType) {
+func AssertTypeOfPath(t *testing.T, def *DataTypeDefinitions, path string, expectedDateType, expectedPrimArrDataType pluginapi.DataType) {
 	if dt, pdt, err := def.TypeOfPath(path); err != nil || dt != expectedDateType || pdt != expectedPrimArrDataType {
 		t.Fatalf("type of path:%s failed. context: %d %d %s", path, dt, pdt, err)
 	}
 }
 
 func AssertNonExistOfPath(t *testing.T, def *DataTypeDefinitions, path string) {
-	if dt, pdt, err := def.TypeOfPath(path); err == nil || dt != fimapi.DataTypeUnavailable || pdt != fimapi.DataTypeUnavailable {
+	if dt, pdt, err := def.TypeOfPath(path); err == nil || dt != pluginapi.DataTypeUnavailable || pdt != pluginapi.DataTypeUnavailable {
 		t.Fatalf("type of path:%s should not exist. context: %d %d %s", path, dt, pdt, err)
 	}
 }

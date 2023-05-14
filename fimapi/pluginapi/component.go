@@ -1,4 +1,4 @@
-package fimapi
+package pluginapi
 
 type Fn func(m Model) error
 

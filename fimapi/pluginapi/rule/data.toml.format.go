@@ -3,7 +3,7 @@ package rule
 import (
 	"strings"
 
-	"github.com/ThisIsSun/fim/fimapi"
+	"github.com/ThisIsSun/fim/fimapi/pluginapi"
 )
 
 func ValidateFullPath(in string) bool {
@@ -17,13 +17,13 @@ func ValidateFullPath(in string) bool {
 		if !ok {
 			return false
 		}
-		if typeOfNode == fimapi.TypeUnknown {
+		if typeOfNode == pluginapi.TypeUnknown {
 			return false
 		}
 		switch typeOfNode {
-		case fimapi.TypeAttributeNode:
+		case pluginapi.TypeAttributeNode:
 			fallthrough
-		case fimapi.TypeNsNode:
+		case pluginapi.TypeNsNode:
 			lastLevel = true
 		}
 	}
@@ -41,13 +41,13 @@ func ValidateFullPathOfDefinition(in string) bool {
 		if !ok {
 			return false
 		}
-		if typeOfNode == fimapi.TypeUnknown {
+		if typeOfNode == pluginapi.TypeUnknown {
 			return false
 		}
 		switch typeOfNode {
-		case fimapi.TypeAttributeNode:
+		case pluginapi.TypeAttributeNode:
 			fallthrough
-		case fimapi.TypeNsNode:
+		case pluginapi.TypeNsNode:
 			lastLevel = true
 		}
 	}
@@ -55,7 +55,7 @@ func ValidateFullPathOfDefinition(in string) bool {
 }
 
 func SplitFullPath(in string) []string {
-	return strings.Split(in, fimapi.PathSeparator)
+	return strings.Split(in, pluginapi.PathSeparator)
 }
 
 func IsPathArray(in string) bool {
@@ -64,7 +64,7 @@ func IsPathArray(in string) bool {
 }
 
 func ConcatFullPath(paths []string) string {
-	return strings.Join(paths, fimapi.PathSeparator)
+	return strings.Join(paths, pluginapi.PathSeparator)
 }
 
 func ExtractArrayPath(in string) (string, int) {
@@ -91,26 +91,26 @@ func ExtractArrayPath(in string) (string, int) {
 	}
 }
 
-func checkElementKey(key string, allowedEmptyArrayIndex bool) (fimapi.TypeOfNode, bool) {
+func checkElementKey(key string, allowedEmptyArrayIndex bool) (pluginapi.TypeOfNode, bool) {
 	if len(key) <= 0 {
-		return fimapi.TypeUnknown, false
+		return pluginapi.TypeUnknown, false
 	}
 	first := key[0]
 	var nameKey string
-	var nodeType fimapi.TypeOfNode
+	var nodeType pluginapi.TypeOfNode
 	switch first {
 	case '#':
 		nameKey = key[1:]
-		nodeType = fimapi.TypeAttributeNode
+		nodeType = pluginapi.TypeAttributeNode
 	case '@':
 		nameKey = key[1:]
-		nodeType = fimapi.TypeNsNode
+		nodeType = pluginapi.TypeNsNode
 	default:
 		nameKey = key
-		nodeType = fimapi.TypeDataNode
+		nodeType = pluginapi.TypeDataNode
 	}
 	if len(nameKey) <= 0 {
-		return fimapi.TypeUnknown, false
+		return pluginapi.TypeUnknown, false
 	}
 
 	return nodeType, checkElement(nameKey, allowedEmptyArrayIndex)

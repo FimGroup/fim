@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/ThisIsSun/fim/fimapi"
+	"github.com/ThisIsSun/fim/fimapi/pluginapi"
 )
 
 func NewContainer() *ContainerInst {
@@ -20,12 +20,12 @@ func NewContainer() *ContainerInst {
 		pipelineMap:        map[string]*Pipeline{},
 		pipelineRawContent: map[string]struct{ PipelineTomlRaw []byte }{},
 
-		builtinGenFnMap: map[string]fimapi.FnGen{},
-		customGenFnMap:  map[string]fimapi.FnGen{},
+		builtinGenFnMap: map[string]pluginapi.FnGen{},
+		customGenFnMap:  map[string]pluginapi.FnGen{},
 
-		connectorMap:               map[string]fimapi.Connector{},
-		registerSourceConnectorGen: map[string]fimapi.SourceConnectorGenerator{},
-		registerTargetConnectorGen: map[string]fimapi.TargetConnectorGenerator{},
+		connectorMap:               map[string]pluginapi.Connector{},
+		registerSourceConnectorGen: map[string]pluginapi.SourceConnectorGenerator{},
+		registerTargetConnectorGen: map[string]pluginapi.TargetConnectorGenerator{},
 	}
 }
 
@@ -43,12 +43,12 @@ type ContainerInst struct {
 	}
 	pipelineMap map[string]*Pipeline
 
-	builtinGenFnMap map[string]fimapi.FnGen
-	customGenFnMap  map[string]fimapi.FnGen
+	builtinGenFnMap map[string]pluginapi.FnGen
+	customGenFnMap  map[string]pluginapi.FnGen
 
-	connectorMap               map[string]fimapi.Connector
-	registerSourceConnectorGen map[string]fimapi.SourceConnectorGenerator
-	registerTargetConnectorGen map[string]fimapi.TargetConnectorGenerator
+	connectorMap               map[string]pluginapi.Connector
+	registerSourceConnectorGen map[string]pluginapi.SourceConnectorGenerator
+	registerTargetConnectorGen map[string]pluginapi.TargetConnectorGenerator
 }
 
 func (c *ContainerInst) LoadFlowModel(tomlContent string) error {
@@ -125,6 +125,6 @@ func (c *ContainerInst) StartContainer() error {
 	return nil
 }
 
-func (c *ContainerInst) NewModel() fimapi.Model {
+func (c *ContainerInst) NewModel() pluginapi.Model {
 	return NewModelInst(c.flowModel)
 }

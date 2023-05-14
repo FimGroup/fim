@@ -8,32 +8,32 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
-	"github.com/ThisIsSun/fim/fimapi"
-	"github.com/ThisIsSun/fim/fimapi/rule"
+	"github.com/ThisIsSun/fim/fimapi/pluginapi"
+	"github.com/ThisIsSun/fim/fimapi/pluginapi/rule"
 )
 
 type templateFlowModel struct {
 	Model map[string]string `toml:"model"`
 }
 
-var primitiveType = map[fimapi.DataType]struct{}{}
+var primitiveType = map[pluginapi.DataType]struct{}{}
 
 func init() {
-	primitiveType[fimapi.DataTypeInt] = struct{}{}
-	primitiveType[fimapi.DataTypeString] = struct{}{}
-	primitiveType[fimapi.DataTypeBool] = struct{}{}
-	primitiveType[fimapi.DataTypeFloat] = struct{}{}
+	primitiveType[pluginapi.DataTypeInt] = struct{}{}
+	primitiveType[pluginapi.DataTypeString] = struct{}{}
+	primitiveType[pluginapi.DataTypeBool] = struct{}{}
+	primitiveType[pluginapi.DataTypeFloat] = struct{}{}
 }
 
 type DataTypeDefinitions struct {
-	fimapi.DataType
-	PrimitiveArrayElementType fimapi.DataType // exists only when the element data type is primitive
+	pluginapi.DataType
+	PrimitiveArrayElementType pluginapi.DataType // exists only when the element data type is primitive
 	dataTypeMap               map[string]*DataTypeDefinitions
 }
 
 func NewDataTypeDefinitions() *DataTypeDefinitions {
 	dtd := newInternalDataTypeDefinitions()
-	dtd.DataType = fimapi.DataTypeObject
+	dtd.DataType = pluginapi.DataTypeObject
 	return dtd
 }
 
@@ -83,16 +83,16 @@ func (d *DataTypeDefinitions) AddTypeDefinitions(m *templateFlowModel) error {
 }
 
 func (d *DataTypeDefinitions) addTypeDefinitionOfPath(path string, dataTypeStr string) error {
-	var dataType fimapi.DataType
+	var dataType pluginapi.DataType
 	switch dataTypeStr {
 	case "string":
-		dataType = fimapi.DataTypeString
+		dataType = pluginapi.DataTypeString
 	case "int":
-		dataType = fimapi.DataTypeInt
+		dataType = pluginapi.DataTypeInt
 	case "float":
-		dataType = fimapi.DataTypeFloat
+		dataType = pluginapi.DataTypeFloat
 	case "bool":
-		dataType = fimapi.DataTypeBool
+		dataType = pluginapi.DataTypeBool
 	default:
 		return errors.New(fmt.Sprint("unknown dataType:", dataTypeStr))
 	}
@@ -112,9 +112,9 @@ func (d *DataTypeDefinitions) addTypeDefinitionOfPath(path string, dataTypeStr s
 			// not exist
 			lv := newInternalDataTypeDefinitions()
 			if isPathArr {
-				lv.DataType = fimapi.DataTypeArray
+				lv.DataType = pluginapi.DataTypeArray
 			} else {
-				lv.DataType = fimapi.DataTypeObject
+				lv.DataType = pluginapi.DataTypeObject
 			}
 			objMap[pLv] = lv
 			objMap = lv.dataTypeMap
@@ -122,11 +122,11 @@ func (d *DataTypeDefinitions) addTypeDefinitionOfPath(path string, dataTypeStr s
 		} else {
 			// exist
 			if isPathArr {
-				if lv.DataType != fimapi.DataTypeArray {
+				if lv.DataType != pluginapi.DataTypeArray {
 					return errors.New(fmt.Sprintf("data type of path:%s is not array at level:%s", path, pLv))
 				}
 			} else {
-				if lv.DataType != fimapi.DataTypeObject {
+				if lv.DataType != pluginapi.DataTypeObject {
 					return errors.New(fmt.Sprintf("data type of path:%s is not object at level:%s", path, pLv))
 				}
 			}
@@ -148,11 +148,11 @@ func (d *DataTypeDefinitions) addTypeDefinitionOfPath(path string, dataTypeStr s
 			// not exist
 			dtd = newLastLevelDataTypeDefinitions()
 			if isPathArr {
-				dtd.DataType = fimapi.DataTypeArray
+				dtd.DataType = pluginapi.DataTypeArray
 				dtd.PrimitiveArrayElementType = dataType
 			} else {
 				dtd.DataType = dataType
-				dtd.PrimitiveArrayElementType = fimapi.DataTypeUnavailable
+				dtd.PrimitiveArrayElementType = pluginapi.DataTypeUnavailable
 			}
 			objMap[lastLv] = dtd
 		} else {
@@ -165,16 +165,16 @@ func (d *DataTypeDefinitions) addTypeDefinitionOfPath(path string, dataTypeStr s
 }
 
 // TypeOfPath returns the path data type, primitive array element data type and error
-func (d *DataTypeDefinitions) TypeOfPath(path string) (fimapi.DataType, fimapi.DataType, error) {
+func (d *DataTypeDefinitions) TypeOfPath(path string) (pluginapi.DataType, pluginapi.DataType, error) {
 	if !rule.ValidateFullPath(path) {
-		return fimapi.DataTypeUnavailable, fimapi.DataTypeUnavailable, errors.New(fmt.Sprint("path:", path, " illegal"))
+		return pluginapi.DataTypeUnavailable, pluginapi.DataTypeUnavailable, errors.New(fmt.Sprint("path:", path, " illegal"))
 	}
 
 	splits := rule.SplitFullPath(path)
 	return d.typeOfPaths(splits)
 }
 
-func (d *DataTypeDefinitions) typeOfPaths(paths []string) (fimapi.DataType, fimapi.DataType, error) {
+func (d *DataTypeDefinitions) typeOfPaths(paths []string) (pluginapi.DataType, pluginapi.DataType, error) {
 	dtd := d
 	isAccessArrElem := false
 	for _, pLv := range paths {
@@ -183,7 +183,7 @@ func (d *DataTypeDefinitions) typeOfPaths(paths []string) (fimapi.DataType, fima
 		pLv = lvName
 		subDtd, ok := dtd.dataTypeMap[pLv]
 		if !ok {
-			return fimapi.DataTypeUnavailable, fimapi.DataTypeUnavailable, errors.New(fmt.Sprintf("path:%s not found", strings.Join(paths, fimapi.PathSeparator)))
+			return pluginapi.DataTypeUnavailable, pluginapi.DataTypeUnavailable, errors.New(fmt.Sprintf("path:%s not found", strings.Join(paths, pluginapi.PathSeparator)))
 		}
 		dtd = subDtd
 	}
@@ -195,10 +195,10 @@ func (d *DataTypeDefinitions) typeOfPaths(paths []string) (fimapi.DataType, fima
 		_, isPrimitive := primitiveType[pDataType]
 		if isPrimitive {
 			dataType = pDataType
-			pDataType = fimapi.DataTypeUnavailable
+			pDataType = pluginapi.DataTypeUnavailable
 		} else {
-			dataType = fimapi.DataTypeObject
-			pDataType = fimapi.DataTypeUnavailable
+			dataType = pluginapi.DataTypeObject
+			pDataType = pluginapi.DataTypeUnavailable
 		}
 	}
 

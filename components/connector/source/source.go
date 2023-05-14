@@ -1,11 +1,11 @@
 package source
 
 import (
-	"github.com/ThisIsSun/fim/fimapi"
+	"github.com/ThisIsSun/fim/fimapi/pluginapi"
 )
 
-func InitSource(container fimapi.Container) error {
-	if err := registerSourceConnectorGen(container, map[string]fimapi.SourceConnectorGenerator{
+func InitSource(container pluginapi.Container) error {
+	if err := registerSourceConnectorGen(container, map[string]pluginapi.SourceConnectorGenerator{
 		"http_rest": sourceConnectorHttpRest,
 	}); err != nil {
 		return err
@@ -13,7 +13,7 @@ func InitSource(container fimapi.Container) error {
 	return nil
 }
 
-func registerSourceConnectorGen(container fimapi.Container, m map[string]fimapi.SourceConnectorGenerator) error {
+func registerSourceConnectorGen(container pluginapi.Container, m map[string]pluginapi.SourceConnectorGenerator) error {
 	for name, connGen := range m {
 		if err := container.RegisterSourceConnectorGen(name, connGen); err != nil {
 			return err

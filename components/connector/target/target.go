@@ -1,11 +1,11 @@
 package target
 
 import (
-	"github.com/ThisIsSun/fim/fimapi"
+	"github.com/ThisIsSun/fim/fimapi/pluginapi"
 )
 
-func InitTarget(container fimapi.Container) error {
-	if err := registerTargetConnectorGen(container, map[string]fimapi.TargetConnectorGenerator{
+func InitTarget(container pluginapi.Container) error {
+	if err := registerTargetConnectorGen(container, map[string]pluginapi.TargetConnectorGenerator{
 		"&database_postgres": databasePostgresGenerator,
 	}); err != nil {
 		return err
@@ -13,7 +13,7 @@ func InitTarget(container fimapi.Container) error {
 	return nil
 }
 
-func registerTargetConnectorGen(container fimapi.Container, m map[string]fimapi.TargetConnectorGenerator) error {
+func registerTargetConnectorGen(container pluginapi.Container, m map[string]pluginapi.TargetConnectorGenerator) error {
 	for name, connGen := range m {
 		if err := container.RegisterTargetConnectorGen(name, connGen); err != nil {
 			return err

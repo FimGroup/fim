@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/ThisIsSun/fim/components"
-	"github.com/ThisIsSun/fim/fimapi"
+	"github.com/ThisIsSun/fim/fimapi/pluginapi"
 	"github.com/ThisIsSun/fim/fimcore"
 )
 
@@ -23,7 +23,7 @@ func StartForum() error {
 	if err := components.InitComponent(container); err != nil {
 		return err
 	}
-	if err := loadCustomFn(container, map[string]fimapi.FnGen{
+	if err := loadCustomFn(container, map[string]pluginapi.FnGen{
 		"#print_obj": FnPrintObject,
 	}); err != nil {
 		return err
@@ -53,7 +53,7 @@ func StartForum() error {
 	return nil
 }
 
-func loadCustomFn(container fimapi.Container, mapping map[string]fimapi.FnGen) error {
+func loadCustomFn(container pluginapi.Container, mapping map[string]pluginapi.FnGen) error {
 	for name, fg := range mapping {
 		if err := container.RegisterCustomFn(name, fg); err != nil {
 			return err

@@ -1,3 +1,3 @@
-package fimapi
+package pluginapi
 
 const IMPLEMENT_ME = "implement me!"

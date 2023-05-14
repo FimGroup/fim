@@ -4,10 +4,10 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/ThisIsSun/fim/fimapi"
+	"github.com/ThisIsSun/fim/fimapi/pluginapi"
 )
 
-func (c *ContainerInst) RegisterBuiltinFn(methodName string, fg fimapi.FnGen) error {
+func (c *ContainerInst) RegisterBuiltinFn(methodName string, fg pluginapi.FnGen) error {
 	if !strings.HasPrefix(methodName, "@") {
 		return errors.New("builtin functions should have @ as prefix")
 	}
@@ -19,7 +19,7 @@ func (c *ContainerInst) RegisterBuiltinFn(methodName string, fg fimapi.FnGen) er
 	return nil
 }
 
-func (c *ContainerInst) RegisterCustomFn(name string, fn fimapi.FnGen) error {
+func (c *ContainerInst) RegisterCustomFn(name string, fn pluginapi.FnGen) error {
 	if !strings.HasPrefix(name, "#") {
 		return errors.New("custom functions should have # as prefix")
 	}
@@ -31,7 +31,7 @@ func (c *ContainerInst) RegisterCustomFn(name string, fn fimapi.FnGen) error {
 	return nil
 }
 
-func (c *ContainerInst) RegisterSourceConnectorGen(name string, connGen fimapi.SourceConnectorGenerator) error {
+func (c *ContainerInst) RegisterSourceConnectorGen(name string, connGen pluginapi.SourceConnectorGenerator) error {
 	if _, ok := c.registerSourceConnectorGen[name]; ok {
 		return errors.New("source connector generator already exists:" + name)
 	}
@@ -39,7 +39,7 @@ func (c *ContainerInst) RegisterSourceConnectorGen(name string, connGen fimapi.S
 	return nil
 }
 
-func (c *ContainerInst) RegisterTargetConnectorGen(name string, connGen fimapi.TargetConnectorGenerator) error {
+func (c *ContainerInst) RegisterTargetConnectorGen(name string, connGen pluginapi.TargetConnectorGenerator) error {
 	if _, ok := c.registerTargetConnectorGen[name]; ok {
 		return errors.New("target connector generator already exists:" + name)
 	}

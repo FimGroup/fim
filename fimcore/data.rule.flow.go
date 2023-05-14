@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/ThisIsSun/fim/fimapi"
-	"github.com/ThisIsSun/fim/fimapi/rule"
+	"github.com/ThisIsSun/fim/fimapi/pluginapi"
+	"github.com/ThisIsSun/fim/fimapi/pluginapi/rule"
 
 	"github.com/pelletier/go-toml/v2"
 )
@@ -24,13 +24,13 @@ type Flow struct {
 	localInMapping map[string]struct {
 		ModelFieldPath string
 		SplitPath      []string
-		DataType       fimapi.DataType
+		DataType       pluginapi.DataType
 		KeySplitPath   []string
 	}
 	localOutMapping map[string]struct {
 		ModelFieldPath string
 		SplitPath      []string
-		DataType       fimapi.DataType
+		DataType       pluginapi.DataType
 		KeySplitPath   []string
 	}
 	localPreOutOperations map[string]struct {
@@ -38,7 +38,7 @@ type Flow struct {
 		SplitPath []string
 	}
 
-	fnList []fimapi.Fn
+	fnList []pluginapi.Fn
 }
 
 func NewFlow(dtd *DataTypeDefinitions, c *ContainerInst) *Flow {
@@ -49,13 +49,13 @@ func NewFlow(dtd *DataTypeDefinitions, c *ContainerInst) *Flow {
 		localInMapping: map[string]struct {
 			ModelFieldPath string
 			SplitPath      []string
-			DataType       fimapi.DataType
+			DataType       pluginapi.DataType
 			KeySplitPath   []string
 		}{},
 		localOutMapping: map[string]struct {
 			ModelFieldPath string
 			SplitPath      []string
-			DataType       fimapi.DataType
+			DataType       pluginapi.DataType
 			KeySplitPath   []string
 		}{},
 		localPreOutOperations: map[string]struct {
@@ -109,13 +109,13 @@ func (f *Flow) addIn(source, local string) error {
 
 	if dt, _, err := f.dtd.TypeOfPath(source); err != nil {
 		return err
-	} else if dt == fimapi.DataTypeUnavailable {
+	} else if dt == pluginapi.DataTypeUnavailable {
 		return errors.New("cannot find path:" + source)
 	} else {
 		f.localInMapping[local] = struct {
 			ModelFieldPath string
 			SplitPath      []string
-			DataType       fimapi.DataType
+			DataType       pluginapi.DataType
 			KeySplitPath   []string
 		}{ModelFieldPath: source, SplitPath: rule.SplitFullPath(source), DataType: dt, KeySplitPath: rule.SplitFullPath(local)}
 	}
@@ -146,13 +146,13 @@ func (f *Flow) addOut(local, out string) error {
 
 	if dt, _, err := f.dtd.TypeOfPath(out); err != nil {
 		return err
-	} else if dt == fimapi.DataTypeUnavailable {
+	} else if dt == pluginapi.DataTypeUnavailable {
 		return errors.New("cannot find path:" + out)
 	} else {
 		f.localOutMapping[local] = struct {
 			ModelFieldPath string
 			SplitPath      []string
-			DataType       fimapi.DataType
+			DataType       pluginapi.DataType
 			KeySplitPath   []string
 		}{ModelFieldPath: out, SplitPath: rule.SplitFullPath(out), DataType: dt, KeySplitPath: rule.SplitFullPath(local)}
 	}
@@ -185,9 +185,9 @@ func (f *Flow) outConv() func(local, out *ModelInst) error {
 	}
 }
 
-func (f *Flow) FlowFn() func(global fimapi.Model) error {
+func (f *Flow) FlowFn() func(global pluginapi.Model) error {
 	local := NewModelInst(f.dtd)
-	return func(global fimapi.Model) error {
+	return func(global pluginapi.Model) error {
 		if err := f.inConv()(global.(*ModelInst), local); err != nil {
 			return err
 		}
@@ -207,9 +207,9 @@ func (f *Flow) FlowFn() func(global fimapi.Model) error {
 	}
 }
 
-func (f *Flow) FlowFnNoResp() func(global fimapi.Model) error {
+func (f *Flow) FlowFnNoResp() func(global pluginapi.Model) error {
 	local := NewModelInst(f.dtd)
-	return func(global fimapi.Model) error {
+	return func(global pluginapi.Model) error {
 		if err := f.inConv()(global.(*ModelInst), local); err != nil {
 			return err
 		}
@@ -232,7 +232,7 @@ func (f *Flow) FlowFnNoResp() func(global fimapi.Model) error {
 
 func (f *Flow) addFlow(tf *templateFlow) error {
 	steps := tf.Flow["steps"]
-	var fList []fimapi.Fn
+	var fList []pluginapi.Fn
 	for _, step := range steps {
 		for fn, params := range step {
 			if fn[0] == '@' {
@@ -300,7 +300,7 @@ func (f *Flow) addPreOut(op string, path string) error {
 
 	if dt, _, err := f.dtd.TypeOfPath(path); err != nil {
 		return err
-	} else if dt == fimapi.DataTypeUnavailable {
+	} else if dt == pluginapi.DataTypeUnavailable {
 		return errors.New("cannot find path:" + path)
 	} else {
 		f.localPreOutOperations[path] = struct {
