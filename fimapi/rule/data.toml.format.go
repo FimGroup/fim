@@ -3,7 +3,7 @@ package rule
 import (
 	"strings"
 
-	"esbconcept/esbapi"
+	"github.com/ThisIsSun/fim/fimapi"
 )
 
 func ValidateFullPath(in string) bool {
@@ -17,13 +17,13 @@ func ValidateFullPath(in string) bool {
 		if !ok {
 			return false
 		}
-		if typeOfNode == esbapi.TypeUnknown {
+		if typeOfNode == fimapi.TypeUnknown {
 			return false
 		}
 		switch typeOfNode {
-		case esbapi.TypeAttributeNode:
+		case fimapi.TypeAttributeNode:
 			fallthrough
-		case esbapi.TypeNsNode:
+		case fimapi.TypeNsNode:
 			lastLevel = true
 		}
 	}
@@ -41,13 +41,13 @@ func ValidateFullPathOfDefinition(in string) bool {
 		if !ok {
 			return false
 		}
-		if typeOfNode == esbapi.TypeUnknown {
+		if typeOfNode == fimapi.TypeUnknown {
 			return false
 		}
 		switch typeOfNode {
-		case esbapi.TypeAttributeNode:
+		case fimapi.TypeAttributeNode:
 			fallthrough
-		case esbapi.TypeNsNode:
+		case fimapi.TypeNsNode:
 			lastLevel = true
 		}
 	}
@@ -55,7 +55,7 @@ func ValidateFullPathOfDefinition(in string) bool {
 }
 
 func SplitFullPath(in string) []string {
-	return strings.Split(in, esbapi.PathSeparator)
+	return strings.Split(in, fimapi.PathSeparator)
 }
 
 func IsPathArray(in string) bool {
@@ -64,7 +64,7 @@ func IsPathArray(in string) bool {
 }
 
 func ConcatFullPath(paths []string) string {
-	return strings.Join(paths, esbapi.PathSeparator)
+	return strings.Join(paths, fimapi.PathSeparator)
 }
 
 func ExtractArrayPath(in string) (string, int) {
@@ -91,26 +91,26 @@ func ExtractArrayPath(in string) (string, int) {
 	}
 }
 
-func checkElementKey(key string, allowedEmptyArrayIndex bool) (esbapi.TypeOfNode, bool) {
+func checkElementKey(key string, allowedEmptyArrayIndex bool) (fimapi.TypeOfNode, bool) {
 	if len(key) <= 0 {
-		return esbapi.TypeUnknown, false
+		return fimapi.TypeUnknown, false
 	}
 	first := key[0]
 	var nameKey string
-	var nodeType esbapi.TypeOfNode
+	var nodeType fimapi.TypeOfNode
 	switch first {
 	case '#':
 		nameKey = key[1:]
-		nodeType = esbapi.TypeAttributeNode
+		nodeType = fimapi.TypeAttributeNode
 	case '@':
 		nameKey = key[1:]
-		nodeType = esbapi.TypeNsNode
+		nodeType = fimapi.TypeNsNode
 	default:
 		nameKey = key
-		nodeType = esbapi.TypeDataNode
+		nodeType = fimapi.TypeDataNode
 	}
 	if len(nameKey) <= 0 {
-		return esbapi.TypeUnknown, false
+		return fimapi.TypeUnknown, false
 	}
 
 	return nodeType, checkElement(nameKey, allowedEmptyArrayIndex)

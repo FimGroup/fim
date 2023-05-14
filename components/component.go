@@ -1,13 +1,13 @@
 package components
 
 import (
-	"esbconcept/components/connector/source"
-	"esbconcept/components/connector/target"
-	"esbconcept/components/fn"
-	"esbconcept/esbapi"
+	"github.com/ThisIsSun/fim/components/connector/source"
+	"github.com/ThisIsSun/fim/components/connector/target"
+	"github.com/ThisIsSun/fim/components/fn"
+	"github.com/ThisIsSun/fim/fimapi"
 )
 
-func InitComponent(container esbapi.Container) error {
+func InitComponent(container fimapi.Container) error {
 	if err := fn.InitFn(container); err != nil {
 		return err
 	}

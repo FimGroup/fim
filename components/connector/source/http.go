@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"strings"
 
-	"esbconcept/esbapi"
-	"esbconcept/esbapi/rule"
+	"github.com/ThisIsSun/fim/fimapi"
+	"github.com/ThisIsSun/fim/fimapi/rule"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -123,13 +123,13 @@ func (h *HttpServer) addHandler(options map[string]string, handleFunc http.Handl
 	return nil
 }
 
-func sourceConnectorHttpRest(options map[string]string, container esbapi.Container) (*struct {
-	esbapi.Connector
-	esbapi.ConnectorProcessEntryPoint
+func sourceConnectorHttpRest(options map[string]string, container fimapi.Container) (*struct {
+	fimapi.Connector
+	fimapi.ConnectorProcessEntryPoint
 	InstanceName string
 }, error) {
 
-	entryPoint := func(fn esbapi.PipelineProcess, mappingDef *esbapi.MappingDefinition) error {
+	entryPoint := func(fn fimapi.PipelineProcess, mappingDef *fimapi.MappingDefinition) error {
 		f := func(writer http.ResponseWriter, request *http.Request) {
 
 			body, err := io.ReadAll(request.Body)
@@ -184,8 +184,8 @@ func sourceConnectorHttpRest(options map[string]string, container esbapi.Contain
 	}
 
 	return &struct {
-		esbapi.Connector
-		esbapi.ConnectorProcessEntryPoint
+		fimapi.Connector
+		fimapi.ConnectorProcessEntryPoint
 		InstanceName string
 	}{
 		Connector:                  httpServer,
@@ -194,7 +194,7 @@ func sourceConnectorHttpRest(options map[string]string, container esbapi.Contain
 	}, nil
 }
 
-func convertJsonResponseModel(m esbapi.Model, def *esbapi.MappingDefinition) ([]byte, error) {
+func convertJsonResponseModel(m fimapi.Model, def *fimapi.MappingDefinition) ([]byte, error) {
 	r := map[string]interface{}{}
 	for fp, cp := range def.Res {
 		val := m.GetFieldUnsafe(rule.SplitFullPath(fp))
@@ -226,7 +226,7 @@ func convertJsonResponseModel(m esbapi.Model, def *esbapi.MappingDefinition) ([]
 	return json.Marshal(r)
 }
 
-func convertJsonRequestModel(request *http.Request, body []byte, m esbapi.Model, def *esbapi.MappingDefinition) error {
+func convertJsonRequestModel(request *http.Request, body []byte, m fimapi.Model, def *fimapi.MappingDefinition) error {
 	var b interface{}
 	if err := json.Unmarshal(body, &b); err != nil {
 		log.Println(err)

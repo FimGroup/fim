@@ -1,4 +1,4 @@
-module esbconcept
+module github.com/ThisIsSun/fim
 
 go 1.20
 

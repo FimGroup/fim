@@ -1,11 +1,11 @@
-package esbcore
+package fimcore
 
 import (
 	"errors"
 	"fmt"
 
-	"esbconcept/esbapi"
-	"esbconcept/esbapi/rule"
+	"github.com/ThisIsSun/fim/fimapi"
+	"github.com/ThisIsSun/fim/fimapi/rule"
 )
 
 type ElementMap map[string]interface{}
@@ -163,11 +163,11 @@ func (m *ModelInst) GetFieldUnsafe(paths []string) interface{} {
 }
 
 func (m *ModelInst) FillInFrom(o interface{}) error {
-	panic(esbapi.IMPLEMENT_ME)
+	panic(fimapi.IMPLEMENT_ME)
 }
 
 func (m *ModelInst) ExtractTo(o interface{}) error {
-	panic(esbapi.IMPLEMENT_ME)
+	panic(fimapi.IMPLEMENT_ME)
 }
 
 func (m *ModelInst) transferTo(dest *ModelInst, sourcePaths, destPaths []string, defaultTypeRefBy refBy) error {
@@ -176,7 +176,7 @@ func (m *ModelInst) transferTo(dest *ModelInst, sourcePaths, destPaths []string,
 		return dest.addOrUpdateField(destPaths, val)
 	} else {
 		// default value handling when not existing
-		var d esbapi.DataType
+		var d fimapi.DataType
 		switch defaultTypeRefBy {
 		case ByLeft:
 			dt, _, err := m.dtd.typeOfPaths(sourcePaths)
@@ -194,17 +194,17 @@ func (m *ModelInst) transferTo(dest *ModelInst, sourcePaths, destPaths []string,
 			return errors.New("unknown refBy:" + fmt.Sprint(defaultTypeRefBy))
 		}
 		switch d {
-		case esbapi.DataTypeInt:
+		case fimapi.DataTypeInt:
 			return dest.addOrUpdateField(destPaths, 0)
-		case esbapi.DataTypeString:
+		case fimapi.DataTypeString:
 			return dest.addOrUpdateField(destPaths, "")
-		case esbapi.DataTypeFloat:
+		case fimapi.DataTypeFloat:
 			return dest.addOrUpdateField(destPaths, 0.0)
-		case esbapi.DataTypeBool:
+		case fimapi.DataTypeBool:
 			return dest.addOrUpdateField(destPaths, false)
-		case esbapi.DataTypeObject:
+		case fimapi.DataTypeObject:
 			return dest.deleteField(destPaths)
-		case esbapi.DataTypeArray:
+		case fimapi.DataTypeArray:
 			return dest.deleteField(destPaths)
 		}
 	}

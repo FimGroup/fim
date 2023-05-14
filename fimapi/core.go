@@ -1,4 +1,4 @@
-package esbapi
+package fimapi
 
 type DataType int
 

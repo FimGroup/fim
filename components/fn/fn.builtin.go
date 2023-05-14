@@ -6,29 +6,29 @@ import (
 
 	"github.com/gofrs/uuid/v5"
 
-	"esbconcept/esbapi"
-	"esbconcept/esbapi/rule"
+	"github.com/ThisIsSun/fim/fimapi"
+	"github.com/ThisIsSun/fim/fimapi/rule"
 )
 
-func FnAssign(params []interface{}) (esbapi.Fn, error) {
+func FnAssign(params []interface{}) (fimapi.Fn, error) {
 	var field string = params[0].(string)
 	if !rule.ValidateFullPath(field) {
 		return nil, errors.New("path invalid:" + field)
 	}
 	fieldPaths := rule.SplitFullPath(field)
 	var val = params[1]
-	return func(m esbapi.Model) error {
+	return func(m fimapi.Model) error {
 		return m.AddOrUpdateField0(fieldPaths, val)
 	}, nil
 }
 
-func FnUUID(params []interface{}) (esbapi.Fn, error) {
+func FnUUID(params []interface{}) (fimapi.Fn, error) {
 	var field string = params[0].(string)
 	if !rule.ValidateFullPath(field) {
 		return nil, errors.New("path invalid:" + field)
 	}
 	fieldPaths := rule.SplitFullPath(field)
-	return func(m esbapi.Model) error {
+	return func(m fimapi.Model) error {
 		u, err := uuid.NewV4()
 		if err != nil {
 			return err
@@ -37,13 +37,13 @@ func FnUUID(params []interface{}) (esbapi.Fn, error) {
 	}, nil
 }
 
-func FnSetCurrentUnixTimestamp(params []interface{}) (esbapi.Fn, error) {
+func FnSetCurrentUnixTimestamp(params []interface{}) (fimapi.Fn, error) {
 	var field string = params[0].(string)
 	if !rule.ValidateFullPath(field) {
 		return nil, errors.New("path invalid:" + field)
 	}
 	fieldPaths := rule.SplitFullPath(field)
-	return func(m esbapi.Model) error {
+	return func(m fimapi.Model) error {
 		return m.AddOrUpdateField0(fieldPaths, int(time.Now().UnixMilli()))
 	}, nil
 }

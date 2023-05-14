@@ -1,4 +1,4 @@
-package esbcore
+package fimcore
 
 import (
 	"io"

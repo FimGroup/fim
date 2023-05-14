@@ -1,9 +1,9 @@
-package esbcore
+package fimcore
 
 import (
 	"testing"
 
-	"esbconcept/esbapi/rule"
+	"github.com/ThisIsSun/fim/fimapi/rule"
 )
 
 func TestSyncFlowEngineExample(t *testing.T) {

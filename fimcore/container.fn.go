@@ -1,13 +1,13 @@
-package esbcore
+package fimcore
 
 import (
 	"errors"
 	"strings"
 
-	"esbconcept/esbapi"
+	"github.com/ThisIsSun/fim/fimapi"
 )
 
-func (c *ContainerInst) RegisterBuiltinFn(methodName string, fg esbapi.FnGen) error {
+func (c *ContainerInst) RegisterBuiltinFn(methodName string, fg fimapi.FnGen) error {
 	if !strings.HasPrefix(methodName, "@") {
 		return errors.New("builtin functions should have @ as prefix")
 	}
@@ -19,7 +19,7 @@ func (c *ContainerInst) RegisterBuiltinFn(methodName string, fg esbapi.FnGen) er
 	return nil
 }
 
-func (c *ContainerInst) RegisterCustomFn(name string, fn esbapi.FnGen) error {
+func (c *ContainerInst) RegisterCustomFn(name string, fn fimapi.FnGen) error {
 	if !strings.HasPrefix(name, "#") {
 		return errors.New("custom functions should have # as prefix")
 	}
@@ -31,7 +31,7 @@ func (c *ContainerInst) RegisterCustomFn(name string, fn esbapi.FnGen) error {
 	return nil
 }
 
-func (c *ContainerInst) RegisterSourceConnectorGen(name string, connGen esbapi.SourceConnectorGenerator) error {
+func (c *ContainerInst) RegisterSourceConnectorGen(name string, connGen fimapi.SourceConnectorGenerator) error {
 	if _, ok := c.registerSourceConnectorGen[name]; ok {
 		return errors.New("source connector generator already exists:" + name)
 	}
@@ -39,7 +39,7 @@ func (c *ContainerInst) RegisterSourceConnectorGen(name string, connGen esbapi.S
 	return nil
 }
 
-func (c *ContainerInst) RegisterTargetConnectorGen(name string, connGen esbapi.TargetConnectorGenerator) error {
+func (c *ContainerInst) RegisterTargetConnectorGen(name string, connGen fimapi.TargetConnectorGenerator) error {
 	if _, ok := c.registerTargetConnectorGen[name]; ok {
 		return errors.New("target connector generator already exists:" + name)
 	}

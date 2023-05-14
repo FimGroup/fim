@@ -8,7 +8,7 @@ import (
 	"strings"
 	"syscall"
 
-	"esbconcept/sample"
+	"github.com/ThisIsSun/fim/sample"
 )
 
 //go:embed version

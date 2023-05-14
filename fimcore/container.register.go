@@ -1,11 +1,11 @@
-package esbcore
+package fimcore
 
 import (
 	"errors"
 	"fmt"
 	"log"
 
-	"esbconcept/esbapi"
+	"github.com/ThisIsSun/fim/fimapi"
 )
 
 func NewContainer() *ContainerInst {
@@ -20,12 +20,12 @@ func NewContainer() *ContainerInst {
 		pipelineMap:        map[string]*Pipeline{},
 		pipelineRawContent: map[string]struct{ PipelineTomlRaw []byte }{},
 
-		builtinGenFnMap: map[string]esbapi.FnGen{},
-		customGenFnMap:  map[string]esbapi.FnGen{},
+		builtinGenFnMap: map[string]fimapi.FnGen{},
+		customGenFnMap:  map[string]fimapi.FnGen{},
 
-		connectorMap:               map[string]esbapi.Connector{},
-		registerSourceConnectorGen: map[string]esbapi.SourceConnectorGenerator{},
-		registerTargetConnectorGen: map[string]esbapi.TargetConnectorGenerator{},
+		connectorMap:               map[string]fimapi.Connector{},
+		registerSourceConnectorGen: map[string]fimapi.SourceConnectorGenerator{},
+		registerTargetConnectorGen: map[string]fimapi.TargetConnectorGenerator{},
 	}
 }
 
@@ -43,12 +43,12 @@ type ContainerInst struct {
 	}
 	pipelineMap map[string]*Pipeline
 
-	builtinGenFnMap map[string]esbapi.FnGen
-	customGenFnMap  map[string]esbapi.FnGen
+	builtinGenFnMap map[string]fimapi.FnGen
+	customGenFnMap  map[string]fimapi.FnGen
 
-	connectorMap               map[string]esbapi.Connector
-	registerSourceConnectorGen map[string]esbapi.SourceConnectorGenerator
-	registerTargetConnectorGen map[string]esbapi.TargetConnectorGenerator
+	connectorMap               map[string]fimapi.Connector
+	registerSourceConnectorGen map[string]fimapi.SourceConnectorGenerator
+	registerTargetConnectorGen map[string]fimapi.TargetConnectorGenerator
 }
 
 func (c *ContainerInst) LoadFlowModel(tomlContent string) error {
@@ -125,6 +125,6 @@ func (c *ContainerInst) StartContainer() error {
 	return nil
 }
 
-func (c *ContainerInst) NewModel() esbapi.Model {
+func (c *ContainerInst) NewModel() fimapi.Model {
 	return NewModelInst(c.flowModel)
 }

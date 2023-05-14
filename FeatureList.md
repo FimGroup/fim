@@ -44,7 +44,6 @@
 * Timeout for synchronous flow + timeout accumulation when processing each step of the flow
 * Data constraints: e.g. not empty/greater than/less than/etc.
 * Panic handling: avoid unexpected broken flow
-* lifecycle of Pipeline/Flow/functions/connector/etc. - e.g. http server connector should be able to shutdown
 * version support - keep a single pipeline stuck to a specific version - can be used for upgrade
 * specific node - run specific connector/flow/etc. - e.g. accessing internet may require few nodes and this requires the
   flow to be able to run on those nodes other than any node in the cluster
@@ -57,11 +56,14 @@
 
 Top priority
 
-* Independent components(not nested existing in other component): container, pipeline, connector, FlowModel
-* Merged toml file definition
-* refactor component apis & lifecycles
-* split container apis
-* error handling & interrupt pipeline
+1. Independent components(not nested existing in other component): container, pipeline, connector, FlowModel
+    * lifecycle of Pipeline/Flow/functions/connector/etc. - e.g. http server connector should be able to shutdown
+    * refactor component apis & lifecycles
+    * split container apis
+    * lifecycle of a request: user input/scheduling, event is not part of standalone lifecycle
+2. Merged toml file definition
+3. error handling & interrupt pipeline
+4. allow step to run independently from each other to support async invoking
 
 # 3. Work groups
 

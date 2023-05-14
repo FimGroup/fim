@@ -4,9 +4,9 @@ import (
 	"embed"
 	"log"
 
-	"esbconcept/components"
-	"esbconcept/esbapi"
-	"esbconcept/esbcore"
+	"github.com/ThisIsSun/fim/components"
+	"github.com/ThisIsSun/fim/fimapi"
+	"github.com/ThisIsSun/fim/fimcore"
 )
 
 //go:embed flowmodel.*.toml
@@ -19,11 +19,11 @@ var flowFs embed.FS
 var pipelineFs embed.FS
 
 func StartForum() error {
-	container := esbcore.NewContainer()
+	container := fimcore.NewContainer()
 	if err := components.InitComponent(container); err != nil {
 		return err
 	}
-	if err := loadCustomFn(container, map[string]esbapi.FnGen{
+	if err := loadCustomFn(container, map[string]fimapi.FnGen{
 		"#print_obj": FnPrintObject,
 	}); err != nil {
 		return err
@@ -53,7 +53,7 @@ func StartForum() error {
 	return nil
 }
 
-func loadCustomFn(container esbapi.Container, mapping map[string]esbapi.FnGen) error {
+func loadCustomFn(container fimapi.Container, mapping map[string]fimapi.FnGen) error {
 	for name, fg := range mapping {
 		if err := container.RegisterCustomFn(name, fg); err != nil {
 			return err
@@ -62,7 +62,7 @@ func loadCustomFn(container esbapi.Container, mapping map[string]esbapi.FnGen) e
 	return nil
 }
 
-func loadFlowModel(container *esbcore.ContainerInst, files []string) error {
+func loadFlowModel(container *fimcore.ContainerInst, files []string) error {
 	for _, file := range files {
 		data, err := flowModelFs.ReadFile(file)
 		if err != nil {
@@ -77,7 +77,7 @@ func loadFlowModel(container *esbcore.ContainerInst, files []string) error {
 	return nil
 }
 
-func loadFlow(container *esbcore.ContainerInst, flowFiles map[string]string) error {
+func loadFlow(container *fimcore.ContainerInst, flowFiles map[string]string) error {
 	for flowName, file := range flowFiles {
 		data, err := flowFs.ReadFile(file)
 		if err != nil {
@@ -92,7 +92,7 @@ func loadFlow(container *esbcore.ContainerInst, flowFiles map[string]string) err
 	return nil
 }
 
-func loadPipeline(container *esbcore.ContainerInst, pipelineFiles map[string]string) error {
+func loadPipeline(container *fimcore.ContainerInst, pipelineFiles map[string]string) error {
 	for pipelineName, file := range pipelineFiles {
 		data, err := pipelineFs.ReadFile(file)
 		if err != nil {

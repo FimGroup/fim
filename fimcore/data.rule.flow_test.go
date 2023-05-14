@@ -1,6 +1,6 @@
-package esbcore
+package fimcore
 
-import "esbconcept/components"
+import "github.com/ThisIsSun/fim/components"
 
 const flowFileContent = `
 [in]

@@ -1,9 +1,9 @@
-package esbcore
+package fimcore
 
 import (
 	"testing"
 
-	"esbconcept/components"
+	"github.com/ThisIsSun/fim/components"
 )
 
 var pipelineContent = `

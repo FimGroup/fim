@@ -1,4 +1,4 @@
-package esbapi
+package fimapi
 
 type Fn func(m Model) error
 

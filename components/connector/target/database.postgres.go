@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"esbconcept/esbapi"
-	"esbconcept/esbapi/rule"
+	"github.com/ThisIsSun/fim/fimapi"
+	"github.com/ThisIsSun/fim/fimapi/rule"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -44,9 +44,9 @@ func (d *dbPgConnector) Reload() error {
 	return nil
 }
 
-func databasePostgresGenerator(options map[string]string, container esbapi.Container, definition *esbapi.MappingDefinition) (*struct {
-	esbapi.Connector
-	esbapi.ConnectorFlow
+func databasePostgresGenerator(options map[string]string, container fimapi.Container, definition *fimapi.MappingDefinition) (*struct {
+	fimapi.Connector
+	fimapi.ConnectorFlow
 	InstanceName string
 }, error) {
 	dbConnStr, ok := options["database.connect_string"]
@@ -84,10 +84,10 @@ func databasePostgresGenerator(options map[string]string, container esbapi.Conta
 
 	cr := &dbPgConnector{p: p}
 	instName := fmt.Sprintf("%s:%s", dbOper, dbSql)
-	var f esbapi.ConnectorFlow
+	var f fimapi.ConnectorFlow
 	switch dbOper {
 	case DatabaseOperationExec:
-		f = func(s, d esbapi.Model) error {
+		f = func(s, d fimapi.Model) error {
 			//FIXME allow to configure timeout
 			sqlParam := make([]interface{}, len(params))
 			for i, v := range params {
@@ -116,13 +116,13 @@ func databasePostgresGenerator(options map[string]string, container esbapi.Conta
 	}
 
 	return &struct {
-		esbapi.Connector
-		esbapi.ConnectorFlow
+		fimapi.Connector
+		fimapi.ConnectorFlow
 		InstanceName string
 	}{Connector: cr, ConnectorFlow: f, InstanceName: instName}, nil
 }
 
-func convertResponse(definition *esbapi.MappingDefinition, d esbapi.Model, r map[string]interface{}) error {
+func convertResponse(definition *fimapi.MappingDefinition, d fimapi.Model, r map[string]interface{}) error {
 	for fp, cp := range definition.Res {
 		val, ok := r[cp]
 		if !ok {
@@ -133,7 +133,7 @@ func convertResponse(definition *esbapi.MappingDefinition, d esbapi.Model, r map
 	return nil
 }
 
-func prepareArgMapping(definition *esbapi.MappingDefinition) ([][]string, error) {
+func prepareArgMapping(definition *fimapi.MappingDefinition) ([][]string, error) {
 	paramIdxMapping := map[int][]string{}
 	maxArgIdx := -1
 	for fp, cp := range definition.Req {

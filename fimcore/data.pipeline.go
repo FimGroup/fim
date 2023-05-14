@@ -1,4 +1,4 @@
-package esbcore
+package fimcore
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
-	"esbconcept/esbapi"
+	"github.com/ThisIsSun/fim/fimapi"
 )
 
 type Pipeline struct {
@@ -22,16 +22,16 @@ type Pipeline struct {
 		SourceConnectors []map[string]string `toml:"source_connectors"`
 	} `toml:"pipeline"`
 	ConnectorMapping map[string]struct {
-		Req esbapi.DataMapping `toml:"req"`
-		Res esbapi.DataMapping `toml:"res"`
+		Req fimapi.DataMapping `toml:"req"`
+		Res fimapi.DataMapping `toml:"res"`
 	} `toml:"connector_mapping"`
 
 	container          *ContainerInst
 	connectorInitFuncs []struct {
-		esbapi.ConnectorProcessEntryPoint
-		*esbapi.MappingDefinition
+		fimapi.ConnectorProcessEntryPoint
+		*fimapi.MappingDefinition
 	}
-	steps []func() func(global esbapi.Model) error
+	steps []func() func(global fimapi.Model) error
 }
 
 func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error) {
@@ -61,7 +61,7 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 			if !ok {
 				return nil, errors.New("connect mapping cannot be found:" + connInstName)
 			}
-			mappdingDef := &esbapi.MappingDefinition{
+			mappdingDef := &fimapi.MappingDefinition{
 				Req: s.Req,
 				Res: s.Res,
 			}
@@ -75,8 +75,8 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 			} else {
 				container.connectorMap[f.InstanceName] = f.Connector
 				p.connectorInitFuncs = append(p.connectorInitFuncs, struct {
-					esbapi.ConnectorProcessEntryPoint
-					*esbapi.MappingDefinition
+					fimapi.ConnectorProcessEntryPoint
+					*fimapi.MappingDefinition
 				}{ConnectorProcessEntryPoint: f.ConnectorProcessEntryPoint, MappingDefinition: mappdingDef})
 			}
 		}
@@ -113,7 +113,7 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 				if !ok {
 					return nil, errors.New("connect mapping cannot be found:" + connInstName)
 				}
-				mappdingDef := &esbapi.MappingDefinition{
+				mappdingDef := &fimapi.MappingDefinition{
 					Req: s.Req,
 					Res: s.Res,
 				}
@@ -130,14 +130,14 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 				}
 				// assemble flow
 				if okS {
-					p.steps = append(p.steps, func() func(g esbapi.Model) error {
-						return func(g esbapi.Model) error {
+					p.steps = append(p.steps, func() func(g fimapi.Model) error {
+						return func(g fimapi.Model) error {
 							return flowInst(g, g)
 						}
 					})
 				} else {
-					p.steps = append(p.steps, func() func(g esbapi.Model) error {
-						return func(g esbapi.Model) error {
+					p.steps = append(p.steps, func() func(g fimapi.Model) error {
+						return func(g fimapi.Model) error {
 							return flowInst(g, NewModelInst(p.container.flowModel))
 						}
 					})
@@ -163,8 +163,8 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 	return p, nil
 }
 
-func (p *Pipeline) toPipelineFn() esbapi.PipelineProcess {
-	return func(m esbapi.Model) error {
+func (p *Pipeline) toPipelineFn() fimapi.PipelineProcess {
+	return func(m fimapi.Model) error {
 		for _, fn := range p.steps {
 			f := fn()
 			if err := f(m); err != nil {
