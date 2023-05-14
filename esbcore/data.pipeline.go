@@ -99,7 +99,7 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 
 			if strings.HasPrefix(flow, "&") {
 				// target connector
-				g, ok := targetConnectorGenMap[flow]
+				g, ok := container.registerTargetConnectorGen[flow]
 				if !ok {
 					return nil, errors.New("target connector cannot be found:" + flow)
 				}
@@ -113,23 +113,32 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 				if !ok {
 					return nil, errors.New("connect mapping cannot be found:" + connInstName)
 				}
+				mappdingDef := &esbapi.MappingDefinition{
+					Req: s.Req,
+					Res: s.Res,
+				}
 				//FIXME support parameter data mapping for target connector
-				var _ = s
 
-				f, err := g(v)
+				tConnStruct, err := g(v, container, mappdingDef)
 				if err != nil {
 					return nil, err
 				}
+				flowInst := tConnStruct.ConnectorFlow
+				if _, ok := container.connectorMap[tConnStruct.InstanceName]; !ok {
+					// add connector lifecycle map if new
+					container.connectorMap[tConnStruct.InstanceName] = tConnStruct.Connector
+				}
+				// assemble flow
 				if okS {
 					p.steps = append(p.steps, func() func(g esbapi.Model) error {
 						return func(g esbapi.Model) error {
-							return f(g, g)
+							return flowInst(g, g)
 						}
 					})
 				} else {
 					p.steps = append(p.steps, func() func(g esbapi.Model) error {
 						return func(g esbapi.Model) error {
-							return f(g, NewModelInst(p.container.flowModel))
+							return flowInst(g, NewModelInst(p.container.flowModel))
 						}
 					})
 				}

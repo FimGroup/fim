@@ -25,6 +25,7 @@ func NewContainer() *ContainerInst {
 
 		connectorMap:               map[string]esbapi.Connector{},
 		registerSourceConnectorGen: map[string]esbapi.SourceConnectorGenerator{},
+		registerTargetConnectorGen: map[string]esbapi.TargetConnectorGenerator{},
 	}
 }
 
@@ -47,6 +48,7 @@ type ContainerInst struct {
 
 	connectorMap               map[string]esbapi.Connector
 	registerSourceConnectorGen map[string]esbapi.SourceConnectorGenerator
+	registerTargetConnectorGen map[string]esbapi.TargetConnectorGenerator
 }
 
 func (c *ContainerInst) LoadFlowModel(tomlContent string) error {

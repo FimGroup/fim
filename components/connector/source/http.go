@@ -123,7 +123,7 @@ func (h *HttpServer) addHandler(options map[string]string, handleFunc http.Handl
 	return nil
 }
 
-func sourceConnectorHttpRest(options map[string]string, container esbapi.Container) (struct {
+func sourceConnectorHttpRest(options map[string]string, container esbapi.Container) (*struct {
 	esbapi.Connector
 	esbapi.ConnectorProcessEntryPoint
 	InstanceName string
@@ -183,7 +183,7 @@ func sourceConnectorHttpRest(options map[string]string, container esbapi.Contain
 		return nil
 	}
 
-	return struct {
+	return &struct {
 		esbapi.Connector
 		esbapi.ConnectorProcessEntryPoint
 		InstanceName string

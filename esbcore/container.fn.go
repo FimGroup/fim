@@ -32,6 +32,17 @@ func (c *ContainerInst) RegisterCustomFn(name string, fn esbapi.FnGen) error {
 }
 
 func (c *ContainerInst) RegisterSourceConnectorGen(name string, connGen esbapi.SourceConnectorGenerator) error {
+	if _, ok := c.registerSourceConnectorGen[name]; ok {
+		return errors.New("source connector generator already exists:" + name)
+	}
 	c.registerSourceConnectorGen[name] = connGen
+	return nil
+}
+
+func (c *ContainerInst) RegisterTargetConnectorGen(name string, connGen esbapi.TargetConnectorGenerator) error {
+	if _, ok := c.registerTargetConnectorGen[name]; ok {
+		return errors.New("target connector generator already exists:" + name)
+	}
+	c.registerTargetConnectorGen[name] = connGen
 	return nil
 }

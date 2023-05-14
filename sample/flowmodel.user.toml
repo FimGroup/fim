@@ -8,11 +8,12 @@
 # compound type default value
 # * object = (not exist)
 # * array = (not exist)
-"global_name" = "string"
-"user/user_id" = "int"
+"user/user_id" = "string"
 "user/username" = "string"
 "user/password" = "string"
 "user/nickname" = "string"
+"user/time_created" = "int"
+"user/time_updated" = "int"
 "user/is_login" = "bool"
 "user/risk/rating_core" = "float"
 "user/phone[]/country_code" = "string"
@@ -21,3 +22,4 @@
 "user/login/lastLoginTime[]" = "int"
 "user/risk/matrix[]/sub_matrix[]" = "float"
 
+"debugging/database/affected_row_count" = "int"

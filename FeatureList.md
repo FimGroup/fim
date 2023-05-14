@@ -50,6 +50,18 @@
   flow to be able to run on those nodes other than any node in the cluster
 * Add a resource check - e.g. check tcp binding used/conflict to avoid error
 * FlowModel/Object/protocols transformation
+* Connector instance and lifecycle management
+* data mapping supports array item converter(mapping each element in the array)
+* support assign one FlowModel field to different local fields(but not vice versa, for the reason that only one value
+  can be assigned and effective to one single field)
+
+Top priority
+
+* Independent components(not nested existing in other component): container, pipeline, connector, FlowModel
+* Merged toml file definition
+* refactor component apis & lifecycles
+* split container apis
+* error handling & interrupt pipeline
 
 # 3. Work groups
 

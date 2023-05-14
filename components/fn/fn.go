@@ -7,8 +7,9 @@ import (
 func InitFn(container esbapi.Container) error {
 
 	if err := registerFn(container, map[string]esbapi.FnGen{
-		"@assign": FnAssign,
-		"@uuid":   FnUUID,
+		"@assign":                     FnAssign,
+		"@uuid":                       FnUUID,
+		"@set_current_unix_timestamp": FnSetCurrentUnixTimestamp,
 	}); err != nil {
 		return err
 	}

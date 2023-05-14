@@ -35,6 +35,7 @@ type Container interface {
 	RegisterBuiltinFn(name string, fnGen FnGen) error
 	RegisterCustomFn(name string, fnGen FnGen) error
 	RegisterSourceConnectorGen(name string, connGen SourceConnectorGenerator) error
+	RegisterTargetConnectorGen(name string, connGen TargetConnectorGenerator) error
 
 	NewModel() Model
 }
@@ -42,6 +43,7 @@ type Container interface {
 type DataMapping map[string]string
 
 type PipelineProcess func(m Model) error
+type ConnectorFlow func(s, d Model) error
 type MappingDefinition struct {
 	Req DataMapping
 	Res DataMapping
@@ -54,8 +56,14 @@ type Connector interface {
 	Reload() error
 }
 
-type SourceConnectorGenerator func(options map[string]string, container Container) (struct {
+type SourceConnectorGenerator func(options map[string]string, container Container) (*struct {
 	Connector
 	ConnectorProcessEntryPoint
+	InstanceName string
+}, error)
+
+type TargetConnectorGenerator func(options map[string]string, container Container, definition *MappingDefinition) (*struct {
+	Connector
+	ConnectorFlow
 	InstanceName string
 }, error)
