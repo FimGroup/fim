@@ -1,5 +1,7 @@
 package pluginapi
 
-type Fn func(m Model) error
+import "github.com/ThisIsSun/fim/fimapi/basicapi"
 
-type FnGen func(params []interface{}) (Fn, error)
+type Fn = basicapi.Fn
+
+type FnGen = basicapi.FnGen

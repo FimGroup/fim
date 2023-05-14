@@ -1,5 +1,7 @@
 package pluginapi
 
+import "github.com/ThisIsSun/fim/fimapi/basicapi"
+
 type DataType int
 
 const (
@@ -25,19 +27,21 @@ const (
 	TypeAttributeNode TypeOfNode = 3
 )
 
-type Model interface {
-	//FIXME need design the type and behaviors of Model
-	AddOrUpdateField0(paths []string, value interface{}) error
-	GetFieldUnsafe(paths []string) interface{}
-}
+type Model = basicapi.Model
 
 type Container interface {
 	RegisterBuiltinFn(name string, fnGen FnGen) error
 	RegisterCustomFn(name string, fnGen FnGen) error
-	RegisterSourceConnectorGen(name string, connGen SourceConnectorGenerator) error
-	RegisterTargetConnectorGen(name string, connGen TargetConnectorGenerator) error
+	RegisterSourceConnectorGen(connGen SourceConnectorGenerator) error
+	RegisterTargetConnectorGen(connGen TargetConnectorGenerator) error
 
 	NewModel() Model
+
+	LoadFlowModel(tomlContent string) error
+	LoadFlow(flowName, tomlContent string) error
+	LoadPipeline(pipelineName, tomlContent string) error
+
+	StartContainer() error
 }
 
 type DataMapping map[string]string
@@ -55,15 +59,3 @@ type Connector interface {
 	Stop() error
 	Reload() error
 }
-
-type SourceConnectorGenerator func(options map[string]string, container Container) (*struct {
-	Connector
-	ConnectorProcessEntryPoint
-	InstanceName string
-}, error)
-
-type TargetConnectorGenerator func(options map[string]string, container Container, definition *MappingDefinition) (*struct {
-	Connector
-	ConnectorFlow
-	InstanceName string
-}, error)

@@ -70,7 +70,7 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 			if !ok {
 				return nil, errors.New("source connector generator cannot be found:" + connectorName)
 			}
-			if f, err := gen(v, p.container); err != nil {
+			if f, err := gen.GenerateSourceConnectorInstance(v, p.container); err != nil {
 				return nil, err
 			} else {
 				container.connectorMap[f.InstanceName] = f.Connector
@@ -119,7 +119,7 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 				}
 				//FIXME support parameter data mapping for target connector
 
-				tConnStruct, err := g(v, container, mappdingDef)
+				tConnStruct, err := g.GenerateTargetConnectorInstance(v, container, mappdingDef)
 				if err != nil {
 					return nil, err
 				}

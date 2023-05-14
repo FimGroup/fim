@@ -39,6 +39,25 @@
         * Flow
         * Connector: Source connector/Target connector
 
+### Core model
+
+#### Connector
+
+* connector generator
+    * instance by: generator name
+    * store: connectors and states
+    * spawn connectors by rules inside the generator
+* connector
+    * instance by: generator + instance name
+    * connector name: used by pipeline
+    * lifecycle control in the container(may not release resource immediately since other pipelines may use) and also
+      controlled by generator
+* connector model
+    * generator : connector = 1 : N
+    * pipeline : connector = M : N
+    * generator: for shared resource like listening to a network address
+    * connector: for defining the entrypoint of a request
+
 # 2. TODO List
 
 * Timeout for synchronous flow + timeout accumulation when processing each step of the flow

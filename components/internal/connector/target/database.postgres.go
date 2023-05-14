@@ -44,7 +44,14 @@ func (d *dbPgConnector) Reload() error {
 	return nil
 }
 
-func databasePostgresGenerator(options map[string]string, container pluginapi.Container, definition *pluginapi.MappingDefinition) (*struct {
+type dbPgConnectorGenerator struct {
+}
+
+func (d *dbPgConnectorGenerator) GeneratorName() string {
+	return "database_postgres"
+}
+
+func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[string]string, container pluginapi.Container, definition *pluginapi.MappingDefinition) (*struct {
 	pluginapi.Connector
 	pluginapi.ConnectorFlow
 	InstanceName string

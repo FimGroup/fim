@@ -20,10 +20,10 @@ const (
 	ParamHttpBodyPrefix = "http/body/"
 )
 
-var httpServer *HttpServer
+var httpRestServer *HttpServer
 
 func init() {
-	httpServer = &HttpServer{
+	httpRestServer = &HttpServer{
 		listenMap: map[string]struct {
 			net.Listener
 			*http.Server
@@ -38,6 +38,10 @@ type HttpServer struct {
 		*http.Server
 		Mux *chi.Mux
 	}
+}
+
+func (h *HttpServer) GeneratorName() string {
+	return "http_rest"
 }
 
 func (h *HttpServer) Start() error {
@@ -123,12 +127,11 @@ func (h *HttpServer) addHandler(options map[string]string, handleFunc http.Handl
 	return nil
 }
 
-func sourceConnectorHttpRest(options map[string]string, container pluginapi.Container) (*struct {
+func (h *HttpServer) GenerateSourceConnectorInstance(options map[string]string, container pluginapi.Container) (*struct {
 	pluginapi.Connector
 	pluginapi.ConnectorProcessEntryPoint
 	InstanceName string
 }, error) {
-
 	entryPoint := func(fn pluginapi.PipelineProcess, mappingDef *pluginapi.MappingDefinition) error {
 		f := func(writer http.ResponseWriter, request *http.Request) {
 
@@ -174,10 +177,10 @@ func sourceConnectorHttpRest(options map[string]string, container pluginapi.Cont
 				return
 			}
 		}
-		if err := httpServer.addHandler(options, f); err != nil {
+		if err := httpRestServer.addHandler(options, f); err != nil {
 			return err
 		}
-		if err := httpServer.Reload(); err != nil {
+		if err := httpRestServer.Reload(); err != nil {
 			return err
 		}
 		return nil
@@ -188,7 +191,7 @@ func sourceConnectorHttpRest(options map[string]string, container pluginapi.Cont
 		pluginapi.ConnectorProcessEntryPoint
 		InstanceName string
 	}{
-		Connector:                  httpServer,
+		Connector:                  httpRestServer,
 		ConnectorProcessEntryPoint: entryPoint,
 		InstanceName:               "http_rest",
 	}, nil

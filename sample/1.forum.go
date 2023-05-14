@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/ThisIsSun/fim/components"
-	"github.com/ThisIsSun/fim/fimapi/pluginapi"
+	"github.com/ThisIsSun/fim/fimapi/basicapi"
 	"github.com/ThisIsSun/fim/fimcore"
 )
 
@@ -19,11 +19,11 @@ var flowFs embed.FS
 var pipelineFs embed.FS
 
 func StartForum() error {
-	container := fimcore.NewContainer()
+	container := fimcore.NewUseContainer()
 	if err := components.InitComponent(container); err != nil {
 		return err
 	}
-	if err := loadCustomFn(container, map[string]pluginapi.FnGen{
+	if err := loadCustomFn(container, map[string]basicapi.FnGen{
 		"#print_obj": FnPrintObject,
 	}); err != nil {
 		return err
@@ -53,7 +53,7 @@ func StartForum() error {
 	return nil
 }
 
-func loadCustomFn(container pluginapi.Container, mapping map[string]pluginapi.FnGen) error {
+func loadCustomFn(container basicapi.BasicContainer, mapping map[string]basicapi.FnGen) error {
 	for name, fg := range mapping {
 		if err := container.RegisterCustomFn(name, fg); err != nil {
 			return err
@@ -62,7 +62,7 @@ func loadCustomFn(container pluginapi.Container, mapping map[string]pluginapi.Fn
 	return nil
 }
 
-func loadFlowModel(container *fimcore.ContainerInst, files []string) error {
+func loadFlowModel(container basicapi.BasicContainer, files []string) error {
 	for _, file := range files {
 		data, err := flowModelFs.ReadFile(file)
 		if err != nil {
@@ -77,7 +77,7 @@ func loadFlowModel(container *fimcore.ContainerInst, files []string) error {
 	return nil
 }
 
-func loadFlow(container *fimcore.ContainerInst, flowFiles map[string]string) error {
+func loadFlow(container basicapi.BasicContainer, flowFiles map[string]string) error {
 	for flowName, file := range flowFiles {
 		data, err := flowFs.ReadFile(file)
 		if err != nil {
@@ -92,7 +92,7 @@ func loadFlow(container *fimcore.ContainerInst, flowFiles map[string]string) err
 	return nil
 }
 
-func loadPipeline(container *fimcore.ContainerInst, pipelineFiles map[string]string) error {
+func loadPipeline(container basicapi.BasicContainer, pipelineFiles map[string]string) error {
 	for pipelineName, file := range pipelineFiles {
 		data, err := pipelineFs.ReadFile(file)
 		if err != nil {

@@ -5,8 +5,13 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/ThisIsSun/fim/fimapi/basicapi"
 	"github.com/ThisIsSun/fim/fimapi/pluginapi"
 )
+
+func NewUseContainer() basicapi.BasicContainer {
+	return NewContainer()
+}
 
 func NewContainer() *ContainerInst {
 	var flowModelMap = NewDataTypeDefinitions()

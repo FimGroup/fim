@@ -31,7 +31,8 @@ func (c *ContainerInst) RegisterCustomFn(name string, fn pluginapi.FnGen) error 
 	return nil
 }
 
-func (c *ContainerInst) RegisterSourceConnectorGen(name string, connGen pluginapi.SourceConnectorGenerator) error {
+func (c *ContainerInst) RegisterSourceConnectorGen(connGen pluginapi.SourceConnectorGenerator) error {
+	name := connGen.GeneratorName()
 	if _, ok := c.registerSourceConnectorGen[name]; ok {
 		return errors.New("source connector generator already exists:" + name)
 	}
@@ -39,7 +40,11 @@ func (c *ContainerInst) RegisterSourceConnectorGen(name string, connGen pluginap
 	return nil
 }
 
-func (c *ContainerInst) RegisterTargetConnectorGen(name string, connGen pluginapi.TargetConnectorGenerator) error {
+func (c *ContainerInst) RegisterTargetConnectorGen(connGen pluginapi.TargetConnectorGenerator) error {
+	name := connGen.GeneratorName()
+	if !strings.HasPrefix(name, "&") {
+		name = "&" + name
+	}
 	if _, ok := c.registerTargetConnectorGen[name]; ok {
 		return errors.New("target connector generator already exists:" + name)
 	}
