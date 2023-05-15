@@ -1,17 +1,17 @@
 package fimcore
 
 import (
-	"bytes"
 	"errors"
 	"log"
 	"strings"
-
-	"github.com/pelletier/go-toml/v2"
 
 	"github.com/ThisIsSun/fim/fimapi/pluginapi"
 )
 
 type Pipeline struct {
+	Metadata struct {
+		Version string `toml:"version"`
+	} `toml:"metadata"`
 	Parameter struct {
 		Inputs     []string            `toml:"inputs"`
 		PreOutputs []map[string]string `toml:"pre_outputs"`
@@ -34,11 +34,7 @@ type Pipeline struct {
 	steps []func() func(global pluginapi.Model) error
 }
 
-func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error) {
-	p := new(Pipeline)
-	if err := toml.NewDecoder(bytes.NewBufferString(tomlContent)).DisallowUnknownFields().Decode(p); err != nil {
-		return nil, err
-	}
+func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 	p.container = container
 
 	// parse pipeline definition and validate components

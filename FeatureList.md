@@ -95,7 +95,6 @@ Top priority
 
 1. Independent components(not nested existing in other component): container, pipeline, connector, FlowModel
     * lifecycle of a request: user input/scheduling, event is not part of standalone lifecycle
-2. Merged toml file definition
 3. error handling & interrupt pipeline
 4. allow step to run independently from each other to support async invoking
 

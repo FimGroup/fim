@@ -1,13 +1,10 @@
 package fimcore
 
 import (
-	"bytes"
 	"errors"
 
 	"github.com/ThisIsSun/fim/fimapi/pluginapi"
 	"github.com/ThisIsSun/fim/fimapi/rule"
-
-	"github.com/pelletier/go-toml/v2"
 )
 
 type templateFlow struct {
@@ -65,13 +62,7 @@ func NewFlow(dtd *DataTypeDefinitions, c *ContainerInst) *Flow {
 	}
 }
 
-func (f *Flow) MergeToml(data string) error {
-	tf := new(templateFlow)
-	err := toml.NewDecoder(bytes.NewBufferString(data)).DisallowUnknownFields().Decode(tf)
-	if err != nil {
-		return err
-	}
-
+func (f *Flow) mergeToml(tf *templateFlow) error {
 	for path, local := range tf.In {
 		if err := f.addIn(path, local); err != nil {
 			return err

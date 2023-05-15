@@ -1,8 +1,6 @@
 package fimcore
 
 import (
-	"errors"
-	"fmt"
 	"log"
 
 	"github.com/ThisIsSun/fim/fimapi/basicapi"
@@ -18,12 +16,12 @@ func NewContainer() *ContainerInst {
 
 	return &ContainerInst{
 		flowModelRawContents: [][]byte{},
-		flowRawMap:           map[string]struct{ FlowTomlRaw []byte }{},
+		flowRawMap:           map[string]struct{ tf *templateFlow }{},
 		flowMap:              map[string]*Flow{},
 		flowModel:            flowModelMap,
 
 		pipelineMap:        map[string]*Pipeline{},
-		pipelineRawContent: map[string]struct{ PipelineTomlRaw []byte }{},
+		pipelineRawContent: map[string]struct{ *Pipeline }{},
 
 		builtinGenFnMap: map[string]pluginapi.FnGen{},
 		customGenFnMap:  map[string]pluginapi.FnGen{},
@@ -36,7 +34,7 @@ func NewContainer() *ContainerInst {
 
 type ContainerInst struct {
 	flowRawMap map[string]struct {
-		FlowTomlRaw []byte
+		tf *templateFlow
 	}
 	flowMap map[string]*Flow
 
@@ -44,7 +42,7 @@ type ContainerInst struct {
 	flowModel            *DataTypeDefinitions
 
 	pipelineRawContent map[string]struct {
-		PipelineTomlRaw []byte
+		*Pipeline
 	}
 	pipelineMap map[string]*Pipeline
 
@@ -62,40 +60,6 @@ func (c *ContainerInst) LoadFlowModel(tomlContent string) error {
 		return err
 	}
 	c.flowModelRawContents = append(c.flowModelRawContents, []byte(tomlContent))
-
-	return nil
-}
-
-func (c *ContainerInst) LoadFlow(flowName, tomlContent string) error {
-	_, ok := c.flowMap[flowName]
-	if ok {
-		return errors.New(fmt.Sprint("flow exists:", flowName))
-	}
-
-	flow := NewFlow(c.flowModel, c)
-	if err := flow.MergeToml(tomlContent); err != nil {
-		return err
-	}
-	c.flowMap[flowName] = flow
-	c.flowRawMap[flowName] = struct{ FlowTomlRaw []byte }{
-		FlowTomlRaw: []byte(tomlContent),
-	}
-
-	return nil
-}
-
-func (c *ContainerInst) LoadPipeline(pipelineName, tomlContent string) error {
-	_, ok := c.pipelineMap[pipelineName]
-	if ok {
-		return errors.New(fmt.Sprintf("pipeline exists:%s", pipelineName))
-	}
-
-	p, err := NewPipeline(tomlContent, c)
-	if err != nil {
-		return err
-	}
-	c.pipelineRawContent[pipelineName] = struct{ PipelineTomlRaw []byte }{PipelineTomlRaw: []byte(tomlContent)}
-	c.pipelineMap[pipelineName] = p
 
 	return nil
 }

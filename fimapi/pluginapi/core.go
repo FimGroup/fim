@@ -38,8 +38,7 @@ type Container interface {
 	NewModel() Model
 
 	LoadFlowModel(tomlContent string) error
-	LoadFlow(flowName, tomlContent string) error
-	LoadPipeline(pipelineName, tomlContent string) error
+	LoadMerged(content string) error
 
 	StartContainer() error
 }

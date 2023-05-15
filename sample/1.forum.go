@@ -12,11 +12,8 @@ import (
 //go:embed flowmodel.*.toml
 var flowModelFs embed.FS
 
-//go:embed flow.*.toml
-var flowFs embed.FS
-
-//go:embed pipeline.*.toml
-var pipelineFs embed.FS
+//go:embed scene.*.toml
+var sceneFs embed.FS
 
 func StartForum() error {
 	container := fimcore.NewUseContainer()
@@ -34,14 +31,8 @@ func StartForum() error {
 	}); err != nil {
 		return err
 	}
-	if err := loadFlow(container, map[string]string{
-		"register_validation":        "flow.register.validation.toml",
-		"send_register_notification": "flow.register.send_notification.toml",
-	}); err != nil {
-		return err
-	}
-	if err := loadPipeline(container, map[string]string{
-		"register": "pipeline.register.toml",
+	if err := loadMerged(container, []string{
+		"scene.register.toml",
 	}); err != nil {
 		return err
 	}
@@ -77,30 +68,15 @@ func loadFlowModel(container basicapi.BasicContainer, files []string) error {
 	return nil
 }
 
-func loadFlow(container basicapi.BasicContainer, flowFiles map[string]string) error {
-	for flowName, file := range flowFiles {
-		data, err := flowFs.ReadFile(file)
+func loadMerged(container basicapi.BasicContainer, files []string) error {
+	for _, file := range files {
+		data, err := sceneFs.ReadFile(file)
 		if err != nil {
 			return err
 		}
-		log.Println("read Flow content:", string(data))
+		log.Println("read scene content:", string(data))
 
-		if err := container.LoadFlow(flowName, string(data)); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func loadPipeline(container basicapi.BasicContainer, pipelineFiles map[string]string) error {
-	for pipelineName, file := range pipelineFiles {
-		data, err := pipelineFs.ReadFile(file)
-		if err != nil {
-			return err
-		}
-		log.Println("read Pipeline content:", string(data))
-
-		if err := container.LoadPipeline(pipelineName, string(data)); err != nil {
+		if err := container.LoadMerged(string(data)); err != nil {
 			return err
 		}
 	}
