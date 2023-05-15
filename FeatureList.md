@@ -42,12 +42,21 @@
 
 ### Core model
 
+#### FlowModel
+
+(Refer to above)
+
+#### Pipeline
+
+(Refer to above)
+
 #### Connector
 
 * connector generator
     * instance by: generator name
     * store: connectors and states
     * spawn connectors by rules inside the generator
+    * may or may not have lifecycle control / require self-management based on connector lifecycle if possible
 * connector
     * instance by: generator + instance name
     * connector name: used by pipeline
@@ -85,9 +94,6 @@ The following apis can be used in projects(for starting container and custom fun
 Top priority
 
 1. Independent components(not nested existing in other component): container, pipeline, connector, FlowModel
-    * lifecycle of Pipeline/Flow/functions/connector/etc. - e.g. http server connector should be able to shutdown
-    * refactor component apis & lifecycles
-    * split container apis
     * lifecycle of a request: user input/scheduling, event is not part of standalone lifecycle
 2. Merged toml file definition
 3. error handling & interrupt pipeline

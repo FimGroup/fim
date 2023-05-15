@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/ThisIsSun/fim/fimapi/pluginapi"
-	"github.com/ThisIsSun/fim/fimapi/pluginapi/rule"
+	"github.com/ThisIsSun/fim/fimapi/rule"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

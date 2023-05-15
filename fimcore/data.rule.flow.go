@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/ThisIsSun/fim/fimapi/pluginapi"
-	"github.com/ThisIsSun/fim/fimapi/pluginapi/rule"
+	"github.com/ThisIsSun/fim/fimapi/rule"
 
 	"github.com/pelletier/go-toml/v2"
 )

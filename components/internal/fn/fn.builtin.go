@@ -7,7 +7,7 @@ import (
 	"github.com/gofrs/uuid/v5"
 
 	"github.com/ThisIsSun/fim/fimapi/pluginapi"
-	"github.com/ThisIsSun/fim/fimapi/pluginapi/rule"
+	"github.com/ThisIsSun/fim/fimapi/rule"
 )
 
 func FnAssign(params []interface{}) (pluginapi.Fn, error) {

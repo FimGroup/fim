@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/ThisIsSun/fim/fimapi/pluginapi"
-	"github.com/ThisIsSun/fim/fimapi/pluginapi/rule"
+	"github.com/ThisIsSun/fim/fimapi/rule"
 )
 
 func FnPrintObject(params []interface{}) (pluginapi.Fn, error) {
