@@ -23,6 +23,12 @@ const (
 type httpRestServerConnector struct {
 	instName  string
 	generator *HttpRestServerGenerator
+
+	entryPoint func(process pluginapi.PipelineProcess, definition *pluginapi.MappingDefinition) error
+}
+
+func (h *httpRestServerConnector) InvokeProcess(process pluginapi.PipelineProcess, definition *pluginapi.MappingDefinition) error {
+	return h.entryPoint(process, definition)
 }
 
 func (h *httpRestServerConnector) Start() error {
@@ -144,10 +150,7 @@ func (h *HttpRestServerGenerator) addHandler(options map[string]string, handleFu
 	return nil
 }
 
-func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[string]string, container pluginapi.Container) (*struct {
-	pluginapi.Connector
-	pluginapi.ConnectorProcessEntryPoint
-}, error) {
+func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[string]string, container pluginapi.Container) (pluginapi.SourceConnector, error) {
 	entryPoint := func(fn pluginapi.PipelineProcess, mappingDef *pluginapi.MappingDefinition) error {
 		f := func(writer http.ResponseWriter, request *http.Request) {
 
@@ -202,15 +205,10 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[st
 		return nil
 	}
 
-	return &struct {
-		pluginapi.Connector
-		pluginapi.ConnectorProcessEntryPoint
-	}{
-		Connector: &httpRestServerConnector{
-			instName:  "http_rest",
-			generator: h,
-		},
-		ConnectorProcessEntryPoint: entryPoint,
+	return &httpRestServerConnector{
+		instName:   "http_rest",
+		generator:  h,
+		entryPoint: entryPoint,
 	}, nil
 }
 

@@ -47,12 +47,10 @@ type Container interface {
 type DataMapping map[string]string
 
 type PipelineProcess func(m Model) error
-type ConnectorFlow func(s, d Model) error
 type MappingDefinition struct {
 	Req DataMapping
 	Res DataMapping
 }
-type ConnectorProcessEntryPoint func(PipelineProcess, *MappingDefinition) error
 
 type Connector interface {
 	Start() error
@@ -60,4 +58,16 @@ type Connector interface {
 	Reload() error
 
 	ConnectorName() string
+}
+
+type SourceConnector interface {
+	Connector
+
+	InvokeProcess(PipelineProcess, *MappingDefinition) error
+}
+
+type TargetConnector interface {
+	Connector
+
+	InvokeFlow(s, d Model) error
 }

@@ -28,7 +28,7 @@ type Pipeline struct {
 
 	container          *ContainerInst
 	connectorInitFuncs []struct {
-		pluginapi.ConnectorProcessEntryPoint
+		pluginapi.SourceConnector
 		*pluginapi.MappingDefinition
 	}
 	steps []func() func(global pluginapi.Model) error
@@ -73,11 +73,11 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 			if f, err := gen.GenerateSourceConnectorInstance(v, p.container); err != nil {
 				return nil, err
 			} else {
-				container.connectorMap[f.ConnectorName()] = f.Connector
+				container.connectorMap[f.ConnectorName()] = f
 				p.connectorInitFuncs = append(p.connectorInitFuncs, struct {
-					pluginapi.ConnectorProcessEntryPoint
+					pluginapi.SourceConnector
 					*pluginapi.MappingDefinition
-				}{ConnectorProcessEntryPoint: f.ConnectorProcessEntryPoint, MappingDefinition: mappdingDef})
+				}{SourceConnector: f, MappingDefinition: mappdingDef})
 			}
 		}
 	}
@@ -119,14 +119,14 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 				}
 				//FIXME support parameter data mapping for target connector
 
-				tConnStruct, err := g.GenerateTargetConnectorInstance(v, container, mappdingDef)
+				tConnector, err := g.GenerateTargetConnectorInstance(v, container, mappdingDef)
 				if err != nil {
 					return nil, err
 				}
-				flowInst := tConnStruct.ConnectorFlow
-				if _, ok := container.connectorMap[tConnStruct.ConnectorName()]; !ok {
+				flowInst := tConnector.InvokeFlow
+				if _, ok := container.connectorMap[tConnector.ConnectorName()]; !ok {
 					// add connector lifecycle map if new
-					container.connectorMap[tConnStruct.ConnectorName()] = tConnStruct.Connector
+					container.connectorMap[tConnector.ConnectorName()] = tConnector
 				}
 				// assemble flow
 				if okS {
@@ -179,7 +179,7 @@ func (p *Pipeline) setupPipeline() error {
 	// start source connector
 	process := p.toPipelineFn()
 	for _, f := range p.connectorInitFuncs {
-		if err := f.ConnectorProcessEntryPoint(process, f.MappingDefinition); err != nil {
+		if err := f.InvokeProcess(process, f.MappingDefinition); err != nil {
 			return err
 		}
 	}

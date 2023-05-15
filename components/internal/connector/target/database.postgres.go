@@ -28,6 +28,11 @@ type dbPgConnector struct {
 		connector *dbPgConnector
 		refCnt    int
 	}
+
+	operation  string
+	sql        string
+	params     [][]string
+	definition *pluginapi.MappingDefinition
 }
 
 func (c *dbPgConnector) Start() error {
@@ -51,6 +56,38 @@ func (c *dbPgConnector) ConnectorName() string {
 	return c.instName
 }
 
+func (c *dbPgConnector) InvokeFlow(s, d pluginapi.Model) error {
+	switch c.operation {
+	case DatabaseOperationExec:
+		//FIXME allow to configure timeout
+		sqlParam := make([]interface{}, len(c.params))
+		for i, v := range c.params {
+			if len(v) == 0 {
+				//FIXME no arg in this position
+				sqlParam[i] = nil
+			} else {
+				sqlParam[i] = s.GetFieldUnsafe(v)
+			}
+		}
+		tag, err := c.p.Exec(context.Background(), c.sql, sqlParam...)
+		if err != nil {
+			return err
+		}
+		r := map[string]interface{}{
+			SqlAffectedRowCountKey: tag.RowsAffected(),
+		}
+		if err := c.convertResponse(c.definition, d, r); err != nil {
+			return err
+		}
+		return nil
+	case DatabaseOperationQuery:
+		//FIXME support database query
+		return errors.New("not support operation:" + DatabaseOperationQuery)
+	default:
+		return errors.New("unsupported operation:" + c.operation)
+	}
+}
+
 func NewDatabasePostgresGenerator() pluginapi.TargetConnectorGenerator {
 	return &dbPgConnectorGenerator{dbPgMapping: map[string]*struct {
 		connector *dbPgConnector
@@ -69,10 +106,7 @@ func (d *dbPgConnectorGenerator) GeneratorNames() []string {
 	return []string{"database_postgres"}
 }
 
-func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[string]string, container pluginapi.Container, definition *pluginapi.MappingDefinition) (*struct {
-	pluginapi.Connector
-	pluginapi.ConnectorFlow
-}, error) {
+func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[string]string, container pluginapi.Container, definition *pluginapi.MappingDefinition) (pluginapi.TargetConnector, error) {
 	dbConnStr, ok := options["database.connect_string"]
 	if !ok {
 		return nil, errors.New("database.connect_string is not set")
@@ -92,6 +126,7 @@ func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[str
 		return nil, errors.New("database.sql is not set")
 	}
 
+	//FIXME maybe share the database pool rather than connector instance(meaning different instance name)
 	p, ok := d.dbPgMapping[dbConnStr]
 	if !ok {
 		np, err := pgxpool.New(context.Background(), dbConnStr)
@@ -116,43 +151,12 @@ func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[str
 	if err != nil {
 		return nil, err
 	}
+	p.connector.sql = dbSql
+	p.connector.params = params
+	p.connector.definition = definition
+	p.connector.operation = dbOper
 
-	connector := p.connector
-	var f pluginapi.ConnectorFlow
-	switch dbOper {
-	case DatabaseOperationExec:
-		f = func(s, d pluginapi.Model) error {
-			//FIXME allow to configure timeout
-			sqlParam := make([]interface{}, len(params))
-			for i, v := range params {
-				if len(v) == 0 {
-					//FIXME no arg in this position
-					sqlParam[i] = nil
-				} else {
-					sqlParam[i] = s.GetFieldUnsafe(v)
-				}
-			}
-			tag, err := connector.p.Exec(context.Background(), dbSql, sqlParam...)
-			if err != nil {
-				return err
-			}
-			r := map[string]interface{}{
-				SqlAffectedRowCountKey: tag.RowsAffected(),
-			}
-			if err := connector.convertResponse(definition, d, r); err != nil {
-				return err
-			}
-			return nil
-		}
-	case DatabaseOperationQuery:
-		//FIXME support database query
-		return nil, errors.New("not support operation:" + DatabaseOperationQuery)
-	}
-
-	return &struct {
-		pluginapi.Connector
-		pluginapi.ConnectorFlow
-	}{Connector: connector, ConnectorFlow: f}, nil
+	return p.connector, nil
 }
 
 func (c *dbPgConnector) convertResponse(definition *pluginapi.MappingDefinition, d pluginapi.Model, r map[string]interface{}) error {
