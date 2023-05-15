@@ -58,6 +58,14 @@
     * generator: for shared resource like listening to a network address
     * connector: for defining the entrypoint of a request
 
+#### Project entrypoint
+
+The following apis can be used in projects(for starting container and custom functions)
+
+* package basicapi
+* components.InitComponent
+* fimcore.NewUseContainer
+
 # 2. TODO List
 
 * Timeout for synchronous flow + timeout accumulation when processing each step of the flow

@@ -21,30 +21,44 @@ const (
 	SqlAffectedRowCountKey = "sql.affected_row_count"
 )
 
-var dbPgMapping map[string]*pgxpool.Pool
-
-func init() {
-	dbPgMapping = map[string]*pgxpool.Pool{}
-}
-
 type dbPgConnector struct {
-	p *pgxpool.Pool
+	instName string
+	p        *pgxpool.Pool
+	ref      *struct {
+		connector *dbPgConnector
+		refCnt    int
+	}
 }
 
-func (d *dbPgConnector) Start() error {
+func (c *dbPgConnector) Start() error {
+	c.ref.refCnt++
 	return nil
 }
 
-func (d *dbPgConnector) Stop() error {
-	d.p.Close()
+func (c *dbPgConnector) Stop() error {
+	c.ref.refCnt--
+	if c.ref.refCnt == 0 {
+		c.p.Close()
+	}
 	return nil
 }
 
-func (d *dbPgConnector) Reload() error {
+func (c *dbPgConnector) Reload() error {
 	return nil
+}
+
+func NewDatabasePostgresGenerator() pluginapi.TargetConnectorGenerator {
+	return &dbPgConnectorGenerator{dbPgMapping: map[string]*struct {
+		connector *dbPgConnector
+		refCnt    int
+	}{}}
 }
 
 type dbPgConnectorGenerator struct {
+	dbPgMapping map[string]*struct {
+		connector *dbPgConnector
+		refCnt    int
+	}
 }
 
 func (d *dbPgConnectorGenerator) GeneratorName() string {
@@ -75,22 +89,32 @@ func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[str
 		return nil, errors.New("database.sql is not set")
 	}
 
-	p, ok := dbPgMapping[dbConnStr]
+	p, ok := d.dbPgMapping[dbConnStr]
 	if !ok {
 		np, err := pgxpool.New(context.Background(), dbConnStr)
 		if err != nil {
 			return nil, err
 		}
-		dbPgMapping[dbConnStr] = np
-		p = np
+		n := &struct {
+			connector *dbPgConnector
+			refCnt    int
+		}{
+			connector: &dbPgConnector{
+				p:        np,
+				instName: fmt.Sprintf("%s:%s", dbOper, dbSql),
+			},
+			refCnt: 0,
+		}
+		n.connector.ref = n
+		d.dbPgMapping[dbConnStr] = n
+		p = n
 	}
-	params, err := prepareArgMapping(definition)
+	params, err := d.prepareArgMapping(definition)
 	if err != nil {
 		return nil, err
 	}
 
-	cr := &dbPgConnector{p: p}
-	instName := fmt.Sprintf("%s:%s", dbOper, dbSql)
+	connector := p.connector
 	var f pluginapi.ConnectorFlow
 	switch dbOper {
 	case DatabaseOperationExec:
@@ -105,14 +129,14 @@ func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[str
 					sqlParam[i] = s.GetFieldUnsafe(v)
 				}
 			}
-			tag, err := p.Exec(context.Background(), dbSql, sqlParam...)
+			tag, err := connector.p.Exec(context.Background(), dbSql, sqlParam...)
 			if err != nil {
 				return err
 			}
 			r := map[string]interface{}{
 				SqlAffectedRowCountKey: tag.RowsAffected(),
 			}
-			if err := convertResponse(definition, d, r); err != nil {
+			if err := connector.convertResponse(definition, d, r); err != nil {
 				return err
 			}
 			return nil
@@ -126,10 +150,10 @@ func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[str
 		pluginapi.Connector
 		pluginapi.ConnectorFlow
 		InstanceName string
-	}{Connector: cr, ConnectorFlow: f, InstanceName: instName}, nil
+	}{Connector: connector, ConnectorFlow: f, InstanceName: connector.instName}, nil
 }
 
-func convertResponse(definition *pluginapi.MappingDefinition, d pluginapi.Model, r map[string]interface{}) error {
+func (c *dbPgConnector) convertResponse(definition *pluginapi.MappingDefinition, d pluginapi.Model, r map[string]interface{}) error {
 	for fp, cp := range definition.Res {
 		val, ok := r[cp]
 		if !ok {
@@ -140,7 +164,7 @@ func convertResponse(definition *pluginapi.MappingDefinition, d pluginapi.Model,
 	return nil
 }
 
-func prepareArgMapping(definition *pluginapi.MappingDefinition) ([][]string, error) {
+func (d *dbPgConnectorGenerator) prepareArgMapping(definition *pluginapi.MappingDefinition) ([][]string, error) {
 	paramIdxMapping := map[int][]string{}
 	maxArgIdx := -1
 	for fp, cp := range definition.Req {
