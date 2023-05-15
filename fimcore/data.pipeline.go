@@ -73,7 +73,7 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 			if f, err := gen.GenerateSourceConnectorInstance(v, p.container); err != nil {
 				return nil, err
 			} else {
-				container.connectorMap[f.InstanceName] = f.Connector
+				container.connectorMap[f.ConnectorName()] = f.Connector
 				p.connectorInitFuncs = append(p.connectorInitFuncs, struct {
 					pluginapi.ConnectorProcessEntryPoint
 					*pluginapi.MappingDefinition
@@ -124,9 +124,9 @@ func NewPipeline(tomlContent string, container *ContainerInst) (*Pipeline, error
 					return nil, err
 				}
 				flowInst := tConnStruct.ConnectorFlow
-				if _, ok := container.connectorMap[tConnStruct.InstanceName]; !ok {
+				if _, ok := container.connectorMap[tConnStruct.ConnectorName()]; !ok {
 					// add connector lifecycle map if new
-					container.connectorMap[tConnStruct.InstanceName] = tConnStruct.Connector
+					container.connectorMap[tConnStruct.ConnectorName()] = tConnStruct.Connector
 				}
 				// assemble flow
 				if okS {

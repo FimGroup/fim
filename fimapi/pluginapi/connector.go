@@ -5,7 +5,6 @@ type SourceConnectorGenerator interface {
 	GenerateSourceConnectorInstance(options map[string]string, container Container) (*struct {
 		Connector
 		ConnectorProcessEntryPoint
-		InstanceName string
 	}, error)
 }
 
@@ -14,6 +13,5 @@ type TargetConnectorGenerator interface {
 	GenerateTargetConnectorInstance(options map[string]string, container Container, definition *MappingDefinition) (*struct {
 		Connector
 		ConnectorFlow
-		InstanceName string
 	}, error)
 }

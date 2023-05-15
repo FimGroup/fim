@@ -20,6 +20,27 @@ const (
 	ParamHttpBodyPrefix = "http/body/"
 )
 
+type httpRestServerConnector struct {
+	instName  string
+	generator *HttpRestServerGenerator
+}
+
+func (h *httpRestServerConnector) Start() error {
+	return h.generator.Start()
+}
+
+func (h *httpRestServerConnector) Stop() error {
+	return h.generator.Stop()
+}
+
+func (h *httpRestServerConnector) Reload() error {
+	return h.generator.Reload()
+}
+
+func (h *httpRestServerConnector) ConnectorName() string {
+	return h.instName
+}
+
 func NewHttpRestServerGenerator() pluginapi.SourceConnectorGenerator {
 	return &HttpRestServerGenerator{listenMap: map[string]struct {
 		net.Listener
@@ -126,7 +147,6 @@ func (h *HttpRestServerGenerator) addHandler(options map[string]string, handleFu
 func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[string]string, container pluginapi.Container) (*struct {
 	pluginapi.Connector
 	pluginapi.ConnectorProcessEntryPoint
-	InstanceName string
 }, error) {
 	entryPoint := func(fn pluginapi.PipelineProcess, mappingDef *pluginapi.MappingDefinition) error {
 		f := func(writer http.ResponseWriter, request *http.Request) {
@@ -185,11 +205,12 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[st
 	return &struct {
 		pluginapi.Connector
 		pluginapi.ConnectorProcessEntryPoint
-		InstanceName string
 	}{
-		Connector:                  h,
+		Connector: &httpRestServerConnector{
+			instName:  "http_rest",
+			generator: h,
+		},
 		ConnectorProcessEntryPoint: entryPoint,
-		InstanceName:               "http_rest",
 	}, nil
 }
 

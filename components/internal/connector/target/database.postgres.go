@@ -47,6 +47,10 @@ func (c *dbPgConnector) Reload() error {
 	return nil
 }
 
+func (c *dbPgConnector) ConnectorName() string {
+	return c.instName
+}
+
 func NewDatabasePostgresGenerator() pluginapi.TargetConnectorGenerator {
 	return &dbPgConnectorGenerator{dbPgMapping: map[string]*struct {
 		connector *dbPgConnector
@@ -68,7 +72,6 @@ func (d *dbPgConnectorGenerator) GeneratorNames() []string {
 func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[string]string, container pluginapi.Container, definition *pluginapi.MappingDefinition) (*struct {
 	pluginapi.Connector
 	pluginapi.ConnectorFlow
-	InstanceName string
 }, error) {
 	dbConnStr, ok := options["database.connect_string"]
 	if !ok {
@@ -149,8 +152,7 @@ func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[str
 	return &struct {
 		pluginapi.Connector
 		pluginapi.ConnectorFlow
-		InstanceName string
-	}{Connector: connector, ConnectorFlow: f, InstanceName: connector.instName}, nil
+	}{Connector: connector, ConnectorFlow: f}, nil
 }
 
 func (c *dbPgConnector) convertResponse(definition *pluginapi.MappingDefinition, d pluginapi.Model, r map[string]interface{}) error {

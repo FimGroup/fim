@@ -58,4 +58,6 @@ type Connector interface {
 	Start() error
 	Stop() error
 	Reload() error
+
+	ConnectorName() string
 }
