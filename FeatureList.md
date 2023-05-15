@@ -36,6 +36,7 @@
         * Builtin functions
         * Customized functions
     * Used in pipeline
+        * Use FlowModel as in/out parameters
         * Flow
         * Connector: Source connector/Target connector
 

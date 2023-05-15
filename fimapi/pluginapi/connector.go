@@ -1,7 +1,7 @@
 package pluginapi
 
 type SourceConnectorGenerator interface {
-	GeneratorName() string
+	GeneratorNames() []string
 	GenerateSourceConnectorInstance(options map[string]string, container Container) (*struct {
 		Connector
 		ConnectorProcessEntryPoint
@@ -10,7 +10,7 @@ type SourceConnectorGenerator interface {
 }
 
 type TargetConnectorGenerator interface {
-	GeneratorName() string
+	GeneratorNames() []string
 	GenerateTargetConnectorInstance(options map[string]string, container Container, definition *MappingDefinition) (*struct {
 		Connector
 		ConnectorFlow

@@ -6,7 +6,7 @@ import (
 
 func InitSource(container pluginapi.Container) error {
 	if err := registerSourceConnectorGen(container, []pluginapi.SourceConnectorGenerator{
-		httpRestServer,
+		NewHttpRestServerGenerator(),
 	}); err != nil {
 		return err
 	}

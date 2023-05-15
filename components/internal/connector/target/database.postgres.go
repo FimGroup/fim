@@ -61,8 +61,8 @@ type dbPgConnectorGenerator struct {
 	}
 }
 
-func (d *dbPgConnectorGenerator) GeneratorName() string {
-	return "database_postgres"
+func (d *dbPgConnectorGenerator) GeneratorNames() []string {
+	return []string{"database_postgres"}
 }
 
 func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[string]string, container pluginapi.Container, definition *pluginapi.MappingDefinition) (*struct {

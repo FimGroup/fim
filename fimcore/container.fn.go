@@ -32,22 +32,33 @@ func (c *ContainerInst) RegisterCustomFn(name string, fn pluginapi.FnGen) error 
 }
 
 func (c *ContainerInst) RegisterSourceConnectorGen(connGen pluginapi.SourceConnectorGenerator) error {
-	name := connGen.GeneratorName()
-	if _, ok := c.registerSourceConnectorGen[name]; ok {
-		return errors.New("source connector generator already exists:" + name)
+	names := connGen.GeneratorNames()
+	for _, name := range names {
+		if _, ok := c.registerSourceConnectorGen[name]; ok {
+			return errors.New("source connector generator already exists:" + name)
+		}
 	}
-	c.registerSourceConnectorGen[name] = connGen
+	for _, name := range names {
+		c.registerSourceConnectorGen[name] = connGen
+	}
 	return nil
 }
 
 func (c *ContainerInst) RegisterTargetConnectorGen(connGen pluginapi.TargetConnectorGenerator) error {
-	name := connGen.GeneratorName()
-	if !strings.HasPrefix(name, "&") {
-		name = "&" + name
+	names := connGen.GeneratorNames()
+	for _, name := range names {
+		if !strings.HasPrefix(name, "&") {
+			name = "&" + name
+		}
+		if _, ok := c.registerTargetConnectorGen[name]; ok {
+			return errors.New("target connector generator already exists:" + name)
+		}
 	}
-	if _, ok := c.registerTargetConnectorGen[name]; ok {
-		return errors.New("target connector generator already exists:" + name)
+	for _, name := range names {
+		if !strings.HasPrefix(name, "&") {
+			name = "&" + name
+		}
+		c.registerTargetConnectorGen[name] = connGen
 	}
-	c.registerTargetConnectorGen[name] = connGen
 	return nil
 }

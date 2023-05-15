@@ -20,19 +20,15 @@ const (
 	ParamHttpBodyPrefix = "http/body/"
 )
 
-var httpRestServer *HttpServer
-
-func init() {
-	httpRestServer = &HttpServer{
-		listenMap: map[string]struct {
-			net.Listener
-			*http.Server
-			Mux *chi.Mux
-		}{},
-	}
+func NewHttpRestServerGenerator() pluginapi.SourceConnectorGenerator {
+	return &HttpRestServerGenerator{listenMap: map[string]struct {
+		net.Listener
+		*http.Server
+		Mux *chi.Mux
+	}{}}
 }
 
-type HttpServer struct {
+type HttpRestServerGenerator struct {
 	listenMap map[string]struct {
 		net.Listener
 		*http.Server
@@ -40,11 +36,11 @@ type HttpServer struct {
 	}
 }
 
-func (h *HttpServer) GeneratorName() string {
-	return "http_rest"
+func (h *HttpRestServerGenerator) GeneratorNames() []string {
+	return []string{"http_rest"}
 }
 
-func (h *HttpServer) Start() error {
+func (h *HttpRestServerGenerator) Start() error {
 	for _, v := range h.listenMap {
 		go func() {
 			if err := v.Server.Serve(v.Listener); err != nil {
@@ -55,17 +51,17 @@ func (h *HttpServer) Start() error {
 	return nil
 }
 
-func (h *HttpServer) Stop() error {
+func (h *HttpRestServerGenerator) Stop() error {
 	//FIXME shutdown listeners
 	return nil
 }
 
-func (h *HttpServer) Reload() error {
+func (h *HttpRestServerGenerator) Reload() error {
 	//FIXME allow to reload http registrations including start or shutdown listeners
 	return nil
 }
 
-func (h *HttpServer) addHandler(options map[string]string, handleFunc http.HandlerFunc) error {
+func (h *HttpRestServerGenerator) addHandler(options map[string]string, handleFunc http.HandlerFunc) error {
 	ls, ok := options["http.listen"]
 	if !ok {
 		return errors.New("need provide http.listen for http")
@@ -127,7 +123,7 @@ func (h *HttpServer) addHandler(options map[string]string, handleFunc http.Handl
 	return nil
 }
 
-func (h *HttpServer) GenerateSourceConnectorInstance(options map[string]string, container pluginapi.Container) (*struct {
+func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[string]string, container pluginapi.Container) (*struct {
 	pluginapi.Connector
 	pluginapi.ConnectorProcessEntryPoint
 	InstanceName string
@@ -151,7 +147,7 @@ func (h *HttpServer) GenerateSourceConnectorInstance(options map[string]string, 
 
 			// convert request
 			m := container.NewModel()
-			if err := convertJsonRequestModel(request, body, m, mappingDef); err != nil {
+			if err := h.convertJsonRequestModel(request, body, m, mappingDef); err != nil {
 				writer.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -164,7 +160,7 @@ func (h *HttpServer) GenerateSourceConnectorInstance(options map[string]string, 
 			}
 
 			// convert response
-			if data, err := convertJsonResponseModel(m, mappingDef); err != nil {
+			if data, err := h.convertJsonResponseModel(m, mappingDef); err != nil {
 				writer.WriteHeader(http.StatusInternalServerError)
 				return
 			} else {
@@ -177,10 +173,10 @@ func (h *HttpServer) GenerateSourceConnectorInstance(options map[string]string, 
 				return
 			}
 		}
-		if err := httpRestServer.addHandler(options, f); err != nil {
+		if err := h.addHandler(options, f); err != nil {
 			return err
 		}
-		if err := httpRestServer.Reload(); err != nil {
+		if err := h.Reload(); err != nil {
 			return err
 		}
 		return nil
@@ -191,13 +187,13 @@ func (h *HttpServer) GenerateSourceConnectorInstance(options map[string]string, 
 		pluginapi.ConnectorProcessEntryPoint
 		InstanceName string
 	}{
-		Connector:                  httpRestServer,
+		Connector:                  h,
 		ConnectorProcessEntryPoint: entryPoint,
 		InstanceName:               "http_rest",
 	}, nil
 }
 
-func convertJsonResponseModel(m pluginapi.Model, def *pluginapi.MappingDefinition) ([]byte, error) {
+func (h *HttpRestServerGenerator) convertJsonResponseModel(m pluginapi.Model, def *pluginapi.MappingDefinition) ([]byte, error) {
 	r := map[string]interface{}{}
 	for fp, cp := range def.Res {
 		val := m.GetFieldUnsafe(rule.SplitFullPath(fp))
@@ -229,7 +225,7 @@ func convertJsonResponseModel(m pluginapi.Model, def *pluginapi.MappingDefinitio
 	return json.Marshal(r)
 }
 
-func convertJsonRequestModel(request *http.Request, body []byte, m pluginapi.Model, def *pluginapi.MappingDefinition) error {
+func (h *HttpRestServerGenerator) convertJsonRequestModel(request *http.Request, body []byte, m pluginapi.Model, def *pluginapi.MappingDefinition) error {
 	var b interface{}
 	if err := json.Unmarshal(body, &b); err != nil {
 		log.Println(err)
@@ -238,7 +234,7 @@ func convertJsonRequestModel(request *http.Request, body []byte, m pluginapi.Mod
 	for fp, cp := range def.Req {
 		if strings.HasPrefix(cp, ParamHttpBodyPrefix) {
 			// http body
-			val, err := traverseRetrievingFromGenericJson(b, rule.SplitFullPath(cp[len(ParamHttpBodyPrefix):]))
+			val, err := h.traverseRetrievingFromGenericJson(b, rule.SplitFullPath(cp[len(ParamHttpBodyPrefix):]))
 			if err != nil {
 				return err
 			}
@@ -252,7 +248,7 @@ func convertJsonRequestModel(request *http.Request, body []byte, m pluginapi.Mod
 	return nil
 }
 
-func traverseRetrievingFromGenericJson(o interface{}, paths []string) (interface{}, error) {
+func (h *HttpRestServerGenerator) traverseRetrievingFromGenericJson(o interface{}, paths []string) (interface{}, error) {
 	if o == nil {
 		return nil, nil
 	}
@@ -271,6 +267,6 @@ func traverseRetrievingFromGenericJson(o interface{}, paths []string) (interface
 		//FIXME should check data type
 		return val, nil
 	} else {
-		return traverseRetrievingFromGenericJson(val, paths[1:])
+		return h.traverseRetrievingFromGenericJson(val, paths[1:])
 	}
 }
