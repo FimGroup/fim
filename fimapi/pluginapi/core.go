@@ -43,12 +43,10 @@ type Container interface {
 	StartContainer() error
 }
 
-type DataMapping map[string]string
-
 type PipelineProcess func(m Model) error
 type MappingDefinition struct {
-	Req DataMapping
-	Res DataMapping
+	Req [][]string
+	Res [][]string
 }
 
 type Connector interface {

@@ -160,7 +160,12 @@ func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[str
 }
 
 func (c *dbPgConnector) convertResponse(definition *pluginapi.MappingDefinition, d pluginapi.Model, r map[string]interface{}) error {
-	for fp, cp := range definition.Res {
+	for _, paramPair := range definition.Res {
+		if len(paramPair) != 2 {
+			return errors.New("paramPair should contains 2 params")
+		}
+		fp := paramPair[0]
+		cp := paramPair[1]
 		val, ok := r[cp]
 		if !ok {
 			continue
@@ -173,7 +178,12 @@ func (c *dbPgConnector) convertResponse(definition *pluginapi.MappingDefinition,
 func (d *dbPgConnectorGenerator) prepareArgMapping(definition *pluginapi.MappingDefinition) ([][]string, error) {
 	paramIdxMapping := map[int][]string{}
 	maxArgIdx := -1
-	for fp, cp := range definition.Req {
+	for _, paramPair := range definition.Req {
+		if len(paramPair) != 2 {
+			return nil, errors.New("paramPair should contains 2 params")
+		}
+		fp := paramPair[0]
+		cp := paramPair[1]
 		if !strings.HasPrefix(cp, SqlArgParameterPrefix) {
 			continue
 		}

@@ -214,7 +214,12 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[st
 
 func (h *HttpRestServerGenerator) convertJsonResponseModel(m pluginapi.Model, def *pluginapi.MappingDefinition) ([]byte, error) {
 	r := map[string]interface{}{}
-	for fp, cp := range def.Res {
+	for _, paramPair := range def.Res {
+		if len(paramPair) != 2 {
+			return nil, errors.New("paramPair should contains 2 params")
+		}
+		fp := paramPair[0]
+		cp := paramPair[1]
 		val := m.GetFieldUnsafe(rule.SplitFullPath(fp))
 		if val == nil {
 			continue
@@ -250,7 +255,12 @@ func (h *HttpRestServerGenerator) convertJsonRequestModel(request *http.Request,
 		log.Println(err)
 	}
 
-	for fp, cp := range def.Req {
+	for _, paramPair := range def.Req {
+		if len(paramPair) != 2 {
+			return errors.New("paramPair should contains 2 params")
+		}
+		fp := paramPair[0]
+		cp := paramPair[1]
 		if strings.HasPrefix(cp, ParamHttpBodyPrefix) {
 			// http body
 			val, err := h.traverseRetrievingFromGenericJson(b, rule.SplitFullPath(cp[len(ParamHttpBodyPrefix):]))

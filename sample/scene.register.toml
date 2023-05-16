@@ -1,21 +1,19 @@
 [pipelines.register.parameter]
 # Declare the variables that are used by the pipeline
-"inputs" = [
-    "user"
-]
-"outputs" = [
-    "user"
-]
+#"inputs" = [
+#    "user"
+#]
+#"outputs" = [
+#    "user"
+#]
 # Declare the operations that are used by the pipeline
-"pre_outputs" = [
-    { "@remove" = "user" }
-]
+#"pre_outputs" = [
+#    { "@remove" = "user" }
+#]
 
-[pipelines.register.metadata]
-version = "1.0"
-
-[pipelines.register.pipeline]
-"source_connectors" = [
+[pipelines.register]
+metadata.version = "1.0"
+pipeline.source_connectors = [
     # Source connector will accept inbound traffic and convert it to FlowModel then invoke the following pipeline steps
     # All the connectors here will trigger the same pipeline, which means one pipeline will allow several source connectors
     # @connector should be used to define the type of connector
@@ -25,7 +23,7 @@ version = "1.0"
     # Note2: the connector will also share the same FlowModel
     { "@connector" = "http_rest", "@mapping" = "http_inst", "http.listen" = "0.0.0.0:8081", "http.method" = "post", "http.path" = "/user/register" }
 ]
-"steps" = [
+pipeline.steps = [
     # Each step should have @flow as key with flow name as value
     # Other key-value pairs are options passing to the flow generator
     # Note: the option key should follow the format of path format
@@ -43,56 +41,60 @@ version = "1.0"
     # And this step can be invoked in parallel to the other steps
     { "#flow" = "send_register_notification" },
 ]
-
-[pipelines.register.connector_mapping.http_inst.req]
+[pipelines.register.connector_mapping.http_inst]
 # connector mapping for both source and target connector
 # FlowModel -> Connector Model
-"user/username" = "http/body/username"
-"user/password" = "http/body/password"
-"user/nickname" = "http/body/nickname"
-[pipelines.register.connector_mapping.http_inst.res]
+req = [
+    ["user/username", "http/body/username"],
+    ["user/password", "http/body/password"],
+    ["user/nickname", "http/body/nickname"],
+]
 # connector mapping for both source and target connector and also for both directions of in and out
 # FlowModel -> Connector Model
-"user/user_id" = "http/body/user_id"
+res = [
+    ["user/user_id", "http/body/user_id"],
+]
+[pipelines.register.connector_mapping.db_pg_insert]
+req = [
+    ["user/user_id", "sql.args.0"],
+    ["user/username", "sql.args.1"],
+    ["user/password", "sql.args.2"],
+    ["user/nickname", "sql.args.3"],
+    ["user/time_created", "sql.args.4"],
+    ["user/time_updated", "sql.args.5"],
+]
+res = [
+    ["debugging/database/affected_row_count", "sql.affected_row_count"],
+]
 
-[pipelines.register.connector_mapping.db_pg_insert.req]
-"user/user_id" = "sql.args.0"
-"user/username" = "sql.args.1"
-"user/password" = "sql.args.2"
-"user/nickname" = "sql.args.3"
-"user/time_created" = "sql.args.4"
-"user/time_updated" = "sql.args.5"
-[pipelines.register.connector_mapping.db_pg_insert.res]
-"debugging/database/affected_row_count" = "sql.affected_row_count"
-
-[flows.register_validation.in]
+[flows.register_validation]
 # flowmodels -> local parameters
 # parameters that are not existing here will be ignored
 # default value will be given based on the type of left if the left value not exist
 # Note: Execution order is not defined. Don't rely on the order.
-"user/user_id" = "user_id"
-"user/username" = "username"
-"user/password" = "password"
-"user/nickname" = "nickname"
-
-[flows.register_validation.pre_out]
-# "@remove" command will remove the given value from the flowmodels
-# Note: Execution order is not defined. Don't rely on the order.
-#"@remove" = "user"
-
-[flows.register_validation.out]
+in = [
+    ["user/user_id", "user_id"],
+    ["user/username", "username"],
+    ["user/password", "password"],
+    ["user/nickname", "nickname"],
+]
+pre_out = [
+    # "@remove" command will remove the given value from the flowmodels
+    # Note: Execution order is not defined. Don't rely on the order.
+    #["@remove", "user"]
+]
 # local parameters -> flowmodels
 # possible paths: "user/username", "user/phone", "user/phone[1]" which are ALL valid paths(not valid path of definition)
 # default value will be  based on the type of right if the left value not exist
 # Note: Execution order is not defined. Don't rely on the order.
-"user_id" = "user/user_id"
-"username" = "user/username"
-"nickname" = "user/nickname"
-"time_created" = "user/time_created"
-"time_updated" = "user/time_updated"
-
-[flows.register_validation.flow]
-"steps" = [
+out = [
+    ["user_id", "user/user_id"],
+    ["username", "user/username"],
+    ["nickname", "user/nickname"],
+    ["time_created", "user/time_created"],
+    ["time_updated", "user/time_updated"],
+]
+flow.steps = [
     # invoke function - "@function" = [ parameter list ]
     { "@uuid" = ["user_id"] },
     { "@set_current_unix_timestamp" = ["time_created"] },
@@ -104,14 +106,12 @@ version = "1.0"
     #{ "#print_obj" = ["password"] },
 ]
 
-[flows.send_register_notification.in]
-"debugging/database/affected_row_count" = "affected_row_count"
-
-[flows.send_register_notification.pre_out]
-
-[flows.send_register_notification.out]
-
-[flows.send_register_notification.flow]
-"steps" = [
+[flows.send_register_notification]
+in = [
+    ["debugging/database/affected_row_count", "affected_row_count"]
+]
+pre_out = []
+out = []
+flow.steps = [
     { "#print_obj" = ["affected_row_count"] },
 ]

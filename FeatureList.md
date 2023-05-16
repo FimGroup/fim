@@ -86,7 +86,6 @@ The following apis can be used in projects(for starting container and custom fun
   flow to be able to run on those nodes other than any node in the cluster
 * Add a resource check - e.g. check tcp binding used/conflict to avoid error
 * FlowModel/Object/protocols transformation
-* Connector instance and lifecycle management
 * data mapping supports array item converter(mapping each element in the array)
 * support assign one FlowModel field to different local fields(but not vice versa, for the reason that only one value
   can be assigned and effective to one single field)
@@ -97,6 +96,7 @@ Top priority
     * lifecycle of a request: user input/scheduling, event is not part of standalone lifecycle
 3. error handling & interrupt pipeline
 4. allow step to run independently from each other to support async invoking
+5. branch/loop
 
 # 3. Work groups
 

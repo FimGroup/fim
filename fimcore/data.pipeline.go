@@ -22,8 +22,8 @@ type Pipeline struct {
 		SourceConnectors []map[string]string `toml:"source_connectors"`
 	} `toml:"pipeline"`
 	ConnectorMapping map[string]struct {
-		Req pluginapi.DataMapping `toml:"req"`
-		Res pluginapi.DataMapping `toml:"res"`
+		Req [][]string `toml:"req"`
+		Res [][]string `toml:"res"`
 	} `toml:"connector_mapping"`
 
 	container          *ContainerInst

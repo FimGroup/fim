@@ -8,9 +8,9 @@ import (
 )
 
 type templateFlow struct {
-	In     map[string]string                     `toml:"in"`
-	Out    map[string]string                     `toml:"out"`
-	PreOut map[string]string                     `toml:"pre_out"`
+	In     [][]string                            `toml:"in"`
+	Out    [][]string                            `toml:"out"`
+	PreOut [][]string                            `toml:"pre_out"`
 	Flow   map[string][]map[string][]interface{} `toml:"flow"`
 }
 
@@ -18,17 +18,19 @@ type Flow struct {
 	dtd       *DataTypeDefinitions
 	container *ContainerInst
 
-	localInMapping map[string]struct {
+	inParamList []struct {
 		ModelFieldPath string
 		SplitPath      []string
 		DataType       pluginapi.DataType
 		KeySplitPath   []string
+		KeyPath        string
 	}
-	localOutMapping map[string]struct {
+	outParamList []struct {
 		ModelFieldPath string
 		SplitPath      []string
 		DataType       pluginapi.DataType
 		KeySplitPath   []string
+		KeyPath        string
 	}
 	localPreOutOperations map[string]struct {
 		Operation string
@@ -43,17 +45,19 @@ func NewFlow(dtd *DataTypeDefinitions, c *ContainerInst) *Flow {
 		dtd:       dtd,
 		container: c,
 
-		localInMapping: map[string]struct {
+		inParamList: []struct {
 			ModelFieldPath string
 			SplitPath      []string
 			DataType       pluginapi.DataType
 			KeySplitPath   []string
+			KeyPath        string
 		}{},
-		localOutMapping: map[string]struct {
+		outParamList: []struct {
 			ModelFieldPath string
 			SplitPath      []string
 			DataType       pluginapi.DataType
 			KeySplitPath   []string
+			KeyPath        string
 		}{},
 		localPreOutOperations: map[string]struct {
 			Operation string
@@ -63,18 +67,30 @@ func NewFlow(dtd *DataTypeDefinitions, c *ContainerInst) *Flow {
 }
 
 func (f *Flow) mergeToml(tf *templateFlow) error {
-	for path, local := range tf.In {
-		if err := f.addIn(path, local); err != nil {
+	for _, paramPair := range tf.In {
+		if len(paramPair) != 2 {
+			return errors.New("parameter pair should have 2 items")
+		}
+		// path -> local
+		if err := f.addIn(paramPair[0], paramPair[1]); err != nil {
 			return err
 		}
 	}
-	for local, path := range tf.Out {
-		if err := f.addOut(local, path); err != nil {
+	for _, paramPair := range tf.Out {
+		if len(paramPair) != 2 {
+			return errors.New("parameter pair should have 2 items")
+		}
+		// local -> path
+		if err := f.addOut(paramPair[0], paramPair[1]); err != nil {
 			return err
 		}
 	}
-	for op, path := range tf.PreOut {
-		if err := f.addPreOut(op, path); err != nil {
+	for _, paramPair := range tf.PreOut {
+		if len(paramPair) != 2 {
+			return errors.New("parameter pair should have 2 items")
+		}
+		// operation -> path
+		if err := f.addPreOut(paramPair[0], paramPair[1]); err != nil {
 			return err
 		}
 	}
@@ -89,11 +105,6 @@ func (f *Flow) mergeToml(tf *templateFlow) error {
 }
 
 func (f *Flow) addIn(source, local string) error {
-	_, ok := f.localInMapping[local]
-	if ok {
-		return errors.New("local parameter registered:" + local)
-	}
-
 	if !rule.ValidateFullPath(source) {
 		return errors.New("in parameter path invalid:" + source)
 	}
@@ -103,12 +114,19 @@ func (f *Flow) addIn(source, local string) error {
 	} else if dt == pluginapi.DataTypeUnavailable {
 		return errors.New("cannot find path:" + source)
 	} else {
-		f.localInMapping[local] = struct {
+		f.inParamList = append(f.inParamList, struct {
 			ModelFieldPath string
 			SplitPath      []string
 			DataType       pluginapi.DataType
 			KeySplitPath   []string
-		}{ModelFieldPath: source, SplitPath: rule.SplitFullPath(source), DataType: dt, KeySplitPath: rule.SplitFullPath(local)}
+			KeyPath        string
+		}{
+			ModelFieldPath: source,
+			SplitPath:      rule.SplitFullPath(source),
+			DataType:       dt,
+			KeySplitPath:   rule.SplitFullPath(local),
+			KeyPath:        local,
+		})
 	}
 
 	return nil
@@ -116,7 +134,7 @@ func (f *Flow) addIn(source, local string) error {
 
 func (f *Flow) inConv() func(source, local *ModelInst) error {
 	return func(source, local *ModelInst) error {
-		for _, dStruct := range f.localInMapping {
+		for _, dStruct := range f.inParamList {
 			if err := source.transferTo(local, dStruct.SplitPath, dStruct.KeySplitPath, ByLeft); err != nil {
 				return err
 			}
@@ -126,11 +144,6 @@ func (f *Flow) inConv() func(source, local *ModelInst) error {
 }
 
 func (f *Flow) addOut(local, out string) error {
-	_, ok := f.localOutMapping[local]
-	if ok {
-		return errors.New("local parameter registered:" + local)
-	}
-
 	if !rule.ValidateFullPath(out) {
 		return errors.New("out parameter path invalid:" + out)
 	}
@@ -140,12 +153,19 @@ func (f *Flow) addOut(local, out string) error {
 	} else if dt == pluginapi.DataTypeUnavailable {
 		return errors.New("cannot find path:" + out)
 	} else {
-		f.localOutMapping[local] = struct {
+		f.outParamList = append(f.outParamList, struct {
 			ModelFieldPath string
 			SplitPath      []string
 			DataType       pluginapi.DataType
 			KeySplitPath   []string
-		}{ModelFieldPath: out, SplitPath: rule.SplitFullPath(out), DataType: dt, KeySplitPath: rule.SplitFullPath(local)}
+			KeyPath        string
+		}{
+			ModelFieldPath: out,
+			SplitPath:      rule.SplitFullPath(out),
+			DataType:       dt,
+			KeySplitPath:   rule.SplitFullPath(local),
+			KeyPath:        local,
+		})
 	}
 
 	return nil
@@ -166,7 +186,7 @@ func (f *Flow) outConv() func(local, out *ModelInst) error {
 		}
 
 		// process out
-		for _, dStruct := range f.localOutMapping {
+		for _, dStruct := range f.outParamList {
 			if err := local.transferTo(out, dStruct.KeySplitPath, dStruct.SplitPath, ByRight); err != nil {
 				return err
 			}
@@ -259,20 +279,24 @@ func (f *Flow) addFlow(tf *templateFlow) error {
 }
 
 func (f *Flow) validateLocalParameters() error {
+	outLocalMapping := map[string]string{}
+	for _, v := range f.outParamList {
+		outLocalMapping[v.KeyPath] = v.ModelFieldPath
+	}
 	// compare the types of the same local parameters
-	for local, si := range f.localInMapping {
-		do, ok := f.localOutMapping[local]
+	for _, si := range f.inParamList {
+		modelFieldPath, ok := outLocalMapping[si.KeyPath]
 		if ok {
 			sdt, spdt, err := f.dtd.TypeOfPath(si.ModelFieldPath)
 			if err != nil {
 				return err
 			}
-			ddt, dpdt, err := f.dtd.TypeOfPath(do.ModelFieldPath)
+			ddt, dpdt, err := f.dtd.TypeOfPath(modelFieldPath)
 			if err != nil {
 				return err
 			}
 			if sdt != ddt || spdt != dpdt {
-				return errors.New("local parameter types of in and out do not match:" + local)
+				return errors.New("local parameter types of in and out do not match:" + si.KeyPath)
 			}
 		}
 	}
