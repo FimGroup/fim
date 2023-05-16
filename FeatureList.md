@@ -44,11 +44,11 @@
 
 #### FlowModel
 
-(Refer to above)
+(Refer to above section)
 
 #### Pipeline
 
-(Refer to above)
+(Refer to above section)
 
 #### Connector
 
@@ -67,6 +67,16 @@
     * pipeline : connector = M : N
     * generator: for shared resource like listening to a network address
     * connector: for defining the entrypoint of a request
+
+### Supporting model
+
+#### Flow
+
+(Refer to above section)
+
+#### Builtin/Custom Function
+
+(Refer to above section)
 
 #### Project entrypoint
 

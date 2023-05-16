@@ -1,18 +1,16 @@
-[pipelines.register.parameter]
-# Declare the variables that are used by the pipeline
-#"inputs" = [
-#    "user"
-#]
-#"outputs" = [
-#    "user"
-#]
-# Declare the operations that are used by the pipeline
-#"pre_outputs" = [
-#    { "@remove" = "user" }
-#]
-
 [pipelines.register]
 metadata.version = "1.0"
+# Declare the variables that are used by the pipeline
+parameter.inputs = [
+    "user"
+]
+parameter.outputs = [
+    "user"
+]
+# Declare the operations that are used by the pipeline
+parameter.pre_outputs = [
+    { "@remove" = "user" }
+]
 pipeline.source_connectors = [
     # Source connector will accept inbound traffic and convert it to FlowModel then invoke the following pipeline steps
     # All the connectors here will trigger the same pipeline, which means one pipeline will allow several source connectors
@@ -33,6 +31,8 @@ pipeline.steps = [
     #
     # Invoke Flow(e.g. subflow/module)
     { "@flow" = "register_validation", "example.parameter1" = "value1" },
+    { "@flow" = "&database_postgres", "@mapping" = "query_user", "database.connect_string" = "postgres://admin:admin@192.168.1.111:25432/forum", "database.operation" = "query", "database.sql" = "select user_id from user where username = $1" },
+    { "@flow" = "register_generate_user_data" },
     # target connector
     # '&' should be used as prefix to indicate that the flow with the corresponding name is a connector
     { "@flow" = "&database_postgres", "@mapping" = "db_pg_insert", "database.connect_string" = "postgres://admin:admin@192.168.1.111:25432/forum", "database.operation" = "exec", "database.sql" = "insert into \"user\" (user_id, username, password, nickname, time_created, time_updated) values ($1, $2, $3, $4, $5, $6)" },
@@ -40,6 +40,13 @@ pipeline.steps = [
     # Meaning this step should not have outputs or at least the outputs will be discarded
     # And this step can be invoked in parallel to the other steps
     { "#flow" = "send_register_notification" },
+]
+[pipelines.register.connector_mapping.query_user]
+req = [
+    ["user/username", "sql.args.0"]
+]
+res = [
+    ["user/user_id", "sql.result.0"]
 ]
 [pipelines.register.connector_mapping.http_inst]
 # connector mapping for both source and target connector
@@ -96,14 +103,27 @@ out = [
 ]
 flow.steps = [
     # invoke function - "@function" = [ parameter list ]
-    { "@uuid" = ["user_id"] },
-    { "@set_current_unix_timestamp" = ["time_created"] },
-    { "@set_current_unix_timestamp" = ["time_updated"] },
+    { "@assign" = ["dummy_field", "dummy_val"] }
     # invoke user defined function
     #{ "#print_obj" = ["user_id"] },
     #{ "#print_obj" = ["username"] },
     #{ "#print_obj" = ["nickname"] },
     #{ "#print_obj" = ["password"] },
+]
+
+[flows.register_generate_user_data]
+in = [
+    ["user/user_id", "user_id"]
+]
+out = [
+    ["user_id", "user/user_id"]
+]
+flow.steps = [
+    { "#print_obj" = ["user_id"] },
+    { "@uuid" = ["user_id"] },
+    { "#print_obj" = ["user_id"] },
+    { "@set_current_unix_timestamp" = ["time_created"] },
+    { "@set_current_unix_timestamp" = ["time_updated"] },
 ]
 
 [flows.send_register_notification]

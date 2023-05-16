@@ -10,6 +10,7 @@ import (
 	"github.com/ThisIsSun/fim/fimapi/pluginapi"
 	"github.com/ThisIsSun/fim/fimapi/rule"
 
+	"github.com/gofrs/uuid/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -23,10 +24,9 @@ const (
 
 type dbPgConnector struct {
 	instName string
-	p        *pgxpool.Pool
 	ref      *struct {
-		connector *dbPgConnector
-		refCnt    int
+		*pgxpool.Pool
+		refCnt int
 	}
 
 	operation  string
@@ -43,7 +43,7 @@ func (c *dbPgConnector) Start() error {
 func (c *dbPgConnector) Stop() error {
 	c.ref.refCnt--
 	if c.ref.refCnt == 0 {
-		c.p.Close()
+		c.ref.Pool.Close()
 	}
 	return nil
 }
@@ -69,7 +69,7 @@ func (c *dbPgConnector) InvokeFlow(s, d pluginapi.Model) error {
 				sqlParam[i] = s.GetFieldUnsafe(v)
 			}
 		}
-		tag, err := c.p.Exec(context.Background(), c.sql, sqlParam...)
+		tag, err := c.ref.Pool.Exec(context.Background(), c.sql, sqlParam...)
 		if err != nil {
 			return err
 		}
@@ -89,16 +89,16 @@ func (c *dbPgConnector) InvokeFlow(s, d pluginapi.Model) error {
 }
 
 func NewDatabasePostgresGenerator() pluginapi.TargetConnectorGenerator {
-	return &dbPgConnectorGenerator{dbPgMapping: map[string]*struct {
-		connector *dbPgConnector
-		refCnt    int
+	return &dbPgConnectorGenerator{dbPoolMapping: map[string]*struct {
+		*pgxpool.Pool
+		refCnt int
 	}{}}
 }
 
 type dbPgConnectorGenerator struct {
-	dbPgMapping map[string]*struct {
-		connector *dbPgConnector
-		refCnt    int
+	dbPoolMapping map[string]*struct {
+		*pgxpool.Pool
+		refCnt int
 	}
 }
 
@@ -127,36 +127,36 @@ func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[str
 	}
 
 	//FIXME maybe share the database pool rather than connector instance(meaning different instance name)
-	p, ok := d.dbPgMapping[dbConnStr]
+	p, ok := d.dbPoolMapping[dbConnStr]
 	if !ok {
 		np, err := pgxpool.New(context.Background(), dbConnStr)
 		if err != nil {
 			return nil, err
 		}
 		n := &struct {
-			connector *dbPgConnector
-			refCnt    int
+			*pgxpool.Pool
+			refCnt int
 		}{
-			connector: &dbPgConnector{
-				p:        np,
-				instName: fmt.Sprintf("%s:%s", dbOper, dbSql),
-			},
+			Pool:   np,
 			refCnt: 0,
 		}
-		n.connector.ref = n
-		d.dbPgMapping[dbConnStr] = n
+		d.dbPoolMapping[dbConnStr] = n
 		p = n
 	}
 	params, err := d.prepareArgMapping(definition)
 	if err != nil {
 		return nil, err
 	}
-	p.connector.sql = dbSql
-	p.connector.params = params
-	p.connector.definition = definition
-	p.connector.operation = dbOper
+	connector := &dbPgConnector{
+		instName:   fmt.Sprintf("%s:%s", dbOper, uuid.Must(uuid.NewV4()).String()),
+		ref:        p,
+		operation:  dbOper,
+		sql:        dbSql,
+		params:     params,
+		definition: definition,
+	}
 
-	return p.connector, nil
+	return connector, nil
 }
 
 func (c *dbPgConnector) convertResponse(definition *pluginapi.MappingDefinition, d pluginapi.Model, r map[string]interface{}) error {
