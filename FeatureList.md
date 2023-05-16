@@ -39,6 +39,12 @@
         * Use FlowModel as in/out parameters
         * Flow
         * Connector: Source connector/Target connector
+* Check functions
+    * For the purpose to validate data/break flow/respond error information
+    * Two types of check functions
+        * break current flow: check_XXX_break - break current flow and respond error
+            * General error is returned: FlowError
+        * non-breaking: check_XXX - check and set error information in local parameter for branching logic
 
 ### Core model
 

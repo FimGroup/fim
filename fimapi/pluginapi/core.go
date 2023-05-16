@@ -45,8 +45,9 @@ type Container interface {
 
 type PipelineProcess func(m Model) error
 type MappingDefinition struct {
-	Req [][]string
-	Res [][]string
+	Req       [][]string
+	Res       [][]string
+	ErrSimple []map[string]string
 }
 
 type Connector interface {

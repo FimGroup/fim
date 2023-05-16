@@ -31,7 +31,8 @@ pipeline.steps = [
     #
     # Invoke Flow(e.g. subflow/module)
     { "@flow" = "register_validation", "example.parameter1" = "value1" },
-    { "@flow" = "&database_postgres", "@mapping" = "query_user", "database.connect_string" = "postgres://admin:admin@192.168.1.111:25432/forum", "database.operation" = "query", "database.sql" = "select user_id from user where username = $1" },
+    { "@flow" = "&database_postgres", "@mapping" = "query_user", "database.connect_string" = "postgres://admin:admin@192.168.1.111:25432/forum", "database.operation" = "query", "database.sql" = "select user_id from \"user\" where username = $1" },
+    { "@flow" = "register_existing_check" },
     { "@flow" = "register_generate_user_data" },
     # target connector
     # '&' should be used as prefix to indicate that the flow with the corresponding name is a connector
@@ -61,6 +62,10 @@ req = [
 res = [
     ["user/user_id", "http/body/user_id"],
 ]
+# connector mapping for source connector only to handle breaking error
+err_simple = [
+    { "error_key" = "check_key_user_exists", "error_message" = "http/body/message", "http/status" = "201" },
+]
 [pipelines.register.connector_mapping.db_pg_insert]
 req = [
     ["user/user_id", "sql.args.0"],
@@ -72,6 +77,14 @@ req = [
 ]
 res = [
     ["debugging/database/affected_row_count", "sql.affected_row_count"],
+]
+
+[flows.register_existing_check]
+in = [
+    ["user/user_id", "user_id"],
+]
+flow.steps = [
+    { "@check_empty_break" = ["user_id", "check_key_user_exists", "(displayed) username exists"] }
 ]
 
 [flows.register_validation]
@@ -119,7 +132,6 @@ out = [
     ["user_id", "user/user_id"]
 ]
 flow.steps = [
-    { "#print_obj" = ["user_id"] },
     { "@uuid" = ["user_id"] },
     { "#print_obj" = ["user_id"] },
     { "@set_current_unix_timestamp" = ["time_created"] },

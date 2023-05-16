@@ -18,8 +18,9 @@ const (
 	DatabaseOperationExec  = "exec"
 	DatabaseOperationQuery = "query"
 
-	SqlArgParameterPrefix  = "sql.args." // index from 0 (1st arg passing to sql)
-	SqlAffectedRowCountKey = "sql.affected_row_count"
+	SqlArgParameterPrefix    = "sql.args."   // index from 0 (1st arg passing to sql)
+	SqlReturnParameterPrefix = "sql.result." // index from 0 (1st arg passing to sql)
+	SqlAffectedRowCountKey   = "sql.affected_row_count"
 )
 
 type dbPgConnector struct {
@@ -29,10 +30,11 @@ type dbPgConnector struct {
 		refCnt int
 	}
 
-	operation  string
-	sql        string
-	params     [][]string
-	definition *pluginapi.MappingDefinition
+	operation     string
+	sql           string
+	params        [][]string
+	returnMapping map[int][]string
+	definition    *pluginapi.MappingDefinition
 }
 
 func (c *dbPgConnector) Start() error {
@@ -57,9 +59,9 @@ func (c *dbPgConnector) ConnectorName() string {
 }
 
 func (c *dbPgConnector) InvokeFlow(s, d pluginapi.Model) error {
+	//FIXME allow to configure timeout
 	switch c.operation {
 	case DatabaseOperationExec:
-		//FIXME allow to configure timeout
 		sqlParam := make([]interface{}, len(c.params))
 		for i, v := range c.params {
 			if len(v) == 0 {
@@ -81,8 +83,36 @@ func (c *dbPgConnector) InvokeFlow(s, d pluginapi.Model) error {
 		}
 		return nil
 	case DatabaseOperationQuery:
-		//FIXME support database query
-		return errors.New("not support operation:" + DatabaseOperationQuery)
+		sqlParam := make([]interface{}, len(c.params))
+		for i, v := range c.params {
+			if len(v) == 0 {
+				//FIXME no arg in this position
+				sqlParam[i] = nil
+			} else {
+				sqlParam[i] = s.GetFieldUnsafe(v)
+			}
+		}
+		rows, err := c.ref.Pool.Query(context.Background(), c.sql, sqlParam...)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		//FIXME need support multiple rows
+		for rows.Next() {
+			vals, err := rows.Values()
+			if err != nil {
+				return err
+			}
+			for idx, val := range vals {
+				paths, ok := c.returnMapping[idx]
+				if ok {
+					if err := d.AddOrUpdateField0(paths, val); err != nil {
+						return err
+					}
+				}
+			}
+		}
+		return nil
 	default:
 		return errors.New("unsupported operation:" + c.operation)
 	}
@@ -147,13 +177,18 @@ func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[str
 	if err != nil {
 		return nil, err
 	}
+	returnMapping, err := d.prepareReturnMapping(definition)
+	if err != nil {
+		return nil, err
+	}
 	connector := &dbPgConnector{
-		instName:   fmt.Sprintf("%s:%s", dbOper, uuid.Must(uuid.NewV4()).String()),
-		ref:        p,
-		operation:  dbOper,
-		sql:        dbSql,
-		params:     params,
-		definition: definition,
+		instName:      fmt.Sprintf("%s:%s", dbOper, uuid.Must(uuid.NewV4()).String()),
+		ref:           p,
+		operation:     dbOper,
+		sql:           dbSql,
+		params:        params,
+		returnMapping: returnMapping,
+		definition:    definition,
 	}
 
 	return connector, nil
@@ -205,4 +240,28 @@ func (d *dbPgConnectorGenerator) prepareArgMapping(definition *pluginapi.Mapping
 		r = append(r, paramIdxMapping[i])
 	}
 	return r, nil
+}
+
+func (d *dbPgConnectorGenerator) prepareReturnMapping(definition *pluginapi.MappingDefinition) (map[int][]string, error) {
+	responseMapping := map[int][]string{}
+
+	for _, paramPair := range definition.Res {
+		if len(paramPair) != 2 {
+			return nil, errors.New("paramPair should contains 2 params")
+		}
+		fp := paramPair[0]
+		cp := paramPair[1]
+		//FIXME currently only support return parameter index mapping
+		if !strings.HasPrefix(cp, SqlReturnParameterPrefix) {
+			continue
+		}
+		idxStr := cp[len(SqlReturnParameterPrefix):]
+		idx, err := strconv.Atoi(idxStr)
+		if err != nil {
+			return nil, err
+		}
+		responseMapping[idx] = rule.SplitFullPath(fp)
+	}
+
+	return responseMapping, nil
 }

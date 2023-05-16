@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/ThisIsSun/fim/fimapi/pluginapi"
@@ -152,6 +153,15 @@ func (h *HttpRestServerGenerator) addHandler(options map[string]string, handleFu
 
 func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[string]string, container pluginapi.Container) (pluginapi.SourceConnector, error) {
 	entryPoint := func(fn pluginapi.PipelineProcess, mappingDef *pluginapi.MappingDefinition) error {
+		errSimpleMapping := map[string]map[string]string{}
+		for _, v := range mappingDef.ErrSimple {
+			key, ok := v["error_key"]
+			if !ok {
+				continue
+			}
+			errSimpleMapping[key] = v
+		}
+
 		f := func(writer http.ResponseWriter, request *http.Request) {
 
 			body, err := io.ReadAll(request.Body)
@@ -177,6 +187,57 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[st
 
 			// run process
 			if err := fn(m); err != nil {
+				// handling error simple
+				if flowErr, ok := err.(*pluginapi.FlowError); ok {
+					errMapping, ok := errSimpleMapping[flowErr.Key]
+					if ok {
+						r := map[string]interface{}{}
+						messagePath, ok := errMapping["error_message"]
+						if ok {
+							if strings.HasPrefix(messagePath, ParamHttpBodyPrefix) {
+								destPaths := rule.SplitFullPath(messagePath[len(ParamHttpBodyPrefix):])
+								m := r
+								for _, p := range destPaths[:len(destPaths)-1] {
+									//FIXME need support the following data types: array
+									nm, ok := m[p]
+									if !ok {
+										nm = map[string]interface{}{}
+										m[p] = nm
+									}
+									m = nm.(map[string]interface{})
+								}
+								lastPath := destPaths[len(destPaths)-1]
+								m[lastPath] = flowErr.Message
+							} else {
+								//FIXME support more data access, e.g. headers
+							}
+						}
+						status, ok := errMapping["http/status"]
+						if ok {
+							code, err := strconv.Atoi(status)
+							if err != nil {
+								log.Println("error processing error simple status code:", err)
+								writer.WriteHeader(http.StatusInternalServerError)
+								return
+							}
+							writer.Header().Add("Content-Type", "application/json")
+							writer.WriteHeader(code)
+						} else {
+							writer.Header().Add("Content-Type", "application/json")
+							writer.WriteHeader(http.StatusInternalServerError)
+						}
+						data, err := json.Marshal(r)
+						if err == nil {
+							_, err := writer.Write(data)
+							if err != nil {
+								log.Println("write response error:", err)
+							}
+							return
+						} else {
+							log.Println("json marshal failed:", err)
+						}
+					}
+				}
 				log.Println("error processing:", err)
 				writer.WriteHeader(http.StatusInternalServerError)
 				return

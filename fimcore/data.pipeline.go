@@ -22,8 +22,9 @@ type Pipeline struct {
 		SourceConnectors []map[string]string `toml:"source_connectors"`
 	} `toml:"pipeline"`
 	ConnectorMapping map[string]struct {
-		Req [][]string `toml:"req"`
-		Res [][]string `toml:"res"`
+		Req       [][]string          `toml:"req"`
+		Res       [][]string          `toml:"res"`
+		ErrSimple []map[string]string `toml:"err_simple"`
 	} `toml:"connector_mapping"`
 
 	container          *ContainerInst
@@ -58,8 +59,9 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 				return nil, errors.New("connect mapping cannot be found:" + connInstName)
 			}
 			mappdingDef := &pluginapi.MappingDefinition{
-				Req: s.Req,
-				Res: s.Res,
+				Req:       s.Req,
+				Res:       s.Res,
+				ErrSimple: s.ErrSimple,
 			}
 
 			gen, ok := container.registerSourceConnectorGen[connectorName]
@@ -110,8 +112,9 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 					return nil, errors.New("connect mapping cannot be found:" + connInstName)
 				}
 				mappdingDef := &pluginapi.MappingDefinition{
-					Req: s.Req,
-					Res: s.Res,
+					Req:       s.Req,
+					Res:       s.Res,
+					ErrSimple: []map[string]string{},
 				}
 				//FIXME support parameter data mapping for target connector
 
