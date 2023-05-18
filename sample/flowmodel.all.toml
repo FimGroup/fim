@@ -23,3 +23,6 @@
 "user/risk/matrix[]/sub_matrix[]" = "float"
 
 "debugging/database/affected_row_count" = "int"
+
+"database/user/password" = "string"
+

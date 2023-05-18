@@ -2,7 +2,9 @@ package fimcore
 
 import (
 	"errors"
+	"strings"
 
+	"github.com/ThisIsSun/fim/fimapi/basicapi"
 	"github.com/ThisIsSun/fim/fimapi/pluginapi"
 	"github.com/ThisIsSun/fim/fimapi/rule"
 )
@@ -245,8 +247,17 @@ func (f *Flow) addFlow(tf *templateFlow) error {
 	steps := tf.Flow["steps"]
 	var fList []pluginapi.Fn
 	for _, step := range steps {
+		var concreteFn pluginapi.Fn
+		var wrapperFn func(fn pluginapi.Fn) pluginapi.Fn
 		for fn, params := range step {
-			if fn[0] == '@' {
+			// to make sure every step struct only contains one step, so overwrite may happen when duplicated definition
+			if strings.HasPrefix(fn, "@case-") {
+				f, err := f.prepareCaseClause(fn, params)
+				if err != nil {
+					return err
+				}
+				wrapperFn = f
+			} else if fn[0] == '@' {
 				//builtin function
 				fngen, ok := f.container.builtinGenFnMap[fn]
 				if !ok {
@@ -256,7 +267,7 @@ func (f *Flow) addFlow(tf *templateFlow) error {
 				if err != nil {
 					return err
 				}
-				fList = append(fList, fnInst)
+				concreteFn = fnInst
 			} else if fn[0] == '#' {
 				//user defined function
 				fngen, ok := f.container.customGenFnMap[fn]
@@ -267,12 +278,18 @@ func (f *Flow) addFlow(tf *templateFlow) error {
 				if err != nil {
 					return err
 				}
-				fList = append(fList, fnInst)
+				concreteFn = fnInst
 			} else {
 				return errors.New("unknown command:" + fn)
 			}
-			break
 		}
+		if concreteFn == nil {
+			return errors.New("step does not contains any logic")
+		}
+		if wrapperFn != nil {
+			concreteFn = wrapperFn(concreteFn)
+		}
+		fList = append(fList, concreteFn)
 	}
 	f.fnList = fList
 	return nil
@@ -328,4 +345,75 @@ func (f *Flow) addPreOut(op string, path string) error {
 	}
 
 	return nil
+}
+
+func (f *Flow) prepareCaseClause(fn string, params []interface{}) (func(fn pluginapi.Fn) pluginapi.Fn, error) {
+	if len(params) <= 0 {
+		return nil, errors.New("case clause requires more parameters:" + fn)
+	}
+	path, ok := params[0].(string)
+	if !ok {
+		return nil, errors.New("case clause parameter should be a string:" + fn)
+	}
+	paths := rule.SplitFullPath(path)
+	switch fn {
+	case "@case-true":
+		return func(fn pluginapi.Fn) pluginapi.Fn {
+			return func(m basicapi.Model) error {
+				val := m.GetFieldUnsafe(paths)
+				if val == nil {
+					return errors.New("case-true on nil value:" + path)
+				}
+				b, ok := val.(bool)
+				if !ok {
+					return errors.New("case-true on non-bool value:" + path)
+				}
+				if b {
+					return fn(m)
+				} else {
+					return nil
+				}
+			}
+		}, nil
+	case "@case-false":
+		return func(fn pluginapi.Fn) pluginapi.Fn {
+			return func(m basicapi.Model) error {
+				val := m.GetFieldUnsafe(paths)
+				if val == nil {
+					return errors.New("case-true on nil value:" + path)
+				}
+				b, ok := val.(bool)
+				if !ok {
+					return errors.New("case-true on non-bool value:" + path)
+				}
+				if !b {
+					return fn(m)
+				} else {
+					return nil
+				}
+			}
+		}, nil
+	case "@case-equals":
+		if len(params) != 2 {
+			return nil, errors.New("@case-equals requires 2 parameters")
+		}
+		path2, ok := params[1].(string)
+		if !ok {
+			return nil, errors.New("case clause parameter should be a string:" + fn)
+		}
+		paths2 := rule.SplitFullPath(path2)
+		return func(fn pluginapi.Fn) pluginapi.Fn {
+			return func(m basicapi.Model) error {
+				val := m.GetFieldUnsafe(paths)
+				val2 := m.GetFieldUnsafe(paths2)
+				if val == val2 {
+					return fn(m)
+				} else {
+					return nil
+				}
+			}
+		}, nil
+	default:
+		return nil, errors.New("unknown case clause:" + fn)
+	}
 }

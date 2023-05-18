@@ -21,3 +21,10 @@ func FnPrintObject(params []interface{}) (pluginapi.Fn, error) {
 		return nil
 	}, nil
 }
+
+func FnPanic(params []interface{}) (pluginapi.Fn, error) {
+	key := params[0].(string)
+	return func(m pluginapi.Model) error {
+		panic(errors.New(key))
+	}, nil
+}

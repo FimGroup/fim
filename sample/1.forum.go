@@ -22,17 +22,19 @@ func StartForum() error {
 	}
 	if err := loadCustomFn(container, map[string]basicapi.FnGen{
 		"#print_obj": FnPrintObject,
+		"#panic":     FnPanic,
 	}); err != nil {
 		return err
 	}
 
 	if err := loadFlowModel(container, []string{
-		"flowmodel.user.toml",
+		"flowmodel.all.toml",
 	}); err != nil {
 		return err
 	}
 	if err := loadMerged(container, []string{
-		"scene.register.toml",
+		"scene.user.register.toml",
+		"scene.user.login.toml",
 	}); err != nil {
 		return err
 	}

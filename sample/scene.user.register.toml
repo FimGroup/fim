@@ -1,16 +1,16 @@
 [pipelines.register]
 metadata.version = "1.0"
-# Declare the variables that are used by the pipeline
-parameter.inputs = [
-    "user"
-]
-parameter.outputs = [
-    "user"
-]
-# Declare the operations that are used by the pipeline
-parameter.pre_outputs = [
-    { "@remove" = "user" }
-]
+## Declare the variables that are used by the pipeline
+#parameter.inputs = [
+#    "user"
+#]
+#parameter.outputs = [
+#    "user"
+#]
+## Declare the operations that are used by the pipeline
+#parameter.pre_outputs = [
+#    { "@remove" = "user" }
+#]
 pipeline.source_connectors = [
     # Source connector will accept inbound traffic and convert it to FlowModel then invoke the following pipeline steps
     # All the connectors here will trigger the same pipeline, which means one pipeline will allow several source connectors
@@ -65,6 +65,7 @@ res = [
 # connector mapping for source connector only to handle breaking error
 err_simple = [
     { "error_key" = "check_key_user_exists", "error_message" = "http/body/message", "http/status" = "201" },
+    { "error_key" = "check_missing_field", "error_message" = "http/body/message", "http/status" = "400" },
 ]
 [pipelines.register.connector_mapping.db_pg_insert]
 req = [
@@ -116,7 +117,9 @@ out = [
 ]
 flow.steps = [
     # invoke function - "@function" = [ parameter list ]
-    { "@assign" = ["dummy_field", "dummy_val"] }
+    { "@check_not_blank_break" = ["username", "check_missing_field", "username is missing"] },
+    { "@check_not_blank_break" = ["password", "check_missing_field", "password is missing"] },
+    { "@check_not_blank_break" = ["nickname", "check_missing_field", "nickname is missing"] },
     # invoke user defined function
     #{ "#print_obj" = ["user_id"] },
     #{ "#print_obj" = ["username"] },
@@ -126,14 +129,18 @@ flow.steps = [
 
 [flows.register_generate_user_data]
 in = [
-    ["user/user_id", "user_id"]
+    ["user/user_id", "user_id"],
+    ["user/password", "password"],
 ]
 out = [
-    ["user_id", "user/user_id"]
+    ["user_id", "user/user_id"],
+    ["password", "user/password"],
 ]
 flow.steps = [
     { "@uuid" = ["user_id"] },
+    { "@crypto_bcrypt" = ["password"] },
     { "#print_obj" = ["user_id"] },
+    { "#print_obj" = ["password"] },
     { "@set_current_unix_timestamp" = ["time_created"] },
     { "@set_current_unix_timestamp" = ["time_updated"] },
 ]
@@ -146,4 +153,5 @@ pre_out = []
 out = []
 flow.steps = [
     { "#print_obj" = ["affected_row_count"] },
+    #{ "#panic" = ["demo panic"] }
 ]

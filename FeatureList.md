@@ -51,6 +51,14 @@
     * Note2: Events types - standard event / delayed(scheduled) event
     * Start point: source connector which is the entrypoint of user request/scheduled job/event listener(not
       recommended)
+* Branching
+    * Branching feature is part of Flow to support dynamic step selection when processing request
+    * Format of branching in a common programming language: if/switch-case/pattern-matching/etc.
+    * Introduce pattern-matching like operators to support branching in Flow definition
+    * Current supported branching operator:
+        * @case-true
+        * @case-false
+        * @case-equals: two parameters(maybe used together with @assign function)
 
 ### Core model
 
@@ -117,11 +125,12 @@ The following apis can be used in projects(for starting container and custom fun
 * support assign one FlowModel field to different local fields(but not vice versa, for the reason that only one value
   can be assigned and effective to one single field)
 * external shared service integration: configuration/service discovery/credential+cert/etc.
+* Detail and precise error information
 
 Top priority
 
 4. allow step to run independently from each other to support async invoking
-5. branch/loop
+5. loop
 
 # 3. Work groups
 
@@ -129,7 +138,7 @@ Top priority
 * clustering - support any form and type cluster
 * components - connector/functions/plugin/etc.
 * optimization - performance/operational
-* experience - feedback/improvement/i18n/l10n
+* experience - feedback/improvement/i18n/l10n/error information
 * research - experimental research
 * observation - operational features
 * usecase - project based

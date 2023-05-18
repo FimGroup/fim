@@ -11,10 +11,11 @@ func (f FlowError) Error() string {
 	return fmt.Sprint(f.Key, "::", f.Message)
 }
 
-func (f FlowError) ErrorKey() string {
-	return f.Key
+type FlowStop struct {
+	Key     string
+	Message string
 }
 
-func (f FlowError) ErrorMessage() string {
-	return f.Message
+func (f FlowStop) Error() string {
+	return fmt.Sprint(f.Key, "::", f.Message)
 }
