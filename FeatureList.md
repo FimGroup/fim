@@ -45,8 +45,19 @@
         * break current flow: check_XXX_break - break current flow and respond error
             * General error is returned: FlowError
         * non-breaking: check_XXX - check and set error information in local parameter for branching logic
+* Lifecycle of requests
+    * Start of requests: user request or scheduled job
+    * Note: Events can be regarded as start of request or not. Recommended not to regard events as start point.
+    * Note2: Events types - standard event / delayed(scheduled) event
+    * Start point: source connector which is the entrypoint of user request/scheduled job/event listener(not
+      recommended)
 
 ### Core model
+
+#### Container
+
+* Contains all components for a specific tenant/application
+* Maintains lifecycle of application
 
 #### FlowModel
 
@@ -95,8 +106,8 @@ The following apis can be used in projects(for starting container and custom fun
 # 2. TODO List
 
 * Timeout for synchronous flow + timeout accumulation when processing each step of the flow
+    * Plus context
 * Data constraints: e.g. not empty/greater than/less than/etc.
-* Panic handling: avoid unexpected broken flow
 * version support - keep a single pipeline stuck to a specific version - can be used for upgrade
 * specific node - run specific connector/flow/etc. - e.g. accessing internet may require few nodes and this requires the
   flow to be able to run on those nodes other than any node in the cluster
@@ -105,12 +116,10 @@ The following apis can be used in projects(for starting container and custom fun
 * data mapping supports array item converter(mapping each element in the array)
 * support assign one FlowModel field to different local fields(but not vice versa, for the reason that only one value
   can be assigned and effective to one single field)
+* external shared service integration: configuration/service discovery/credential+cert/etc.
 
 Top priority
 
-1. Independent components(not nested existing in other component): container, pipeline, connector, FlowModel
-    * lifecycle of a request: user input/scheduling, event is not part of standalone lifecycle
-3. error handling & interrupt pipeline
 4. allow step to run independently from each other to support async invoking
 5. branch/loop
 
@@ -120,7 +129,7 @@ Top priority
 * clustering - support any form and type cluster
 * components - connector/functions/plugin/etc.
 * optimization - performance/operational
-* experience - feedback/improvement
+* experience - feedback/improvement/i18n/l10n
 * research - experimental research
 * observation - operational features
 * usecase - project based

@@ -11,7 +11,10 @@ func InitFn(container pluginapi.Container) error {
 		"@uuid":                       FnUUID,
 		"@set_current_unix_timestamp": FnSetCurrentUnixTimestamp,
 
-		"@check_empty_break": CheckEmptyBreak,
+		"@crypto_bcrypt": FnCryptoBcrypt,
+
+		"@check_empty_break":     CheckEmptyBreak,
+		"@check_not_blank_break": CheckNotBlankBreak,
 	}); err != nil {
 		return err
 	}
