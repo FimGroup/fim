@@ -38,6 +38,9 @@ type Pipeline struct {
 func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 	p.container = container
 
+	if len(p.Metadata.Version) == 0 {
+		return nil, errors.New("pipeline version is empty")
+	}
 	// parse pipeline definition and validate components
 	// 1. validate parameter
 	// currently not supported
