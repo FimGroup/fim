@@ -52,13 +52,15 @@
     * Start point: source connector which is the entrypoint of user request/scheduled job/event listener(not
       recommended)
 * Branching
-    * Branching feature is part of Flow to support dynamic step selection when processing request
+    * Branching feature is part of Flow/Pipeline to support dynamic step selection when processing request
     * Format of branching in a common programming language: if/switch-case/pattern-matching/etc.
-    * Introduce pattern-matching like operators to support branching in Flow definition
+    * Introduce pattern-matching like operators to support branching in Flow/Pipeline definition
     * Current supported branching operator:
-        * @case-true
-        * @case-false
-        * @case-equals: two parameters(maybe used together with @assign function)
+        * (flow/pipeline) @case-true
+        * (flow/pipeline) @case-false
+        * (flow) @case-equals: two parameters(maybe used together with @assign function)
+        * (flow/pipeline) @case-empty: parameter is null or empty string - ""
+        * (flow/pipeline) @case-non-empty: parameter is not empty string
 
 ### Core model
 
@@ -121,16 +123,22 @@ The following apis can be used in projects(for starting container and custom fun
   flow to be able to run on those nodes other than any node in the cluster
 * Add a resource check - e.g. check tcp binding used/conflict to avoid error
 * FlowModel/Object/protocols transformation
-* data mapping supports array item converter(mapping each element in the array)
 * support assign one FlowModel field to different local fields(but not vice versa, for the reason that only one value
   can be assigned and effective to one single field)
 * external shared service integration: configuration/service discovery/credential+cert/etc.
 * Detail and precise error information
+* standard event handling(send and entrypoint without mq vendor spec)
 
 Top priority
 
 4. allow step to run independently from each other to support async invoking
 5. loop
+6. data mapping supports array item converter(mapping each element in the array)
+
+Before 1st release version
+
+1. stable api and toml config definition
+2. clear running/error information
 
 # 3. Work groups
 

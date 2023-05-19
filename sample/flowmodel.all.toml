@@ -22,7 +22,28 @@
 "user/login/lastLoginTime[]" = "int"
 "user/risk/matrix[]/sub_matrix[]" = "float"
 
+"forum/forum_id" = "string"
+"forum/forum_name" = "string"
+"forum/forum_description" = "string"
+"forum/parent_forum_id" = "string"
+"forum/status" = "int"
+"forum/time_created" = "int"
+"forum/time_updated" = "int"
+
+"post/post_id" = "string"
+"post/parent_post_id" = "string"
+"post/post_type" = "int"
+"post/author_id" = "int"
+"post/forum_id" = "string"
+"post/title" = "string"
+"post/content" = "string"
+"post/status" = "int"
+"post/time_created" = "int"
+"post/time_updated" = "int"
+
 "debugging/database/affected_row_count" = "int"
 
 "database/user/password" = "string"
+"database/forum/forum_id" = "string"
+"database/forum/parent_forum_id" = "string"
 

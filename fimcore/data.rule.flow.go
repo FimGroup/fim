@@ -198,48 +198,72 @@ func (f *Flow) outConv() func(local, out *ModelInst) error {
 	}
 }
 
-func (f *Flow) FlowFn() func(global pluginapi.Model) error {
-	local := NewModelInst(f.dtd)
-	return func(global pluginapi.Model) error {
-		if err := f.inConv()(global.(*ModelInst), local); err != nil {
-			return err
-		}
-		// process flow
-		{
-			for _, fn := range f.fnList {
-				if err := fn(local); err != nil {
+func (f *Flow) FlowFn(casePreFn func(m pluginapi.Model) (bool, error)) func() func(global pluginapi.Model) error {
+	return func() func(global pluginapi.Model) error {
+		local := NewModelInst(f.dtd)
+		return func(global pluginapi.Model) error {
+			if casePreFn != nil {
+				val, err := casePreFn(global)
+				if err != nil {
 					return err
 				}
+				if !val {
+					return nil
+				}
 			}
-		}
-		if err := f.outConv()(local, global.(*ModelInst)); err != nil {
-			return err
-		}
 
-		return nil
+			if err := f.inConv()(global.(*ModelInst), local); err != nil {
+				return err
+			}
+			// process flow
+			{
+				for _, fn := range f.fnList {
+					if err := fn(local); err != nil {
+						return err
+					}
+				}
+			}
+			if err := f.outConv()(local, global.(*ModelInst)); err != nil {
+				return err
+			}
+
+			return nil
+		}
 	}
 }
 
-func (f *Flow) FlowFnNoResp() func(global pluginapi.Model) error {
-	local := NewModelInst(f.dtd)
-	return func(global pluginapi.Model) error {
-		if err := f.inConv()(global.(*ModelInst), local); err != nil {
-			return err
-		}
-		// process flow
-		{
-			for _, fn := range f.fnList {
-				if err := fn(local); err != nil {
+func (f *Flow) FlowFnNoResp(casePreFn func(m pluginapi.Model) (bool, error)) func() func(global pluginapi.Model) error {
+	return func() func(global pluginapi.Model) error {
+		local := NewModelInst(f.dtd)
+		return func(global pluginapi.Model) error {
+			if casePreFn != nil {
+				val, err := casePreFn(global)
+				if err != nil {
 					return err
 				}
+				if !val {
+					return nil
+				}
 			}
-		}
-		dummy := NewModelInst(f.dtd)
-		if err := f.outConv()(local, dummy); err != nil {
-			return err
-		}
 
-		return nil
+			if err := f.inConv()(global.(*ModelInst), local); err != nil {
+				return err
+			}
+			// process flow
+			{
+				for _, fn := range f.fnList {
+					if err := fn(local); err != nil {
+						return err
+					}
+				}
+			}
+			dummy := NewModelInst(f.dtd)
+			if err := f.outConv()(local, dummy); err != nil {
+				return err
+			}
+
+			return nil
+		}
 	}
 }
 
@@ -407,6 +431,42 @@ func (f *Flow) prepareCaseClause(fn string, params []interface{}) (func(fn plugi
 				val := m.GetFieldUnsafe(paths)
 				val2 := m.GetFieldUnsafe(paths2)
 				if val == val2 {
+					return fn(m)
+				} else {
+					return nil
+				}
+			}
+		}, nil
+	case "@case-empty":
+		return func(fn pluginapi.Fn) pluginapi.Fn {
+			return func(m basicapi.Model) error {
+				val := m.GetFieldUnsafe(paths)
+				if val == nil {
+					return fn(m)
+				}
+				v, ok := val.(string)
+				if !ok {
+					return errors.New("case-empty on non-string value:" + path)
+				}
+				if v == "" {
+					return fn(m)
+				} else {
+					return nil
+				}
+			}
+		}, nil
+	case "@case-non-empty":
+		return func(fn pluginapi.Fn) pluginapi.Fn {
+			return func(m basicapi.Model) error {
+				val := m.GetFieldUnsafe(paths)
+				if val == nil {
+					return nil
+				}
+				v, ok := val.(string)
+				if !ok {
+					return errors.New("case-non-empty on non-string value:" + path)
+				}
+				if v != "" {
 					return fn(m)
 				} else {
 					return nil

@@ -35,6 +35,7 @@ func StartForum() error {
 	if err := loadMerged(container, []string{
 		"scene.user.register.toml",
 		"scene.user.login.toml",
+		"scene.forums.new_forum.toml",
 	}); err != nil {
 		return err
 	}

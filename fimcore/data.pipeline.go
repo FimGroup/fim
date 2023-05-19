@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ThisIsSun/fim/fimapi/pluginapi"
+	"github.com/ThisIsSun/fim/fimapi/rule"
 )
 
 type Pipeline struct {
@@ -98,6 +99,17 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 				return nil, errors.New("no flow name defined in step")
 			}
 
+			// process case clause
+			var casePreFn func(m pluginapi.Model) (bool, error)
+			caseOperator, caseValue := findCaseClause(v)
+			if caseOperator != "" {
+				var err error
+				casePreFn, err = generateCasePreFn(caseOperator, caseValue)
+				if err != nil {
+					return nil, err
+				}
+			}
+
 			if strings.HasPrefix(flow, "&") {
 				// target connector
 				g, ok := container.registerTargetConnectorGen[flow]
@@ -134,12 +146,30 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 				if okS {
 					p.steps = append(p.steps, func() func(g pluginapi.Model) error {
 						return func(g pluginapi.Model) error {
+							if casePreFn != nil {
+								val, err := casePreFn(g)
+								if err != nil {
+									return err
+								}
+								if !val {
+									return nil
+								}
+							}
 							return flowInst(g, g)
 						}
 					})
 				} else {
 					p.steps = append(p.steps, func() func(g pluginapi.Model) error {
 						return func(g pluginapi.Model) error {
+							if casePreFn != nil {
+								val, err := casePreFn(g)
+								if err != nil {
+									return err
+								}
+								if !val {
+									return nil
+								}
+							}
 							return flowInst(g, NewModelInst(p.container.flowModel))
 						}
 					})
@@ -153,16 +183,89 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 
 				if okS {
 					// sync/invoke flow
-					p.steps = append(p.steps, f.FlowFn)
+					p.steps = append(p.steps, f.FlowFn(casePreFn))
 				} else {
 					// async/trigger event
-					p.steps = append(p.steps, f.FlowFnNoResp)
+					p.steps = append(p.steps, f.FlowFnNoResp(casePreFn))
 				}
 			}
 		}
 	}
 
 	return p, nil
+}
+
+func generateCasePreFn(operator string, value string) (func(m pluginapi.Model) (bool, error), error) {
+	paths := rule.SplitFullPath(value)
+	switch operator {
+	case "@case-true":
+		return func(m pluginapi.Model) (bool, error) {
+			val := m.GetFieldUnsafe(paths)
+			if val == nil {
+				return false, errors.New("case-true on nil value:" + value)
+			}
+			b, ok := val.(bool)
+			if !ok {
+				return false, errors.New("case-true on non-bool value:" + value)
+			}
+			return b, nil
+		}, nil
+	case "@case-false":
+		return func(m pluginapi.Model) (bool, error) {
+			val := m.GetFieldUnsafe(paths)
+			if val == nil {
+				return false, errors.New("case-false on nil value:" + value)
+			}
+			b, ok := val.(bool)
+			if !ok {
+				return false, errors.New("case-false on non-bool value:" + value)
+			}
+			return !b, nil
+		}, nil
+	case "@case-empty":
+		return func(m pluginapi.Model) (bool, error) {
+			val := m.GetFieldUnsafe(paths)
+			if val == nil {
+				return true, nil
+			}
+			v, ok := val.(string)
+			if !ok {
+				return false, errors.New("case-empty on non-string value:" + value)
+			}
+			if v == "" {
+				return true, nil
+			} else {
+				return false, nil
+			}
+		}, nil
+	case "@case-non-empty":
+		return func(m pluginapi.Model) (bool, error) {
+			val := m.GetFieldUnsafe(paths)
+			if val == nil {
+				return false, nil
+			}
+			v, ok := val.(string)
+			if !ok {
+				return false, errors.New("case-non-empty on non-string value:" + value)
+			}
+			if v != "" {
+				return true, nil
+			} else {
+				return false, nil
+			}
+		}, nil
+	default:
+		return nil, errors.New("unknown case clause:" + operator)
+	}
+}
+
+func findCaseClause(v map[string]string) (string, string) {
+	for op, val := range v {
+		if strings.HasPrefix(op, "@case-") {
+			return op, val
+		}
+	}
+	return "", ""
 }
 
 func (p *Pipeline) toPipelineFn() pluginapi.PipelineProcess {
