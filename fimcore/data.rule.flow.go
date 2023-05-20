@@ -2,6 +2,7 @@ package fimcore
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 
 	"github.com/ThisIsSun/fim/fimapi/basicapi"
@@ -430,7 +431,27 @@ func (f *Flow) prepareCaseClause(fn string, params []interface{}) (func(fn plugi
 			return func(m basicapi.Model) error {
 				val := m.GetFieldUnsafe(paths)
 				val2 := m.GetFieldUnsafe(paths2)
-				if val == val2 {
+				if compareInterfaceValue(val, val2) {
+					return fn(m)
+				} else {
+					return nil
+				}
+			}
+		}, nil
+	case "@case-not-equals":
+		if len(params) != 2 {
+			return nil, errors.New("@case-equals requires 2 parameters")
+		}
+		path2, ok := params[1].(string)
+		if !ok {
+			return nil, errors.New("case clause parameter should be a string:" + fn)
+		}
+		paths2 := rule.SplitFullPath(path2)
+		return func(fn pluginapi.Fn) pluginapi.Fn {
+			return func(m basicapi.Model) error {
+				val := m.GetFieldUnsafe(paths)
+				val2 := m.GetFieldUnsafe(paths2)
+				if !compareInterfaceValue(val, val2) {
 					return fn(m)
 				} else {
 					return nil
@@ -476,4 +497,42 @@ func (f *Flow) prepareCaseClause(fn string, params []interface{}) (func(fn plugi
 	default:
 		return nil, errors.New("unknown case clause:" + fn)
 	}
+}
+
+func compareInterfaceValue(val interface{}, val2 interface{}) bool {
+	// for int type, convert all to int64
+	//FIXME need better solution
+	isValInt := false
+	isVal2Int := false
+	switch val.(type) {
+	case int:
+		isValInt = true
+	case int8:
+		isValInt = true
+	case int16:
+		isValInt = true
+	case int32:
+		isValInt = true
+	case int64:
+		isValInt = true
+	}
+	switch val2.(type) {
+	case int:
+		isVal2Int = true
+	case int8:
+		isVal2Int = true
+	case int16:
+		isVal2Int = true
+	case int32:
+		isVal2Int = true
+	case int64:
+		isVal2Int = true
+	}
+	if isValInt && isVal2Int {
+		return reflect.ValueOf(val).Int() == reflect.ValueOf(val2).Int()
+	}
+
+	// for other types, remain the same
+	//FIXME for float32/float64, still require conversion
+	return val == val2
 }
