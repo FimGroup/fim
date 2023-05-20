@@ -148,6 +148,7 @@ Before 1st release version
 1. stable api and toml config definition
 2. clear running/error information
 3. Event driven support
+4. easy to read document
 
 # 3. Work groups
 
@@ -162,4 +163,20 @@ Before 1st release version
 * security - security
 * interoperability - java/dotnet agent and java/dotnet/etc. service integration
 * tooling - debugging/profiling/logging/etc.
+
+# A. Version planning
+
+* version format: x.y.z-type
+    * could without -type
+* git tag version: vx.y.z-type
+* -type enums:
+    * -dev
+    * -alphaN where N is a number from 0 to Int.Max
+    * -betaN where N is a number from 0 to Int.Max
+    * -rcN where N is a number from 0 to Int.Max
+* number format of x/y/z
+    * 1st number - length of the following numbers - e.g. 1-1x, 2-2xx, 3-3xxx
+    * single number should not be used unless there will not any version number smaller than it
+        * e.g. if 0.0.1 and 0.0.2 are used, the next number should start from 0.0.3 or 0.0.3xxx
+    * this aims to support literal sort other than semantic versioning
 
