@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ThisIsSun/fim/fimapi/pluginapi"
-	"github.com/ThisIsSun/fim/fimapi/rule"
+	"github.com/FimGroup/fim/fimapi/pluginapi"
+	"github.com/FimGroup/fim/fimapi/rule"
 )
 
 func FnPrintObject(params []interface{}) (pluginapi.Fn, error) {

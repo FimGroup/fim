@@ -1,7 +1,7 @@
 package target
 
 import (
-	"github.com/ThisIsSun/fim/fimapi/pluginapi"
+	"github.com/FimGroup/fim/fimapi/pluginapi"
 )
 
 func InitTarget(container pluginapi.Container) error {

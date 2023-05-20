@@ -5,8 +5,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/ThisIsSun/fim/fimapi/pluginapi"
-	"github.com/ThisIsSun/fim/fimapi/rule"
+	"github.com/FimGroup/fim/fimapi/pluginapi"
+	"github.com/FimGroup/fim/fimapi/rule"
 )
 
 type Pipeline struct {

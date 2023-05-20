@@ -1,6 +1,6 @@
 package pluginapi
 
-import "github.com/ThisIsSun/fim/fimapi/basicapi"
+import "github.com/FimGroup/fim/fimapi/basicapi"
 
 type Fn = basicapi.Fn
 

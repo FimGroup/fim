@@ -1,4 +1,4 @@
-module github.com/ThisIsSun/fim
+module github.com/FimGroup/fim
 
 go 1.20
 

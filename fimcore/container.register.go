@@ -3,8 +3,8 @@ package fimcore
 import (
 	"log"
 
-	"github.com/ThisIsSun/fim/fimapi/basicapi"
-	"github.com/ThisIsSun/fim/fimapi/pluginapi"
+	"github.com/FimGroup/fim/fimapi/basicapi"
+	"github.com/FimGroup/fim/fimapi/pluginapi"
 )
 
 func NewUseContainer() basicapi.BasicContainer {

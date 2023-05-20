@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/ThisIsSun/fim/fimapi/pluginapi"
+	"github.com/FimGroup/fim/fimapi/pluginapi"
 )
 
 func (c *ContainerInst) RegisterBuiltinFn(methodName string, fg pluginapi.FnGen) error {

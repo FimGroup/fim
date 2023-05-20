@@ -8,7 +8,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/ThisIsSun/fim/sample"
+	"github.com/FimGroup/fim/sample"
 )
 
 //go:embed version

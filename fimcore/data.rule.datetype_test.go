@@ -3,7 +3,7 @@ package fimcore
 import (
 	"testing"
 
-	"github.com/ThisIsSun/fim/fimapi/pluginapi"
+	"github.com/FimGroup/fim/fimapi/pluginapi"
 )
 
 var flowModelFileContent = `

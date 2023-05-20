@@ -3,11 +3,11 @@ package components
 import (
 	"errors"
 
-	"github.com/ThisIsSun/fim/components/internal/connector/source"
-	"github.com/ThisIsSun/fim/components/internal/connector/target"
-	"github.com/ThisIsSun/fim/components/internal/fn"
-	"github.com/ThisIsSun/fim/fimapi/basicapi"
-	"github.com/ThisIsSun/fim/fimapi/pluginapi"
+	"github.com/FimGroup/fim/components/internal/connector/source"
+	"github.com/FimGroup/fim/components/internal/connector/target"
+	"github.com/FimGroup/fim/components/internal/fn"
+	"github.com/FimGroup/fim/fimapi/basicapi"
+	"github.com/FimGroup/fim/fimapi/pluginapi"
 )
 
 func InitComponent(c basicapi.BasicContainer) error {

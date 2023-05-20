@@ -1,7 +1,7 @@
 package fn
 
 import (
-	"github.com/ThisIsSun/fim/fimapi/pluginapi"
+	"github.com/FimGroup/fim/fimapi/pluginapi"
 )
 
 func InitFn(container pluginapi.Container) error {

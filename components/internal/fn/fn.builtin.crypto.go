@@ -5,9 +5,9 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/ThisIsSun/fim/fimapi/basicapi"
-	"github.com/ThisIsSun/fim/fimapi/pluginapi"
-	"github.com/ThisIsSun/fim/fimapi/rule"
+	"github.com/FimGroup/fim/fimapi/basicapi"
+	"github.com/FimGroup/fim/fimapi/pluginapi"
+	"github.com/FimGroup/fim/fimapi/rule"
 )
 
 func FnCryptoBcrypt(params []interface{}) (pluginapi.Fn, error) {

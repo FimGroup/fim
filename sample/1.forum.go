@@ -4,9 +4,9 @@ import (
 	"embed"
 	"log"
 
-	"github.com/ThisIsSun/fim/components"
-	"github.com/ThisIsSun/fim/fimapi/basicapi"
-	"github.com/ThisIsSun/fim/fimcore"
+	"github.com/FimGroup/fim/components"
+	"github.com/FimGroup/fim/fimapi/basicapi"
+	"github.com/FimGroup/fim/fimcore"
 )
 
 //go:embed flowmodel.*.toml
