@@ -1,28 +1,152 @@
 [pipelines.posts_new_post]
 metadata.version = "1.0"
+parameter.local_variables = [
+    { "temp/local/parent_post_id" = "string" }
+]
 pipeline.source_connectors = [
     { "@connector" = "http_rest", "@mapping" = "http_inst", "http.listen" = "0.0.0.0:8081", "http.method" = "post", "http.path" = "/posts/new" }
 ]
 pipeline.steps = [
     { "@flow" = "new_post_validation" },
+    # query user and check user exists
     { "@flow" = "&database_postgres", "@mapping" = "query_user", "database.connect_string" = "postgres://admin:admin@192.168.1.111:25432/forum", "database.operation" = "query", "database.sql" = """
-        select user_id, password from \"user\" where username = $1""" },
-    { "@flow" = "login_user_existing_check" },
-    { "@flow" = "login_check_password" },
+        select user_id from \"user\" where user_id = $1""" },
+    { "@flow" = "new_post_check_user_exists" },
+    # query forum and check forum exists
+    { "@flow" = "&database_postgres", "@mapping" = "query_forum", "database.connect_string" = "postgres://admin:admin@192.168.1.111:25432/forum", "database.operation" = "query", "database.sql" = """
+        select forum_id from \"forums\" where forum_id = $1""" },
+    { "@flow" = "new_post_check_forum_exists" },
+    # if parent post exists, query parent post and check parent post exists and type
+    { "@case-non-empty" = "post/parent_post_id", "@flow" = "&database_postgres", "@mapping" = "query_parent_post", "database.connect_string" = "postgres://admin:admin@192.168.1.111:25432/forum", "database.operation" = "query", "database.sql" = """
+        select post_id, post_type from \"posts\" where post_id = $1""" },
+    { "@case-non-empty" = "post/parent_post_id", "@flow" = "new_post_check_parent_post" },
+    # prepare new post data
+    { "@flow" = "new_post_prepare_post_data" },
+    # persist data
+    { "@flow" = "&database_postgres", "@mapping" = "post_insert", "database.connect_string" = "postgres://admin:admin@192.168.1.111:25432/forum", "database.operation" = "exec", "database.sql" = """
+        insert into posts (post_id,
+                   parent_post_id,
+                   post_type,
+                   author_id,
+                   forum_id,
+                   title,
+                   content,
+                   status,
+                   time_created,
+                   time_updated)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);""" },
 ]
 [pipelines.posts_new_post.connector_mapping.http_inst]
 req = [
-    ["user/username", "http/body/username"],
-    ["user/password", "http/body/password"],
+    ["user/user_id", "http/body/author_id"],
+    ["forum/forum_id", "http/body/forum_id"],
+    ["post/parent_post_id", "http/body/parent_post_id"],
+    ["post/title", "http/body/title"],
+    ["post/content", "http/body/content"],
 ]
 res = [
-    ["user/user_id", "http/body/user_id"],
+    ["post/post_id", "http/body/post_id"],
+]
+err_simple = [
+    { "error_key" = "check_missing_parameter", "error_message" = "http/body/message", "http/status" = "400" },
+    { "error_key" = "check_parameter_available", "error_message" = "http/body/message", "http/status" = "400" },
+]
+[pipelines.posts_new_post.connector_mapping.query_user]
+req = [
+    ["user/user_id", "sql.args.0"],
+]
+res = [
+    ["database/user/user_id", "sql.result.0"],
+]
+[pipelines.posts_new_post.connector_mapping.query_forum]
+req = [
+    ["forum/forum_id", "sql.args.0"],
+]
+res = [
+    ["database/forum/forum_id", "sql.result.0"],
+]
+[pipelines.posts_new_post.connector_mapping.query_parent_post]
+req = [
+    ["post/parent_post_id", "sql.args.0"],
+]
+res = [
+    ["database/post/parent_post_id", "sql.result.0"],
+    ["database/post/post_type", "sql.result.1"],
+]
+[pipelines.posts_new_post.connector_mapping.post_insert]
+req = [
+    ["post/post_id", "sql.args.0"],
+    ["post/parent_post_id", "sql.args.1"],
+    ["post/post_type", "sql.args.2"],
+    ["user/user_id", "sql.args.3"],
+    ["forum/forum_id", "sql.args.4"],
+    ["post/title", "sql.args.5"],
+    ["post/content", "sql.args.6"],
+    ["post/status", "sql.args.7"],
+    ["post/time_created", "sql.args.8"],
+    ["post/time_updated", "sql.args.9"],
+]
+res = [
+    ["debugging/database/affected_row_count", "sql.affected_row_count"],
+]
+
+[flows.new_post_prepare_post_data]
+in = [
+    ["post/parent_post_id", "parent_post_id"],
+]
+out = [
+    ["post_id", "post/post_id"],
+    ["status", "post/status"],
+    ["time_created", "post/time_created"],
+    ["time_updated", "post/time_updated"],
+    ["post_type", "post/post_type"],
+]
+flow.steps = [
+    { "@uuid" = ["post_id"] },
+    { "@assign" = ["status", 0] },
+    { "@set_current_unix_timestamp" = ["time_created"] },
+    { "@set_current_unix_timestamp" = ["time_updated"] },
+    { "@case-empty" = ["parent_post_id"], "@assign" = ["post_type", 1] },
+    { "@case-non-empty" = ["parent_post_id"], "@assign" = ["post_type", 2] },
+]
+
+[flows.new_post_check_parent_post]
+in = [
+    ["database/post/parent_post_id", "parent_post_id"],
+    ["database/post/post_type", "post_type"],
+]
+flow.steps = [
+    { "@check_not_blank_break" = ["parent_post_id", "check_parameter_available", "parent post is not found"] },
+    { "@assign" = ["type_topic", 1] },
+    { "@case-not-equals" = ["post_type", "type_topic"], "@check_always_break" = ["check_parameter_available", "parent post is not topic"] },
+]
+
+[flows.new_post_check_forum_exists]
+in = [
+    ["database/forum/forum_id", "forum_id"],
+]
+flow.steps = [
+    { "@check_not_blank_break" = ["forum_id", "check_parameter_available", "forum is not found"] },
+]
+
+[flows.new_post_check_user_exists]
+in = [
+    ["database/user/user_id", "user_id"],
+]
+flow.steps = [
+    { "@check_not_blank_break" = ["user_id", "check_parameter_available", "user is not found"] },
 ]
 
 [flows.new_post_validation]
 in = [
     ["user/user_id", "user_id"],
+    ["forum/forum_id", "forum_id"],
+    ["post/title", "title"],
+    ["post/content", "content"],
 ]
 flow.steps = [
-    { "@check_not_blank_break" = ["user_id", "check_missing_user", "user not found"] }
+    { "@check_not_blank_break" = ["user_id", "check_missing_parameter", "user_id is missing"] },
+    { "@check_not_blank_break" = ["forum_id", "check_missing_parameter", "forum_id is missing"] },
+    { "@check_not_blank_break" = ["title", "check_missing_parameter", "title is missing"] },
+    { "@check_not_blank_break" = ["content", "check_missing_parameter", "content is missing"] },
 ]

@@ -11,6 +11,11 @@ metadata.version = "1.0"
 #parameter.pre_outputs = [
 #    { "@remove" = "user" }
 #]
+## local variables defines variables used within the pipeline
+## It will not be exposed to the FlowModel(shared)
+#parameter.local_variables = [
+#    { "temp/local/parent_post_id" = "string" }
+#]
 pipeline.source_connectors = [
     # Source connector will accept inbound traffic and convert it to FlowModel then invoke the following pipeline steps
     # All the connectors here will trigger the same pipeline, which means one pipeline will allow several source connectors

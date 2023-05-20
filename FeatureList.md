@@ -58,7 +58,8 @@
     * Current supported branching operator:
         * (flow/pipeline) @case-true
         * (flow/pipeline) @case-false
-        * (flow) @case-equals: two parameters(maybe used together with @assign function)
+        * (flow) @case-equals: two parameters(may use together with @assign function)
+        * (flow) @case-not-equals: two parameters(may use together with @assign function)
         * (flow/pipeline) @case-empty: parameter is null or empty string - ""
         * (flow/pipeline) @case-non-empty: parameter is not empty string
 
@@ -128,6 +129,9 @@ The following apis can be used in projects(for starting container and custom fun
 * external shared service integration: configuration/service discovery/credential+cert/etc.
 * Detail and precise error information
 * standard event handling(send and entrypoint without mq vendor spec)
+* special connector like zookeeper client
+* compatible to design patterns, e.g. soa/ddd/etc.
+* unit test on each piece of config
 
 Top priority
 

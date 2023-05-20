@@ -43,7 +43,10 @@
 
 "debugging/database/affected_row_count" = "int"
 
+"database/user/user_id" = "string"
 "database/user/password" = "string"
 "database/forum/forum_id" = "string"
 "database/forum/parent_forum_id" = "string"
+"database/post/parent_post_id" = "string"
+"database/post/post_type" = "int"
 

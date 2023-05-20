@@ -14,9 +14,10 @@ type Pipeline struct {
 		Version string `toml:"version"`
 	} `toml:"metadata"`
 	Parameter struct {
-		Inputs     []string            `toml:"inputs"`
-		PreOutputs []map[string]string `toml:"pre_outputs"`
-		Outputs    []string            `toml:"outputs"`
+		Inputs        []string            `toml:"inputs"`
+		PreOutputs    []map[string]string `toml:"pre_outputs"`
+		Outputs       []string            `toml:"outputs"`
+		LocalVariable []map[string]string `toml:"local_variables"`
 	} `toml:"parameter"`
 	Pipeline struct {
 		Steps            []map[string]string `toml:"steps"`
