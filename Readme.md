@@ -1,5 +1,9 @@
 # 1. Features
 
+## 1.1 Overview
+
+## 1.2 Detail Features
+
 * Two toml definitions: FlowModel(shared models) and Flow
 * Data Types: primitives and compound data type
     * Primitives: string, int, bool, float
@@ -143,6 +147,7 @@ Before 1st release version
 
 1. stable api and toml config definition
 2. clear running/error information
+3. Event driven support
 
 # 3. Work groups
 
