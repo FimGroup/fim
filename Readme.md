@@ -2,6 +2,17 @@
 
 ## 1.1 Overview
 
+`Make it easy and flexible to integration business logic and external integrations.`
+
+And
+
+`Quick implementation of a prototype or even a production ready application.`
+
+* Using configurable flow file as preference rather than API with coding
+    * Config file format: Toml
+    * [Format definition](DocFormatDefinition.md)
+* Provide flexible APIs to be able to extend the functionalities for complex business and on-demand requirements
+
 ## 1.2 Detail Features
 
 * Two toml definitions: FlowModel(shared models) and Flow
@@ -136,19 +147,26 @@ The following apis can be used in projects(for starting container and custom fun
 * special connector like zookeeper client
 * compatible to design patterns, e.g. soa/ddd/etc.
 * unit test on each piece of config
+* new connector: imap/pop3/smtp, file, scheduling
+* platform specific agent: jee/dotnet/etc...
+* metrics/tracing/etc...
+* DAG flow
+* Transaction support
 
 Top priority
 
 4. allow step to run independently from each other to support async invoking
 5. loop
 6. data mapping supports array item converter(mapping each element in the array)
+    * top level array, e.g. top level struct is array in json
+7. entry point - http(done)/messaging/scheduling
 
 Before 1st release version
 
 1. stable api and toml config definition
+    * easy to read document
 2. clear running/error information
-3. Event driven support
-4. easy to read document
+3. Event driven support and path decision(sync and event)
 
 # 3. Work groups
 
@@ -162,7 +180,7 @@ Before 1st release version
 * usecase - project based
 * security - security
 * interoperability - java/dotnet agent and java/dotnet/etc. service integration
-* tooling - debugging/profiling/logging/etc.
+* tooling - IDE/debugging/profiling/logging/etc.
 
 # A. Version planning
 
