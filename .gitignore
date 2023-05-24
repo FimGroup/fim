@@ -2,3 +2,7 @@
 
 # binaries
 /fim.exe
+*.exe
+
+# test configs
+test_*
