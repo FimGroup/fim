@@ -4,72 +4,107 @@ parameter.local_variables = [
     { "temp/local/parent_post_id" = "string" }
 ]
 pipeline.source_connectors = [
-    { "@connector" = "http_rest", "@mapping" = "http_inst", "http.listen" = "0.0.0.0:8081", "http.method" = "post", "http.path" = "/posts/new" }
+    [
+        ["@connector", "http_rest"],
+        ["@mapping", "http_inst"],
+        ["http.listen", "0.0.0.0:8081"],
+        ["http.method", "post"],
+        ["http.path", "/posts/new"],
+    ],
 ]
 pipeline.steps = [
-    { "@flow" = "new_post_validation" },
+    [
+        ["@flow", "new_post_validation"],
+    ],
     # query user and check user exists
-    { "@flow" = "&database_postgres", "@mapping" = "query_user", "database.connect_string" = "postgres://admin:admin@192.168.1.111:25432/forum", "database.operation" = "query", "database.sql" = """
-        select user_id from \"user\" where user_id = $1""" },
-    { "@flow" = "new_post_check_user_exists" },
+    [
+        ["@flow", "&database_postgres"],
+        ["@mapping", "query_user"],
+        ["database.connect_string", "postgres://admin:admin@192.168.1.111:25432/forum"],
+        ["database.operation", "query"],
+        ["database.sql", "select user_id from \"user\" where user_id = $1"],
+    ],
+    [
+        ["@flow", "new_post_check_user_exists"],
+    ],
     # query forum and check forum exists
-    { "@flow" = "&database_postgres", "@mapping" = "query_forum", "database.connect_string" = "postgres://admin:admin@192.168.1.111:25432/forum", "database.operation" = "query", "database.sql" = """
-        select forum_id from \"forums\" where forum_id = $1""" },
-    { "@flow" = "new_post_check_forum_exists" },
+    [
+        ["@flow", "&database_postgres"],
+        ["@mapping", "query_forum"],
+        ["database.connect_string", "postgres://admin:admin@192.168.1.111:25432/forum"],
+        ["database.operation", "query"],
+        ["database.sql", "select forum_id from \"forums\" where forum_id = $1"],
+    ],
+    [
+        ["@flow", "new_post_check_forum_exists"],
+    ],
     # if parent post exists, query parent post and check parent post exists and type
-    { "@case-non-empty" = "post/parent_post_id", "@flow" = "&database_postgres", "@mapping" = "query_parent_post", "database.connect_string" = "postgres://admin:admin@192.168.1.111:25432/forum", "database.operation" = "query", "database.sql" = """
-        select post_id, post_type from \"posts\" where post_id = $1""" },
-    { "@case-non-empty" = "post/parent_post_id", "@flow" = "new_post_check_parent_post" },
+    [
+        ["@case-non-empty", "post/parent_post_id"],
+        ["@flow", "&database_postgres"],
+        ["@mapping", "query_parent_post"],
+        ["database.connect_string", "postgres://admin:admin@192.168.1.111:25432/forum"],
+        ["database.operation", "query"],
+        ["database.sql", "select post_id, post_type from \"posts\" where post_id = $1"],
+    ],
+    [
+        ["@case-non-empty", "post/parent_post_id"],
+        ["@flow", "new_post_check_parent_post"],
+    ],
     # prepare new post data
-    { "@flow" = "new_post_prepare_post_data" },
+    [
+        ["@flow", "new_post_prepare_post_data"],
+    ],
     # persist data
-    { "@flow" = "&database_postgres", "@mapping" = "post_insert", "database.connect_string" = "postgres://admin:admin@192.168.1.111:25432/forum", "database.operation" = "exec", "database.sql" = """
-        insert into posts (post_id,
-                   parent_post_id,
-                   post_type,
-                   author_id,
-                   forum_id,
-                   title,
-                   content,
-                   status,
-                   time_created,
-                   time_updated)
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);""" },
+    [
+        ["@flow", "&database_postgres"],
+        ["@mapping", "post_insert"],
+        ["database.connect_string", "postgres://admin:admin@192.168.1.111:25432/forum"],
+        ["database.operation", "exec"],
+        ["database.sql", """
+            insert into posts (post_id,
+                       parent_post_id,
+                       post_type,
+                       author_id,
+                       forum_id,
+                       title,
+                       content,
+                       status,
+                       time_created,
+                       time_updated)
+            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);"""],
+    ],
 ]
-[pipelines.posts_new_post.connector_mapping.http_inst]
-req = [
+connector_mapping.http_inst.req = [
     ["user/user_id", "http/body/author_id"],
     ["forum/forum_id", "http/body/forum_id"],
     ["post/parent_post_id", "http/body/parent_post_id"],
     ["post/title", "http/body/title"],
     ["post/content", "http/body/content"],
 ]
-res = [
+connector_mapping.http_inst.res = [
     ["post/post_id", "http/body/post_id"],
 ]
-err_simple = [
+connector_mapping.http_inst.err_simple = [
     { "error_key" = "check_missing_parameter", "error_message" = "http/body/message", "http/status" = "400" },
     { "error_key" = "check_parameter_available", "error_message" = "http/body/message", "http/status" = "400" },
 ]
-[pipelines.posts_new_post.connector_mapping.query_user]
-req = [
+connector_mapping.query_user.req = [
     ["user/user_id", "sql.args.0"],
 ]
-res = [
+connector_mapping.query_user.res = [
     ["database/user/user_id", "sql.result.0"],
 ]
-[pipelines.posts_new_post.connector_mapping.query_forum]
-req = [
+connector_mapping.query_forum.req = [
     ["forum/forum_id", "sql.args.0"],
 ]
-res = [
+connector_mapping.query_forum.res = [
     ["database/forum/forum_id", "sql.result.0"],
 ]
-[pipelines.posts_new_post.connector_mapping.query_parent_post]
-req = [
+connector_mapping.query_parent_post.req = [
     ["post/parent_post_id", "sql.args.0"],
 ]
-res = [
+connector_mapping.query_parent_post.res = [
     ["database/post/parent_post_id", "sql.result.0"],
     ["database/post/post_type", "sql.result.1"],
 ]

@@ -20,8 +20,8 @@ type Pipeline struct {
 		LocalVariable []map[string]string `toml:"local_variables"`
 	} `toml:"parameter"`
 	Pipeline struct {
-		Steps            []map[string]string `toml:"steps"`
-		SourceConnectors []map[string]string `toml:"source_connectors"`
+		Steps            [][][]interface{} `toml:"steps"`
+		SourceConnectors [][][]interface{} `toml:"source_connectors"`
 	} `toml:"pipeline"`
 	ConnectorMapping map[string]struct {
 		Req       [][]string          `toml:"req"`
@@ -48,7 +48,35 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 	// currently not supported
 	// 2. validate pipeline.source_connectors
 	{
+		// build source connector maps
+		var sourceConnectorMapLists []map[string]string
 		for _, v := range p.Pipeline.SourceConnectors {
+			m := map[string]string{}
+			for _, vv := range v {
+				if len(vv) != 2 {
+					return nil, errors.New("not k-v pair in source connector definition")
+				}
+				var k, v string
+				if sv, ok := vv[0].(string); !ok {
+					return nil, errors.New("not string key in source connector pair")
+				} else {
+					k = sv
+				}
+				if sv, ok := vv[1].(string); !ok {
+					return nil, errors.New("not string value in source connector pair")
+				} else {
+					v = sv
+				}
+				if _, ok := m[k]; ok {
+					return nil, errors.New("duplicated key in source connector definition")
+				} else {
+					m[k] = v
+				}
+			}
+			sourceConnectorMapLists = append(sourceConnectorMapLists, m)
+		}
+		// do source connector
+		for _, v := range sourceConnectorMapLists {
 			connectorName, ok := v["@connector"]
 			if !ok {
 				return nil, errors.New("no @connector defined")
@@ -86,7 +114,35 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 	}
 	// 3. validate pipeline.steps
 	{
+		// build pipeline.steps maps
+		var stepsMapList []map[string]string
 		for _, v := range p.Pipeline.Steps {
+			m := map[string]string{}
+			for _, vv := range v {
+				if len(vv) != 2 {
+					return nil, errors.New("not k-v pair in pipeline.steps definition")
+				}
+				var k, v string
+				if sv, ok := vv[0].(string); !ok {
+					return nil, errors.New("not string key in pipeline.steps pair")
+				} else {
+					k = sv
+				}
+				if sv, ok := vv[1].(string); !ok {
+					return nil, errors.New("not string value in pipeline.steps pair")
+				} else {
+					v = sv
+				}
+				if _, ok := m[k]; ok {
+					return nil, errors.New("duplicated key in pipeline.steps definition")
+				} else {
+					m[k] = v
+				}
+			}
+			stepsMapList = append(stepsMapList, m)
+		}
+		// do pipeline.steps
+		for _, v := range stepsMapList {
 			flowS, okS := v["@flow"]
 			flowA, okA := v["#flow"]
 			var flow string

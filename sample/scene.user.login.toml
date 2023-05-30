@@ -1,33 +1,48 @@
 [pipelines.user_login]
 metadata.version = "1.0"
 pipeline.source_connectors = [
-    { "@connector" = "http_rest", "@mapping" = "http_inst", "http.listen" = "0.0.0.0:8081", "http.method" = "post", "http.path" = "/user/login" }
+    [
+        ["@connector", "http_rest"],
+        ["@mapping", "http_inst"],
+        ["http.listen", "0.0.0.0:8081"],
+        ["http.method", "post"],
+        ["http.path", "/user/login"],
+    ],
 ]
 pipeline.steps = [
-    { "@flow" = "login_validation" },
-    { "@flow" = "&database_postgres", "@mapping" = "query_user", "database.connect_string" = "postgres://admin:admin@192.168.1.111:25432/forum", "database.operation" = "query", "database.sql" = """
-        select user_id, password from \"user\" where username = $1""" },
-    { "@flow" = "login_user_existing_check" },
-    { "@flow" = "login_check_password" },
+    [
+        ["@flow", "login_validation"],
+    ],
+    [
+        ["@flow", "&database_postgres"],
+        ["@mapping", "query_user"],
+        ["database.connect_string", "postgres://admin:admin@192.168.1.111:25432/forum"],
+        ["database.operation", "query"],
+        ["database.sql", "select user_id, password from \"user\" where username = $1"],
+    ],
+    [
+        ["@flow", "login_user_existing_check"],
+    ],
+    [
+        ["@flow", "login_check_password"],
+    ],
 ]
-[pipelines.user_login.connector_mapping.http_inst]
-req = [
+connector_mapping.http_inst.req = [
     ["user/username", "http/body/username"],
     ["user/password", "http/body/password"],
 ]
-res = [
+connector_mapping.http_inst.res = [
     ["user/user_id", "http/body/user_id"],
 ]
-err_simple = [
+connector_mapping.http_inst.err_simple = [
     { "error_key" = "check_missing_user", "error_message" = "http/body/message", "http/status" = "404" },
     { "error_key" = "check_mismatch_password", "error_message" = "http/body/message", "http/status" = "401" },
     { "error_key" = "check_parameter_failed", "error_message" = "http/body/message", "http/status" = "400" },
 ]
-[pipelines.user_login.connector_mapping.query_user]
-req = [
+connector_mapping.query_user.req = [
     ["user/username", "sql.args.0"],
 ]
-res = [
+connector_mapping.query_user.res = [
     ["user/user_id", "sql.result.0"],
     ["database/user/password", "sql.result.1"],
 ]
