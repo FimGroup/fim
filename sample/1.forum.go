@@ -20,6 +20,14 @@ func StartForum() error {
 	if err := components.InitComponent(container); err != nil {
 		return err
 	}
+	settableConfigureManager := fimcore.NewSettableConfigureManager()
+	settableConfigureManager.SetConfigure("forum_database", "postgres://admin:admin@192.168.1.111:25432/forum")
+	if err := loadConfigureManager(container, []basicapi.ConfigureManager{
+		fimcore.NewEnvConfigureManager(),
+		settableConfigureManager,
+	}); err != nil {
+		return err
+	}
 	if err := loadCustomFn(container, map[string]basicapi.FnGen{
 		"#print_obj": FnPrintObject,
 		"#panic":     FnPanic,
@@ -45,6 +53,15 @@ func StartForum() error {
 		return err
 	}
 
+	return nil
+}
+
+func loadConfigureManager(container basicapi.BasicContainer, managers []basicapi.ConfigureManager) error {
+	for _, v := range managers {
+		if err := container.AddConfigureManager(v); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

@@ -20,7 +20,7 @@ pipeline.steps = [
     [
         ["@flow", "&database_postgres"],
         ["@mapping", "query_user"],
-        ["database.connect_string", "postgres://admin:admin@192.168.1.111:25432/forum"],
+        ["database.connect_string", "configure-static://forum_database"],
         ["database.operation", "query"],
         ["database.sql", "select user_id from \"user\" where user_id = $1"],
     ],
@@ -31,7 +31,7 @@ pipeline.steps = [
     [
         ["@flow", "&database_postgres"],
         ["@mapping", "query_forum"],
-        ["database.connect_string", "postgres://admin:admin@192.168.1.111:25432/forum"],
+        ["database.connect_string", "configure-static://forum_database"],
         ["database.operation", "query"],
         ["database.sql", "select forum_id from \"forums\" where forum_id = $1"],
     ],
@@ -43,7 +43,7 @@ pipeline.steps = [
         ["@case-non-empty", "post/parent_post_id"],
         ["@flow", "&database_postgres"],
         ["@mapping", "query_parent_post"],
-        ["database.connect_string", "postgres://admin:admin@192.168.1.111:25432/forum"],
+        ["database.connect_string", "configure-static://forum_database"],
         ["database.operation", "query"],
         ["database.sql", "select post_id, post_type from \"posts\" where post_id = $1"],
     ],
@@ -59,7 +59,7 @@ pipeline.steps = [
     [
         ["@flow", "&database_postgres"],
         ["@mapping", "post_insert"],
-        ["database.connect_string", "postgres://admin:admin@192.168.1.111:25432/forum"],
+        ["database.connect_string", "configure-static://forum_database"],
         ["database.operation", "exec"],
         ["database.sql", """
             insert into posts (post_id,

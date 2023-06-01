@@ -17,7 +17,7 @@ pipeline.steps = [
         ["@case-non-empty", "forum/parent_forum_id"],
         ["@flow", "&database_postgres"],
         ["@mapping", "query_forum"],
-        ["database.connect_string", "postgres://admin:admin@192.168.1.111:25432/forum"],
+        ["database.connect_string", "configure-static://forum_database"],
         ["database.operation", "query"],
         ["database.sql", "select forum_id from \"forums\" where forum_id = $1"],
     ],
@@ -31,7 +31,7 @@ pipeline.steps = [
     [
         ["@flow", "&database_postgres"],
         ["@mapping", "forum_insert"],
-        ["database.connect_string", "postgres://admin:admin@192.168.1.111:25432/forum"],
+        ["database.connect_string", "configure-static://forum_database"],
         ["database.operation", "exec"],
         ["database.sql", "insert into forums (forum_id, forum_name, forum_description, parent_forum_id, status, time_created, time_updated) values ($1, $2, $3, $4, $5, $6, $7);"],
     ],

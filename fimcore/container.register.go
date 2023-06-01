@@ -29,6 +29,8 @@ func NewContainer() *ContainerInst {
 		connectorMap:               map[string]pluginapi.Connector{},
 		registerSourceConnectorGen: map[string]pluginapi.SourceConnectorGenerator{},
 		registerTargetConnectorGen: map[string]pluginapi.TargetConnectorGenerator{},
+
+		configureManager: NewNestedConfigureManager(),
 	}
 }
 
@@ -52,6 +54,8 @@ type ContainerInst struct {
 	connectorMap               map[string]pluginapi.Connector
 	registerSourceConnectorGen map[string]pluginapi.SourceConnectorGenerator
 	registerTargetConnectorGen map[string]pluginapi.TargetConnectorGenerator
+
+	configureManager *NestedConfigureManager
 }
 
 func (c *ContainerInst) LoadFlowModel(tomlContent string) error {
@@ -96,4 +100,9 @@ func (c *ContainerInst) StartContainer() error {
 
 func (c *ContainerInst) NewModel() pluginapi.Model {
 	return NewModelInst(c.flowModel)
+}
+
+func (c *ContainerInst) AddConfigureManager(manager basicapi.ConfigureManager) error {
+	c.configureManager.configureManagers = append(c.configureManager.configureManagers, manager)
+	return nil
 }

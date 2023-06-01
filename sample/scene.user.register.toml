@@ -48,7 +48,7 @@ pipeline.steps = [
     [
         ["@flow", "&database_postgres"],
         ["@mapping", "query_user"],
-        ["database.connect_string", "postgres://admin:admin@192.168.1.111:25432/forum"],
+        ["database.connect_string", "configure-static://forum_database"],
         ["database.operation", "query"],
         ["database.sql", "select user_id from \"user\" where username = $1"],
     ],
@@ -63,7 +63,7 @@ pipeline.steps = [
     [
         ["@flow", "&database_postgres"],
         ["@mapping", "db_pg_insert"],
-        ["database.connect_string", "postgres://admin:admin@192.168.1.111:25432/forum"],
+        ["database.connect_string", "configure-static://forum_database"],
         ["database.operation", "exec"],
         ["database.sql", "insert into \"user\" (user_id, username, password, nickname, time_created, time_updated) values ($1, $2, $3, $4, $5, $6)"],
     ],

@@ -16,7 +16,7 @@ pipeline.steps = [
     [
         ["@flow", "&database_postgres"],
         ["@mapping", "query_user"],
-        ["database.connect_string", "postgres://admin:admin@192.168.1.111:25432/forum"],
+        ["database.connect_string", "configure-static://forum_database"],
         ["database.operation", "query"],
         ["database.sql", "select user_id, password from \"user\" where username = $1"],
     ],

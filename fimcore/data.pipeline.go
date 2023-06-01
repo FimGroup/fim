@@ -65,7 +65,7 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 				if sv, ok := vv[1].(string); !ok {
 					return nil, errors.New("not string value in source connector pair")
 				} else {
-					v = sv
+					v = container.configureManager.ReplaceStaticConfigure(sv)
 				}
 				if _, ok := m[k]; ok {
 					return nil, errors.New("duplicated key in source connector definition")
@@ -131,7 +131,7 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 				if sv, ok := vv[1].(string); !ok {
 					return nil, errors.New("not string value in pipeline.steps pair")
 				} else {
-					v = sv
+					v = container.configureManager.ReplaceStaticConfigure(sv)
 				}
 				if _, ok := m[k]; ok {
 					return nil, errors.New("duplicated key in pipeline.steps definition")

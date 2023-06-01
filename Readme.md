@@ -77,6 +77,21 @@ And
         * (flow) @case-not-equals: two parameters(may use together with @assign function)
         * (flow/pipeline) @case-empty: parameter is null or empty string - ""
         * (flow/pipeline) @case-non-empty: parameter is not empty string
+* Configure replacement
+    * Configure placement allows to custom configure via various injection ways rather than hardcoded value
+    * Avoid credential/cert/decryption or other configurations being exposed unexpectedly via configure injection
+      support
+    * There are two types of configure replacement
+        * static configure replacement: such as a placeholder in the configure file
+            * The configuration will be replaced once when startup
+            * Prefix 'configure-static://' in values in configure files
+        * dynamic configure replacement
+            * The configuration will be replaced every time it is used
+            * Prefix 'configure-dynamic://' in values in configure files
+        * Even though the two types are nearly the same, the reason to separate them is allowing more options for
+          plugins to deal with configure replacement
+    * Currently, supports
+        * source connector and steps(including target connector) in pipeline
 
 ### Core model
 
@@ -152,6 +167,7 @@ The following apis can be used in projects(for starting container and custom fun
 * metrics/tracing/etc...
 * DAG flow
 * Transaction support
+* as a function integrated into serverless apis, such as aws lambda
 
 Top priority
 
@@ -160,6 +176,7 @@ Top priority
 6. data mapping supports array item converter(mapping each element in the array)
     * top level array, e.g. top level struct is array in json
 7. entry point - http(done)/messaging/scheduling
+8. Running sample forum on a 256MB memory vm with reasonable performance(keep required plugins)
 
 Before 1st release version
 
