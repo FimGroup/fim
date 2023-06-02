@@ -41,6 +41,10 @@ func (n *NestedConfigureManager) SupportDynamicConfigure(placeholder string) boo
 	return false
 }
 
+func (n *NestedConfigureManager) addSubConfigureManager(configureManager basicapi.ConfigureManager) {
+	n.configureManagers = append(n.configureManagers, configureManager)
+}
+
 func NewNestedConfigureManager() *NestedConfigureManager {
 	return &NestedConfigureManager{
 		configureManagers: []basicapi.ConfigureManager{},

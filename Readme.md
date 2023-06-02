@@ -13,6 +13,11 @@ And
     * [Format definition](DocFormatDefinition.md)
 * Provide flexible APIs to be able to extend the functionalities for complex business and on-demand requirements
 
+#### Notable characteristics
+
+* Running core functionality on a 256MB memory vm with reasonable performance(keep required plugins)
+  * See [sample forum system based on fim](https://github.com/FimGroup/sample-fim-forum-system)
+
 ## 1.2 Detail Features
 
 * Two toml definitions: FlowModel(shared models) and Flow
@@ -176,7 +181,6 @@ Top priority
 6. data mapping supports array item converter(mapping each element in the array)
     * top level array, e.g. top level struct is array in json
 7. entry point - http(done)/messaging/scheduling
-8. Running sample forum on a 256MB memory vm with reasonable performance(keep required plugins)
 
 Before 1st release version
 

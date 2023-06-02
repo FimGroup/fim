@@ -103,6 +103,6 @@ func (c *ContainerInst) NewModel() pluginapi.Model {
 }
 
 func (c *ContainerInst) AddConfigureManager(manager basicapi.ConfigureManager) error {
-	c.configureManager.configureManagers = append(c.configureManager.configureManagers, manager)
+	c.configureManager.addSubConfigureManager(manager)
 	return nil
 }
