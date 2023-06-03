@@ -155,11 +155,45 @@ func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[str
 	if !ok {
 		return nil, errors.New("database.sql is not set")
 	}
+	dbMaxConnStr, ok := options["database.max_conns"]
+	dbMaxConn := 0
+	if ok {
+		v, err := strconv.Atoi(dbMaxConnStr)
+		if err != nil {
+			return nil, err
+		} else {
+			dbMaxConn = v
+		}
+	}
+	dbMinConnStr, ok := options["database.min_conns"]
+	dbMinConn := 0
+	if ok {
+		v, err := strconv.Atoi(dbMinConnStr)
+		if err != nil {
+			return nil, err
+		} else {
+			dbMinConn = v
+		}
+	}
 
 	//FIXME maybe share the database pool rather than connector instance(meaning different instance name)
+	//FIXME should/may be shared with instance name since pool minConns and maxConns can be configured individually beyond connection string
 	p, ok := d.dbPoolMapping[dbConnStr]
 	if !ok {
-		np, err := pgxpool.New(context.Background(), dbConnStr)
+		config, err := pgxpool.ParseConfig(dbConnStr)
+		if err != nil {
+			return nil, err
+		}
+		{
+			// custom configuration
+			if dbMaxConn > 0 {
+				config.MaxConns = int32(dbMaxConn)
+			}
+			if dbMinConn > 0 {
+				config.MinConns = int32(dbMinConn)
+			}
+		}
+		np, err := pgxpool.NewWithConfig(context.Background(), config)
 		if err != nil {
 			return nil, err
 		}

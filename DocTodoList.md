@@ -20,8 +20,6 @@ Once the item has been completed, it will be moved to the main document as featu
 * [ ] http and http rest - hostname matching + default server
 * [ ] http - file serving / template rendering
     * Note: using new file apis
-* [ ] database connection pool count setting
-* [ ] http query_string param mapping
 
 ## Todo List
 
