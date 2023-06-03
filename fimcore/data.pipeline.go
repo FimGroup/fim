@@ -204,11 +204,11 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 					p.steps = append(p.steps, func() func(g pluginapi.Model) error {
 						return func(g pluginapi.Model) error {
 							if casePreFn != nil {
-								val, err := casePreFn(g)
+								match, err := casePreFn(g)
 								if err != nil {
 									return err
 								}
-								if !val {
+								if !match {
 									return nil
 								}
 							}
@@ -219,11 +219,11 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 					p.steps = append(p.steps, func() func(g pluginapi.Model) error {
 						return func(g pluginapi.Model) error {
 							if casePreFn != nil {
-								val, err := casePreFn(g)
+								match, err := casePreFn(g)
 								if err != nil {
 									return err
 								}
-								if !val {
+								if !match {
 									return nil
 								}
 							}

@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -18,7 +19,8 @@ import (
 )
 
 const (
-	ParamHttpBodyPrefix = "http/body/"
+	ParamHttpBodyPrefix        = "http/body/"
+	ParamHttpQueryStringPrefix = "http/query_string/"
 )
 
 type httpRestServerConnector struct {
@@ -180,7 +182,7 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[st
 
 			// convert request
 			m := container.NewModel()
-			if err := h.convertJsonRequestModel(request, body, m, mappingDef); err != nil {
+			if err := h.convertQueryStringAndJsonRequestModel(request, body, m, mappingDef); err != nil {
 				writer.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -310,11 +312,14 @@ func (h *HttpRestServerGenerator) convertJsonResponseModel(m pluginapi.Model, de
 	return json.Marshal(r)
 }
 
-func (h *HttpRestServerGenerator) convertJsonRequestModel(request *http.Request, body []byte, m pluginapi.Model, def *pluginapi.MappingDefinition) error {
+func (h *HttpRestServerGenerator) convertQueryStringAndJsonRequestModel(request *http.Request, body []byte, m pluginapi.Model, def *pluginapi.MappingDefinition) error {
 	var b interface{}
-	if err := json.Unmarshal(body, &b); err != nil {
-		log.Println(err)
+	if len(body) > 0 {
+		if err := json.Unmarshal(body, &b); err != nil {
+			log.Println(err)
+		}
 	}
+	var queryValues url.Values
 
 	for _, paramPair := range def.Req {
 		if len(paramPair) != 2 {
@@ -330,6 +335,25 @@ func (h *HttpRestServerGenerator) convertJsonRequestModel(request *http.Request,
 			}
 			if err := m.AddOrUpdateField0(rule.SplitFullPath(fp), val); err != nil {
 				return err
+			}
+		} else if strings.HasPrefix(cp, ParamHttpQueryStringPrefix) {
+			key := cp[len(ParamHttpQueryStringPrefix):]
+			if queryValues == nil {
+				// lazy parse query string
+				parsed, err := url.ParseRequestURI(request.RequestURI)
+				if err != nil {
+					return err
+				}
+				qparsed, err := url.ParseQuery(parsed.RawQuery)
+				if err != nil {
+					return err
+				}
+				queryValues = qparsed
+			}
+			if v, ok := queryValues[key]; ok && len(v) > 0 {
+				if err := m.AddOrUpdateField0(rule.SplitFullPath(fp), v[0]); err != nil {
+					return err
+				}
 			}
 		} else {
 			//FIXME support more data access, e.g. headers

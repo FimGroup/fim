@@ -16,11 +16,28 @@ And
 #### Notable characteristics
 
 * Running core functionality on a 256MB memory vm with reasonable performance(keep required plugins)
+    * Require minimum resource
     * See [sample forum system based on fim](https://github.com/FimGroup/sample-fim-forum-system)
+* Running as the following types of service
+    * Standalone server with single or clustered support
+        * On Bare metal machine
+        * On VMs on both local or cloud
+        * On containers
+    * Cloud PaaS APP on cloud providers
+    * Function/Serverless on cloud providers
+    * As API provider
+    * Support flexible scaling out and scaling up
+* Optimized for the following scenarios
+    * Throughput: e.g. internet application, data pipeline, IoT connections
+    * Latency: e.g. realtime control, decision engine
+    * Business logic: e.g. ERP, CRM
+    * Cost: e.g. resource cost, development cost, quality cost, resource usage
+    * Integration/Open: e.g. various tech stacks, various customer requirements
 
 #### Usage documents that you only need to know to use Flexible Integration Mesh :)
 
-* (TBD)
+* Write configure file: [Format definition](DocFormatDefinition.md)
+* Write entrypoint of service using minimum APIs: [DocEndUserAPI.md](DocEndUserAPI.md)
 
 ## 1.2 Detail Features
 
@@ -178,6 +195,7 @@ See detailed document: [DocTodoList.md](DocTodoList.md)
 * Transaction support
 * as a function integrated into serverless apis, such as aws lambda
 * path/configure literal key format validation
+* pre-generated logic for flows/conversions optimization
 
 Top priority
 
