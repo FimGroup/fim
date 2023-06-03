@@ -16,7 +16,11 @@ And
 #### Notable characteristics
 
 * Running core functionality on a 256MB memory vm with reasonable performance(keep required plugins)
-  * See [sample forum system based on fim](https://github.com/FimGroup/sample-fim-forum-system)
+    * See [sample forum system based on fim](https://github.com/FimGroup/sample-fim-forum-system)
+
+#### Usage documents that you only need to know to use Flexible Integration Mesh :)
+
+* (TBD)
 
 ## 1.2 Detail Features
 
@@ -151,14 +155,14 @@ The following apis can be used in projects(for starting container and custom fun
 
 # 2. TODO List
 
+See detailed document: [DocTodoList.md](DocTodoList.md)
+
 * Timeout for synchronous flow + timeout accumulation when processing each step of the flow
     * Plus context
 * Data constraints: e.g. not empty/greater than/less than/etc.
 * version support - keep a single pipeline stuck to a specific version - can be used for upgrade
 * specific node - run specific connector/flow/etc. - e.g. accessing internet may require few nodes and this requires the
   flow to be able to run on those nodes other than any node in the cluster
-* Add a resource check - e.g. check tcp binding used/conflict to avoid error
-* FlowModel/Object/protocols transformation
 * support assign one FlowModel field to different local fields(but not vice versa, for the reason that only one value
   can be assigned and effective to one single field)
 * external shared service integration: configuration/service discovery/credential+cert/etc.
@@ -173,19 +177,18 @@ The following apis can be used in projects(for starting container and custom fun
 * DAG flow
 * Transaction support
 * as a function integrated into serverless apis, such as aws lambda
+* path/configure literal key format validation
 
 Top priority
 
 4. allow step to run independently from each other to support async invoking
 5. loop
-6. data mapping supports array item converter(mapping each element in the array)
-    * top level array, e.g. top level struct is array in json
 7. entry point - http(done)/messaging/scheduling
 
 Before 1st release version
 
 1. stable api and toml config definition
-    * easy to read document
+    * easy-to-read document
 2. clear running/error information
 3. Event driven support and path decision(sync and event)
 
@@ -210,12 +213,12 @@ Before 1st release version
 * git tag version: vx.y.z-type
 * -type enums:
     * -dev
-    * -alphaN where N is a number from 0 to Int.Max
-    * -betaN where N is a number from 0 to Int.Max
-    * -rcN where N is a number from 0 to Int.Max
+    * -alphaN where N is a number from 0 to Int.Max, prefer no more than 10 or to following the number format below
+    * -betaN where N is a number from 0 to Int.Max, prefer no more than 10 or to following the number format below
+    * -rcN where N is a number from 0 to Int.Max, prefer no more than 10 or to following the number format below
 * number format of x/y/z
     * 1st number - length of the following numbers - e.g. 1-1x, 2-2xx, 3-3xxx
-    * single number should not be used unless there will not any version number smaller than it
+    * single number should not be used unless there will not be any version number smaller than it
         * e.g. if 0.0.1 and 0.0.2 are used, the next number should start from 0.0.3 or 0.0.3xxx
     * this aims to support literal sort other than semantic versioning
 
