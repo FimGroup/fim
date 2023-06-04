@@ -5,6 +5,7 @@ import (
 
 	"github.com/FimGroup/fim/fimapi/basicapi"
 	"github.com/FimGroup/fim/fimapi/pluginapi"
+	"github.com/FimGroup/fim/fimcore/modelinst"
 )
 
 func NewUseContainer() basicapi.BasicContainer {
@@ -99,7 +100,7 @@ func (c *ContainerInst) StartContainer() error {
 }
 
 func (c *ContainerInst) NewModel() pluginapi.Model {
-	return NewModelInst(c.flowModel)
+	return modelinst.ModelInstHelper{}.NewInst()
 }
 
 func (c *ContainerInst) AddConfigureManager(manager basicapi.ConfigureManager) error {

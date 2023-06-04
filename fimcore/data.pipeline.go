@@ -227,7 +227,7 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 									return nil
 								}
 							}
-							return flowInst(g, NewModelInst(p.container.flowModel))
+							return flowInst(g, p.container.NewModel())
 						}
 					})
 				}
@@ -257,7 +257,7 @@ func generateCasePreFn(operator string, value string) (func(m pluginapi.Model) (
 	switch operator {
 	case "@case-true":
 		return func(m pluginapi.Model) (bool, error) {
-			val := m.GetFieldUnsafe(paths)
+			val := m.GetFieldUnsafe0(paths)
 			if val == nil {
 				return false, errors.New("case-true on nil value:" + value)
 			}
@@ -269,7 +269,7 @@ func generateCasePreFn(operator string, value string) (func(m pluginapi.Model) (
 		}, nil
 	case "@case-false":
 		return func(m pluginapi.Model) (bool, error) {
-			val := m.GetFieldUnsafe(paths)
+			val := m.GetFieldUnsafe0(paths)
 			if val == nil {
 				return false, errors.New("case-false on nil value:" + value)
 			}
@@ -281,7 +281,7 @@ func generateCasePreFn(operator string, value string) (func(m pluginapi.Model) (
 		}, nil
 	case "@case-empty":
 		return func(m pluginapi.Model) (bool, error) {
-			val := m.GetFieldUnsafe(paths)
+			val := m.GetFieldUnsafe0(paths)
 			if val == nil {
 				return true, nil
 			}
@@ -297,7 +297,7 @@ func generateCasePreFn(operator string, value string) (func(m pluginapi.Model) (
 		}, nil
 	case "@case-non-empty":
 		return func(m pluginapi.Model) (bool, error) {
-			val := m.GetFieldUnsafe(paths)
+			val := m.GetFieldUnsafe0(paths)
 			if val == nil {
 				return false, nil
 			}

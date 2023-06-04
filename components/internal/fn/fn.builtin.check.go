@@ -28,13 +28,13 @@ func CheckEmptyBreak(params []interface{}) (pluginapi.Fn, error) {
 	errorKey := params[1].(string)
 	errorMessage := params[2].(string)
 	return func(m pluginapi.Model) error {
-		val := m.GetFieldUnsafe(fieldPaths)
+		val := m.GetFieldUnsafe0(fieldPaths)
 		if val == nil {
 			return nil
 		}
 		s, ok := val.(string)
 		if !ok {
-			return errors.New("data type is not string")
+			return errors.New("CheckEmptyBreak: data type is not string")
 		}
 		if s == "" {
 			return nil
@@ -55,7 +55,7 @@ func CheckNotBlankBreak(params []interface{}) (pluginapi.Fn, error) {
 	errorKey := params[1].(string)
 	errorMessage := params[2].(string)
 	return func(m pluginapi.Model) error {
-		val := m.GetFieldUnsafe(fieldPaths)
+		val := m.GetFieldUnsafe0(fieldPaths)
 		if val == nil {
 			return &pluginapi.FlowError{
 				Key:     errorKey,
@@ -64,7 +64,7 @@ func CheckNotBlankBreak(params []interface{}) (pluginapi.Fn, error) {
 		}
 		s, ok := val.(string)
 		if !ok {
-			return errors.New("data type is not string")
+			return errors.New("CheckNotBlankBreak: data type is not string")
 		}
 		if strings.TrimSpace(s) != "" {
 			return nil

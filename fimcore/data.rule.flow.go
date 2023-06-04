@@ -8,11 +8,12 @@ import (
 	"github.com/FimGroup/fim/fimapi/basicapi"
 	"github.com/FimGroup/fim/fimapi/pluginapi"
 	"github.com/FimGroup/fim/fimapi/rule"
+	"github.com/FimGroup/fim/fimcore/modelinst"
 )
 
 type templateFlow struct {
-	In     [][]string                            `toml:"in"`
-	Out    [][]string                            `toml:"out"`
+	In     modelinst.MappingRuleRaw              `toml:"in"`
+	Out    modelinst.MappingRuleRaw              `toml:"out"`
 	PreOut [][]string                            `toml:"pre_out"`
 	Flow   map[string][]map[string][]interface{} `toml:"flow"`
 }
@@ -21,20 +22,8 @@ type Flow struct {
 	dtd       *DataTypeDefinitions
 	container *ContainerInst
 
-	inParamList []struct {
-		ModelFieldPath string
-		SplitPath      []string
-		DataType       pluginapi.DataType
-		KeySplitPath   []string
-		KeyPath        string
-	}
-	outParamList []struct {
-		ModelFieldPath string
-		SplitPath      []string
-		DataType       pluginapi.DataType
-		KeySplitPath   []string
-		KeyPath        string
-	}
+	inConverter           *modelinst.ModelConverter
+	outConverter          *modelinst.ModelConverter
 	localPreOutOperations map[string]struct {
 		Operation string
 		SplitPath []string
@@ -48,20 +37,6 @@ func NewFlow(dtd *DataTypeDefinitions, c *ContainerInst) *Flow {
 		dtd:       dtd,
 		container: c,
 
-		inParamList: []struct {
-			ModelFieldPath string
-			SplitPath      []string
-			DataType       pluginapi.DataType
-			KeySplitPath   []string
-			KeyPath        string
-		}{},
-		outParamList: []struct {
-			ModelFieldPath string
-			SplitPath      []string
-			DataType       pluginapi.DataType
-			KeySplitPath   []string
-			KeyPath        string
-		}{},
 		localPreOutOperations: map[string]struct {
 			Operation string
 			SplitPath []string
@@ -70,23 +45,20 @@ func NewFlow(dtd *DataTypeDefinitions, c *ContainerInst) *Flow {
 }
 
 func (f *Flow) mergeToml(tf *templateFlow) error {
-	for _, paramPair := range tf.In {
-		if len(paramPair) != 2 {
-			return errors.New("parameter pair should have 2 items")
-		}
-		// path -> local
-		if err := f.addIn(paramPair[0], paramPair[1]); err != nil {
-			return err
-		}
+
+	if inConverter, err := tf.In.ToConverter(); err != nil {
+		return err
+	} else if err := f.checkInDtd(inConverter.SourceLeafPathList); err != nil {
+		return err
+	} else {
+		f.inConverter = inConverter
 	}
-	for _, paramPair := range tf.Out {
-		if len(paramPair) != 2 {
-			return errors.New("parameter pair should have 2 items")
-		}
-		// local -> path
-		if err := f.addOut(paramPair[0], paramPair[1]); err != nil {
-			return err
-		}
+	if outConverter, err := tf.Out.ToConverter(); err != nil {
+		return err
+	} else if err := f.checkInDtd(outConverter.TargetLeafPathList); err != nil {
+		return err
+	} else {
+		f.outConverter = outConverter
 	}
 	for _, paramPair := range tf.PreOut {
 		if len(paramPair) != 2 {
@@ -97,9 +69,6 @@ func (f *Flow) mergeToml(tf *templateFlow) error {
 			return err
 		}
 	}
-	if err := f.validateLocalParameters(); err != nil {
-		return err
-	}
 	if err := f.addFlow(tf); err != nil {
 		return err
 	}
@@ -107,80 +76,33 @@ func (f *Flow) mergeToml(tf *templateFlow) error {
 	return nil
 }
 
-func (f *Flow) addIn(source, local string) error {
-	if !rule.ValidateFullPath(source) {
-		return errors.New("in parameter path invalid:" + source)
-	}
-
-	if dt, _, err := f.dtd.TypeOfPath(source); err != nil {
-		return err
-	} else if dt == pluginapi.DataTypeUnavailable {
-		return errors.New("cannot find path:" + source)
-	} else {
-		f.inParamList = append(f.inParamList, struct {
-			ModelFieldPath string
-			SplitPath      []string
-			DataType       pluginapi.DataType
-			KeySplitPath   []string
-			KeyPath        string
-		}{
-			ModelFieldPath: source,
-			SplitPath:      rule.SplitFullPath(source),
-			DataType:       dt,
-			KeySplitPath:   rule.SplitFullPath(local),
-			KeyPath:        local,
-		})
-	}
-
-	return nil
-}
-
-func (f *Flow) inConv() func(source, local *ModelInst) error {
-	return func(source, local *ModelInst) error {
-		for _, dStruct := range f.inParamList {
-			if err := source.transferTo(local, dStruct.SplitPath, dStruct.KeySplitPath, ByLeft); err != nil {
-				return err
-			}
+func (f *Flow) checkInDtd(paths []string) error {
+	for _, path := range paths {
+		if !rule.ValidateFullPathOfDefinition(path) {
+			return errors.New("parameter path invalid:" + path)
 		}
-		return nil
+		if dt, _, err := f.dtd.TypeOfPath(path); err != nil {
+			return err
+		} else if dt == pluginapi.DataTypeUnavailable {
+			return errors.New("cannot find path:" + path)
+		}
 	}
-}
-
-func (f *Flow) addOut(local, out string) error {
-	if !rule.ValidateFullPath(out) {
-		return errors.New("out parameter path invalid:" + out)
-	}
-
-	if dt, _, err := f.dtd.TypeOfPath(out); err != nil {
-		return err
-	} else if dt == pluginapi.DataTypeUnavailable {
-		return errors.New("cannot find path:" + out)
-	} else {
-		f.outParamList = append(f.outParamList, struct {
-			ModelFieldPath string
-			SplitPath      []string
-			DataType       pluginapi.DataType
-			KeySplitPath   []string
-			KeyPath        string
-		}{
-			ModelFieldPath: out,
-			SplitPath:      rule.SplitFullPath(out),
-			DataType:       dt,
-			KeySplitPath:   rule.SplitFullPath(local),
-			KeyPath:        local,
-		})
-	}
-
 	return nil
 }
 
-func (f *Flow) outConv() func(local, out *ModelInst) error {
-	return func(local, out *ModelInst) error {
+func (f *Flow) inConv() func(source, local modelinst.ModelInst2) error {
+	return func(source, local modelinst.ModelInst2) error {
+		return f.inConverter.Transfer(source, local)
+	}
+}
+
+func (f *Flow) outConv() func(local, out modelinst.ModelInst2) error {
+	return func(local, out modelinst.ModelInst2) error {
 		// process pre_out
 		for _, op := range f.localPreOutOperations {
 			switch op.Operation {
-			case "@remove":
-				if err := out.deleteField(op.SplitPath); err != nil {
+			case "@remove-object":
+				if err := out.RemoveObjectByPath(op.SplitPath); err != nil {
 					return err
 				}
 			default:
@@ -189,19 +111,13 @@ func (f *Flow) outConv() func(local, out *ModelInst) error {
 		}
 
 		// process out
-		for _, dStruct := range f.outParamList {
-			if err := local.transferTo(out, dStruct.KeySplitPath, dStruct.SplitPath, ByRight); err != nil {
-				return err
-			}
-		}
-
-		return nil
+		return f.outConverter.Transfer(local, out)
 	}
 }
 
 func (f *Flow) FlowFn(casePreFn func(m pluginapi.Model) (bool, error)) func() func(global pluginapi.Model) error {
 	return func() func(global pluginapi.Model) error {
-		local := NewModelInst(f.dtd)
+		local := modelinst.ModelInstHelper{}.NewInst()
 		return func(global pluginapi.Model) error {
 			if casePreFn != nil {
 				val, err := casePreFn(global)
@@ -213,18 +129,18 @@ func (f *Flow) FlowFn(casePreFn func(m pluginapi.Model) (bool, error)) func() fu
 				}
 			}
 
-			if err := f.inConv()(global.(*ModelInst), local); err != nil {
+			if err := f.inConv()(global.(modelinst.ModelInst2), local); err != nil {
 				return err
 			}
 			// process flow
 			{
 				for _, fn := range f.fnList {
-					if err := fn(local); err != nil {
+					if err := fn(local.(pluginapi.Model)); err != nil {
 						return err
 					}
 				}
 			}
-			if err := f.outConv()(local, global.(*ModelInst)); err != nil {
+			if err := f.outConv()(local, global.(modelinst.ModelInst2)); err != nil {
 				return err
 			}
 
@@ -235,7 +151,7 @@ func (f *Flow) FlowFn(casePreFn func(m pluginapi.Model) (bool, error)) func() fu
 
 func (f *Flow) FlowFnNoResp(casePreFn func(m pluginapi.Model) (bool, error)) func() func(global pluginapi.Model) error {
 	return func() func(global pluginapi.Model) error {
-		local := NewModelInst(f.dtd)
+		local := modelinst.ModelInstHelper{}.NewInst()
 		return func(global pluginapi.Model) error {
 			if casePreFn != nil {
 				val, err := casePreFn(global)
@@ -247,18 +163,18 @@ func (f *Flow) FlowFnNoResp(casePreFn func(m pluginapi.Model) (bool, error)) fun
 				}
 			}
 
-			if err := f.inConv()(global.(*ModelInst), local); err != nil {
+			if err := f.inConv()(global.(modelinst.ModelInst2), local); err != nil {
 				return err
 			}
 			// process flow
 			{
 				for _, fn := range f.fnList {
-					if err := fn(local); err != nil {
+					if err := fn(local.(pluginapi.Model)); err != nil {
 						return err
 					}
 				}
 			}
-			dummy := NewModelInst(f.dtd)
+			dummy := modelinst.ModelInstHelper{}.NewInst()
 			if err := f.outConv()(local, dummy); err != nil {
 				return err
 			}
@@ -320,31 +236,6 @@ func (f *Flow) addFlow(tf *templateFlow) error {
 	return nil
 }
 
-func (f *Flow) validateLocalParameters() error {
-	outLocalMapping := map[string]string{}
-	for _, v := range f.outParamList {
-		outLocalMapping[v.KeyPath] = v.ModelFieldPath
-	}
-	// compare the types of the same local parameters
-	for _, si := range f.inParamList {
-		modelFieldPath, ok := outLocalMapping[si.KeyPath]
-		if ok {
-			sdt, spdt, err := f.dtd.TypeOfPath(si.ModelFieldPath)
-			if err != nil {
-				return err
-			}
-			ddt, dpdt, err := f.dtd.TypeOfPath(modelFieldPath)
-			if err != nil {
-				return err
-			}
-			if sdt != ddt || spdt != dpdt {
-				return errors.New("local parameter types of in and out do not match:" + si.KeyPath)
-			}
-		}
-	}
-	return nil
-}
-
 func (f *Flow) addPreOut(op string, path string) error {
 	_, ok := f.localPreOutOperations[path]
 	if ok {
@@ -385,7 +276,7 @@ func (f *Flow) prepareCaseClause(fn string, params []interface{}) (func(fn plugi
 	case "@case-true":
 		return func(fn pluginapi.Fn) pluginapi.Fn {
 			return func(m basicapi.Model) error {
-				val := m.GetFieldUnsafe(paths)
+				val := m.GetFieldUnsafe0(paths)
 				if val == nil {
 					return errors.New("case-true on nil value:" + path)
 				}
@@ -403,7 +294,7 @@ func (f *Flow) prepareCaseClause(fn string, params []interface{}) (func(fn plugi
 	case "@case-false":
 		return func(fn pluginapi.Fn) pluginapi.Fn {
 			return func(m basicapi.Model) error {
-				val := m.GetFieldUnsafe(paths)
+				val := m.GetFieldUnsafe0(paths)
 				if val == nil {
 					return errors.New("case-true on nil value:" + path)
 				}
@@ -429,8 +320,8 @@ func (f *Flow) prepareCaseClause(fn string, params []interface{}) (func(fn plugi
 		paths2 := rule.SplitFullPath(path2)
 		return func(fn pluginapi.Fn) pluginapi.Fn {
 			return func(m basicapi.Model) error {
-				val := m.GetFieldUnsafe(paths)
-				val2 := m.GetFieldUnsafe(paths2)
+				val := m.GetFieldUnsafe0(paths)
+				val2 := m.GetFieldUnsafe0(paths2)
 				if compareInterfaceValue(val, val2) {
 					return fn(m)
 				} else {
@@ -449,8 +340,8 @@ func (f *Flow) prepareCaseClause(fn string, params []interface{}) (func(fn plugi
 		paths2 := rule.SplitFullPath(path2)
 		return func(fn pluginapi.Fn) pluginapi.Fn {
 			return func(m basicapi.Model) error {
-				val := m.GetFieldUnsafe(paths)
-				val2 := m.GetFieldUnsafe(paths2)
+				val := m.GetFieldUnsafe0(paths)
+				val2 := m.GetFieldUnsafe0(paths2)
 				if !compareInterfaceValue(val, val2) {
 					return fn(m)
 				} else {
@@ -461,7 +352,7 @@ func (f *Flow) prepareCaseClause(fn string, params []interface{}) (func(fn plugi
 	case "@case-empty":
 		return func(fn pluginapi.Fn) pluginapi.Fn {
 			return func(m basicapi.Model) error {
-				val := m.GetFieldUnsafe(paths)
+				val := m.GetFieldUnsafe0(paths)
 				if val == nil {
 					return fn(m)
 				}
@@ -479,7 +370,7 @@ func (f *Flow) prepareCaseClause(fn string, params []interface{}) (func(fn plugi
 	case "@case-non-empty":
 		return func(fn pluginapi.Fn) pluginapi.Fn {
 			return func(m basicapi.Model) error {
-				val := m.GetFieldUnsafe(paths)
+				val := m.GetFieldUnsafe0(paths)
 				if val == nil {
 					return nil
 				}

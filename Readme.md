@@ -20,17 +20,17 @@ And
     * See [sample forum system based on fim](https://github.com/FimGroup/sample-fim-forum-system)
 * Running as the following types of service
     * Standalone server with single or clustered support
-        * On Bare metal machine
+        * On Bare metal machines
         * On VMs on both local or cloud
-        * On containers
-    * Cloud PaaS APP on cloud providers
+        * On containers with/without scheduler(e.g. k8s/docker compose)
+    * Cloud PaaS/Local APPs on cloud providers
     * Function/Serverless on cloud providers
     * As API provider
     * Support flexible scaling out and scaling up
 * Optimized for the following scenarios
     * Throughput: e.g. internet application, data pipeline, IoT connections
     * Latency: e.g. realtime control, decision engine
-    * Business logic: e.g. ERP, CRM
+    * Business logic: e.g. Internet Services, ERP, CRM
     * Cost: e.g. resource cost, development cost, quality cost, resource usage
     * Integration/Open: e.g. various tech stacks, various customer requirements
 

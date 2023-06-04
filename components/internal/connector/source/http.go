@@ -283,7 +283,7 @@ func (h *HttpRestServerGenerator) convertJsonResponseModel(m pluginapi.Model, de
 		}
 		fp := paramPair[0]
 		cp := paramPair[1]
-		val := m.GetFieldUnsafe(rule.SplitFullPath(fp))
+		val := m.GetFieldUnsafe0(rule.SplitFullPath(fp))
 		if val == nil {
 			continue
 		}

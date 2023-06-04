@@ -68,7 +68,7 @@ func (c *dbPgConnector) InvokeFlow(s, d pluginapi.Model) error {
 				//FIXME no arg in this position
 				sqlParam[i] = nil
 			} else {
-				sqlParam[i] = s.GetFieldUnsafe(v)
+				sqlParam[i] = s.GetFieldUnsafe0(v)
 			}
 		}
 		tag, err := c.ref.Pool.Exec(context.Background(), c.sql, sqlParam...)
@@ -89,7 +89,7 @@ func (c *dbPgConnector) InvokeFlow(s, d pluginapi.Model) error {
 				//FIXME no arg in this position
 				sqlParam[i] = nil
 			} else {
-				sqlParam[i] = s.GetFieldUnsafe(v)
+				sqlParam[i] = s.GetFieldUnsafe0(v)
 			}
 		}
 		rows, err := c.ref.Pool.Query(context.Background(), c.sql, sqlParam...)

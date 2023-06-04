@@ -63,6 +63,15 @@ func IsPathArray(in string) bool {
 	return idx >= 0
 }
 
+func IsArrayDefinition(in string) bool {
+	s, _ := ExtractArrayPath(in)
+	return len(s)+2 == len(in) // length of '[]' is 2
+}
+
+func IsArrayAccess(in string) bool {
+	return (!IsArrayDefinition(in)) && IsPathArray(in)
+}
+
 func ConcatFullPath(paths []string) string {
 	return strings.Join(paths, pluginapi.PathSeparator)
 }

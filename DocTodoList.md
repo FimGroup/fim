@@ -9,10 +9,15 @@ Once the item has been completed, it will be moved to the main document as featu
 * [ ] data mapping supports array item converter(mapping each element in the array)
     * Note: top level array, e.g. top level struct is array in json(like htp body is a json array)
     * [x] Pipeline mapping - no impact
-    * [ ] Flow mapping
-    * [ ] ModelInst apis
-    * [ ] Components/functions mapping
+    * [x] Flow mapping
+    * [x] Functions mapping
     * [ ] Source/Target connector mapping
+    * [ ] Check data type of each value when mapping values according to DataTypeStore
+        * Flow in and out parameter type should match DataTypeStore after complete the flow(data assign may happen in
+          the flow)
+        * Can check data type in parallel when setting value in ModelInst2
+    * [x] Implement or update pluginapi.Model interface to allow plugin to assign and retrieve value
+    * [x] Convert all flow files
 * [ ] new api for files to avoid save files on local disks, for the usecases of cache/temp files/etc, such as large http
   payload temp files in nginx
     * [ ] Support component file loading, e.g. http template files
@@ -33,4 +38,18 @@ Once the item has been completed, it will be moved to the main document as featu
 * [ ] new design: converter based on path
     * support object/array
     * used for pipeline/flow/connector/function/etc
+* [ ] Multidimensional array in mapping
+    * Prefer to regard such type of array as single dimensional array for convenience
+* [ ] Array operators for mapping
+    * Split into array / merge into object or primitives
+    * Read/Write single index, leaving untouched indexes default values(primitive default value or null object)
+    * Create empty array
+    * Assign/Retrieve from/to array field in an object
+* [ ] Parent field assignment and operators
+    * assign a field in the child mapping rule using src value from parent levels
+    * operators to retrieve parent field value
+    * operators to filter/map children values
+* [ ] Auto make sure acceptable primitive types when assigning values in ModelInst2
+    * [x] For plugins including functions and connectors
+    * [ ] For core facilities including flow configure static value
 

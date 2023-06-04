@@ -17,13 +17,13 @@ func FnCryptoBcrypt(params []interface{}) (pluginapi.Fn, error) {
 	}
 	fieldPaths := rule.SplitFullPath(field)
 	return func(m pluginapi.Model) error {
-		val := m.GetFieldUnsafe(fieldPaths)
+		val := m.GetFieldUnsafe0(fieldPaths)
 		if val == nil {
 			return nil
 		}
 		sval, ok := val.(string)
 		if !ok {
-			return errors.New("data type is not string")
+			return errors.New("FnCryptoBcrypt: data type is not string")
 		}
 		data, err := bcrypt.GenerateFromPassword([]byte(sval), bcrypt.DefaultCost)
 		if err != nil {
@@ -50,21 +50,21 @@ func FnCryptoBcryptVerify(params []interface{}) (pluginapi.Fn, error) {
 	}
 	validateResultPaths := rule.SplitFullPath(validateResultPath)
 	return func(m basicapi.Model) error {
-		val := m.GetFieldUnsafe(bcryptoDataPaths)
+		val := m.GetFieldUnsafe0(bcryptoDataPaths)
 		if val == nil {
 			return nil
 		}
 		sval, ok := val.(string)
 		if !ok {
-			return errors.New("data type is not string")
+			return errors.New("FnCryptoBcryptVerify: data type is not string")
 		}
-		inputVal := m.GetFieldUnsafe(userInputDataPaths)
+		inputVal := m.GetFieldUnsafe0(userInputDataPaths)
 		if inputVal == nil {
 			return nil
 		}
 		sinputVal, ok := inputVal.(string)
 		if !ok {
-			return errors.New("data type is not string")
+			return errors.New("FnCryptoBcryptVerify: data type is not string")
 		}
 		err := bcrypt.CompareHashAndPassword([]byte(sval), []byte(sinputVal))
 		if err == nil {
