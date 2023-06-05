@@ -7,20 +7,22 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/FimGroup/fim/fimapi/pluginapi"
-	"github.com/FimGroup/fim/fimapi/rule"
-
 	"github.com/gofrs/uuid/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/FimGroup/fim/fimapi/basicapi"
+	"github.com/FimGroup/fim/fimapi/pluginapi"
 )
 
 const (
 	DatabaseOperationExec  = "exec"
 	DatabaseOperationQuery = "query"
 
-	SqlArgParameterPrefix    = "sql.args."   // index from 0 (1st arg passing to sql)
-	SqlReturnParameterPrefix = "sql.result." // index from 0 (1st arg passing to sql)
-	SqlAffectedRowCountKey   = "sql.affected_row_count"
+	SqlArgParameterPrefix                = "sql.args."   // index from 0 (1st arg passing to sql)
+	SqlReturnParameterPrefix             = "sql.result." // index from 0 (1st arg passing to sql)
+	SqlAffectedRowCountKey               = "sql.affected_row_count"
+	SqlReturnArrayParameterKey           = "sql.results"
+	SqlReturnArrayElementParameterPrefix = "arg" //argX
 )
 
 type dbPgConnector struct {
@@ -30,11 +32,13 @@ type dbPgConnector struct {
 		refCnt int
 	}
 
-	operation     string
-	sql           string
-	params        [][]string
-	returnMapping map[int][]string
-	definition    *pluginapi.MappingDefinition
+	operation    string
+	sql          string
+	reqConverter func(src, dst pluginapi.Model) error
+	reqMaxIdx    int
+	resConverter func(src, dst pluginapi.Model) error
+	definition   *pluginapi.MappingDefinition
+	container    pluginapi.Container
 }
 
 func (c *dbPgConnector) Start() error {
@@ -62,14 +66,14 @@ func (c *dbPgConnector) InvokeFlow(s, d pluginapi.Model) error {
 	//FIXME allow to configure timeout
 	switch c.operation {
 	case DatabaseOperationExec:
-		sqlParam := make([]interface{}, len(c.params))
-		for i, v := range c.params {
-			if len(v) == 0 {
-				//FIXME no arg in this position
-				sqlParam[i] = nil
-			} else {
-				sqlParam[i] = s.GetFieldUnsafe0(v)
-			}
+		local := c.container.NewModel()
+		if err := c.reqConverter(s, local); err != nil {
+			return err
+		}
+		//FIXME req mapping can be optimized
+		sqlParam := make([]interface{}, c.reqMaxIdx+1)
+		for i := 0; i <= c.reqMaxIdx; i++ {
+			sqlParam[i] = local.GetFieldUnsafe0([]string{fmt.Sprint(SqlArgParameterPrefix, i)})
 		}
 		tag, err := c.ref.Pool.Exec(context.Background(), c.sql, sqlParam...)
 		if err != nil {
@@ -78,38 +82,58 @@ func (c *dbPgConnector) InvokeFlow(s, d pluginapi.Model) error {
 		r := map[string]interface{}{
 			SqlAffectedRowCountKey: tag.RowsAffected(),
 		}
-		if err := c.convertResponse(c.definition, d, r); err != nil {
+		//FIXME res mapping can be optimized
+		if err := c.convertResponse(d, r); err != nil {
 			return err
 		}
 		return nil
 	case DatabaseOperationQuery:
-		sqlParam := make([]interface{}, len(c.params))
-		for i, v := range c.params {
-			if len(v) == 0 {
-				//FIXME no arg in this position
-				sqlParam[i] = nil
-			} else {
-				sqlParam[i] = s.GetFieldUnsafe0(v)
-			}
+		local := c.container.NewModel()
+		if err := c.reqConverter(s, local); err != nil {
+			return err
+		}
+		//FIXME req mapping can be optimized
+		sqlParam := make([]interface{}, c.reqMaxIdx+1)
+		for i := 0; i <= c.reqMaxIdx; i++ {
+			sqlParam[i] = local.GetFieldUnsafe0([]string{fmt.Sprint(SqlArgParameterPrefix, i)})
 		}
 		rows, err := c.ref.Pool.Query(context.Background(), c.sql, sqlParam...)
 		if err != nil {
 			return err
 		}
 		defer rows.Close()
-		//FIXME need support multiple rows
-		for rows.Next() {
-			vals, err := rows.Values()
-			if err != nil {
-				return err
-			}
-			for idx, val := range vals {
-				paths, ok := c.returnMapping[idx]
-				if ok {
-					if err := d.AddOrUpdateField0(paths, val); err != nil {
-						return err
+		//FIXME res mapping can be optimized
+		{
+			r := map[string]interface{}{}
+			var resultArr []interface{}
+			rowNum := 0
+			for rows.Next() {
+				vals, err := rows.Values()
+				if err != nil {
+					return err
+				}
+				record := map[string]interface{}{}
+				for idx, v := range vals {
+					if v == nil {
+						continue
+					}
+					record[fmt.Sprint(SqlReturnArrayElementParameterPrefix, idx)] = basicapi.MustConvertPrimitive(v)
+				}
+				resultArr = append(resultArr, record)
+				// Generate first line result
+				if rowNum == 0 {
+					for idx, v := range vals {
+						if v == nil {
+							continue
+						}
+						r[fmt.Sprint(SqlReturnParameterPrefix, idx)] = basicapi.MustConvertPrimitive(v)
 					}
 				}
+				rowNum++
+			}
+			r[SqlReturnArrayParameterKey] = resultArr
+			if err := c.convertResponse(d, r); err != nil {
+				return err
 			}
 		}
 		return nil
@@ -207,95 +231,47 @@ func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[str
 		d.dbPoolMapping[dbConnStr] = n
 		p = n
 	}
-	params, err := d.prepareArgMapping(definition)
-	if err != nil {
-		return nil, err
-	}
-	returnMapping, err := d.prepareReturnMapping(definition)
+	maxIdx, err := d.prepareArgMapping(definition)
 	if err != nil {
 		return nil, err
 	}
 	connector := &dbPgConnector{
-		instName:      fmt.Sprintf("%s:%s", dbOper, uuid.Must(uuid.NewV4()).String()),
-		ref:           p,
-		operation:     dbOper,
-		sql:           dbSql,
-		params:        params,
-		returnMapping: returnMapping,
-		definition:    definition,
+		instName:     fmt.Sprintf("%s:%s", dbOper, uuid.Must(uuid.NewV4()).String()),
+		ref:          p,
+		operation:    dbOper,
+		sql:          dbSql,
+		reqConverter: definition.ReqConverter,
+		reqMaxIdx:    maxIdx,
+		resConverter: definition.ResConverter,
+		definition:   definition,
+		container:    container,
 	}
 
 	return connector, nil
 }
 
-func (c *dbPgConnector) convertResponse(definition *pluginapi.MappingDefinition, d pluginapi.Model, r map[string]interface{}) error {
-	for _, paramPair := range definition.Res {
-		if len(paramPair) != 2 {
-			return errors.New("paramPair should contains 2 params")
-		}
-		fp := paramPair[0]
-		cp := paramPair[1]
-		val, ok := r[cp]
-		if !ok {
-			continue
-		}
-		return d.AddOrUpdateField0(rule.SplitFullPath(fp), val)
+func (c *dbPgConnector) convertResponse(d pluginapi.Model, r map[string]interface{}) error {
+	if m, err := c.container.WrapReadonlyModelFromMap(r); err != nil {
+		return err
+	} else {
+		return c.resConverter(m, d)
 	}
-	return nil
 }
 
-func (d *dbPgConnectorGenerator) prepareArgMapping(definition *pluginapi.MappingDefinition) ([][]string, error) {
-	paramIdxMapping := map[int][]string{}
+func (d *dbPgConnectorGenerator) prepareArgMapping(definition *pluginapi.MappingDefinition) (int, error) {
 	maxArgIdx := -1
-	for _, paramPair := range definition.Req {
-		if len(paramPair) != 2 {
-			return nil, errors.New("paramPair should contains 2 params")
-		}
-		fp := paramPair[0]
-		cp := paramPair[1]
-		if !strings.HasPrefix(cp, SqlArgParameterPrefix) {
+	for _, path := range definition.ReqArgPaths {
+		if !strings.HasPrefix(path, SqlArgParameterPrefix) {
 			continue
 		}
-		idxStr := cp[len(SqlArgParameterPrefix):]
+		idxStr := path[len(SqlArgParameterPrefix):]
 		idx, err := strconv.Atoi(idxStr)
 		if err != nil {
-			return nil, err
+			return 0, err
 		}
 		if idx > maxArgIdx {
 			maxArgIdx = idx
 		}
-		paramIdxMapping[idx] = rule.SplitFullPath(fp)
 	}
-	if len(paramIdxMapping) != maxArgIdx+1 {
-		return nil, errors.New("database argument count doesn't match")
-	}
-	var r [][]string
-	for i := 0; i <= maxArgIdx; i++ {
-		r = append(r, paramIdxMapping[i])
-	}
-	return r, nil
-}
-
-func (d *dbPgConnectorGenerator) prepareReturnMapping(definition *pluginapi.MappingDefinition) (map[int][]string, error) {
-	responseMapping := map[int][]string{}
-
-	for _, paramPair := range definition.Res {
-		if len(paramPair) != 2 {
-			return nil, errors.New("paramPair should contains 2 params")
-		}
-		fp := paramPair[0]
-		cp := paramPair[1]
-		//FIXME currently only support return parameter index mapping
-		if !strings.HasPrefix(cp, SqlReturnParameterPrefix) {
-			continue
-		}
-		idxStr := cp[len(SqlReturnParameterPrefix):]
-		idx, err := strconv.Atoi(idxStr)
-		if err != nil {
-			return nil, err
-		}
-		responseMapping[idx] = rule.SplitFullPath(fp)
-	}
-
-	return responseMapping, nil
+	return maxArgIdx, nil
 }

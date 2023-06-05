@@ -103,6 +103,11 @@ func (c *ContainerInst) NewModel() pluginapi.Model {
 	return modelinst.ModelInstHelper{}.NewInst()
 }
 
+func (c *ContainerInst) WrapReadonlyModelFromMap(m map[string]interface{}) (pluginapi.Model, error) {
+	//FIXME need to make sure readonly
+	return modelinst.ModelInstHelper{}.WrapReadonlyMap(m), nil
+}
+
 func (c *ContainerInst) AddConfigureManager(manager basicapi.ConfigureManager) error {
 	c.configureManager.addSubConfigureManager(manager)
 	return nil

@@ -17,6 +17,8 @@ func InitFn(container pluginapi.Container) error {
 		"@check_always_break":    CheckAlwaysBreak,
 		"@check_empty_break":     CheckEmptyBreak,
 		"@check_not_blank_break": CheckNotBlankBreak,
+		"@check_not_exist_break": CheckNotExistBreak,
+		"@check_exist_break":     CheckExistBreak,
 	}); err != nil {
 		return err
 	}

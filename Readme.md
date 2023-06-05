@@ -124,7 +124,7 @@ And
 #### Container
 
 * Contains all components for a specific tenant/application
-* Maintains lifecycle of application
+* Maintains lifecycle of tenant/application
 
 #### FlowModel
 
@@ -151,6 +151,9 @@ And
     * pipeline : connector = M : N
     * generator: for shared resource like listening to a network address
     * connector: for defining the entrypoint of a request
+* Note: the lifecycle of connector generally speaking is independent to container. But for the instance of connector,
+  since it should be unique within one container, the lifecycle of connector instance should be tight to container
+  lifecycle.
 
 ### Supporting model
 
@@ -170,7 +173,7 @@ The following apis can be used in projects(for starting container and custom fun
 * components.InitComponent
 * fimcore.NewUseContainer
 
-# 2. TODO List
+# 2. Project planning details, Project progress and TODO List
 
 See detailed document: [DocTodoList.md](DocTodoList.md)
 
@@ -202,13 +205,6 @@ Top priority
 4. allow step to run independently from each other to support async invoking
 5. loop
 7. entry point - http(done)/messaging/scheduling
-
-Before 1st release version
-
-1. stable api and toml config definition
-    * easy-to-read document
-2. clear running/error information
-3. Event driven support and path decision(sync and event)
 
 # 3. Work groups
 

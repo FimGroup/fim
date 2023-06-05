@@ -22,6 +22,33 @@ type modelInst2MapImpl struct {
 	valueType    byte
 }
 
+func (m *modelInst2MapImpl) ToGeneralObject() interface{} {
+	switch m.valueType {
+	case valueTypePrimitive:
+		return m.value
+	case valueTypePrimitiveArray:
+		arr := make([]interface{}, len(m.primitiveArr))
+		for i, v := range m.primitiveArr {
+			arr[i] = v
+		}
+		return arr
+	case valueTypeObject:
+		r := map[string]interface{}{}
+		for k, v := range m.data {
+			r[k] = v.ToGeneralObject()
+		}
+		return r
+	case valueTypeArray:
+		rarr := make([]interface{}, len(m.array))
+		for i, v := range m.array {
+			rarr[i] = v.ToGeneralObject()
+		}
+		return rarr
+	default:
+		panic("unknown value type:" + fmt.Sprint(m.valueType))
+	}
+}
+
 func (m *modelInst2MapImpl) AddOrUpdateField0(pathLvs []string, value interface{}) error {
 	// skip on nil
 	if value == nil {
@@ -126,10 +153,12 @@ func (m *modelInst2MapImpl) GetFieldUnsafe0(pathLvs []string) interface{} {
 						return nil
 					}
 				} else {
-					return errors.New("primitive array should be the last level")
+					//panic(errors.New("primitive array should be the last level"))
+					return nil //FIXME should raise error?
 				}
 			} else {
-				return errors.New("not a array or primitive array")
+				//panic(errors.New("not a array or primitive array"))
+				return nil //FIXME should raise error?
 			}
 		}
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/FimGroup/fim/fimapi/basicapi"
 	"github.com/FimGroup/fim/fimapi/pluginapi"
 	"github.com/FimGroup/fim/fimapi/rule"
 )
@@ -218,8 +219,8 @@ type ModelInst2 interface {
 type ModelInstHelper struct {
 }
 
-func (ModelInstHelper) WrapMap(m map[string]interface{}) ModelInst2 {
-	return mapWrapper{m: m}
+func (ModelInstHelper) WrapReadonlyMap(m map[string]interface{}) ModelInst2 {
+	return readonlyMapWrapper{m: m}
 }
 
 func (ModelInstHelper) NewInst() ModelInst2 {
@@ -227,6 +228,10 @@ func (ModelInstHelper) NewInst() ModelInst2 {
 		data:      map[string]*modelInst2MapImpl{},
 		valueType: valueTypeObject,
 	}
+}
+
+func (m *ModelConverter) GeneralTransfer(src, dst basicapi.Model) error {
+	return m.Transfer(src.(ModelInst2), dst.(ModelInst2))
 }
 
 // Transfer do data Transfer according to converter definition
@@ -389,49 +394,9 @@ func defaultValuePrimitive(in interface{}) interface{} {
 }
 
 func convertPrimitive(in interface{}) (interface{}, error) {
-	switch v := in.(type) {
-	case float32:
-		return float64(v), nil
-	case float64:
-		return v, nil
-	case bool:
-		return v, nil
-	case uint8:
-		return int64(v), nil
-	case uint16:
-		return int64(v), nil
-	case uint32:
-		return int64(v), nil
-	case uint64:
-		return nil, errors.New("currently uint64 is not supported for conversion")
-	case int8:
-		return int64(v), nil
-	case int16:
-		return int64(v), nil
-	case int32:
-		return int64(v), nil
-	case int64:
-		return v, nil
-	case complex64:
-		return nil, errors.New("currently complex64 is not supported for conversion")
-	case complex128:
-		return nil, errors.New("currently complex128 is not supported for conversion")
-	case string:
-		return v, nil
-	case int:
-		return int64(v), nil
-	case uint:
-		return nil, errors.New("currently uint is not supported for conversion")
-	case uintptr:
-		return nil, errors.New("currently uintptr is not supported for conversion")
-	}
-	return nil, errors.New("unknown type for conversion:" + fmt.Sprint(reflect.TypeOf(in)))
+	return basicapi.ConvertPrimitive(in)
 }
 
 func mustConvertPrimitive(in interface{}) interface{} {
-	v, err := convertPrimitive(in)
-	if err != nil {
-		panic(err)
-	}
-	return v
+	return basicapi.MustConvertPrimitive(in)
 }

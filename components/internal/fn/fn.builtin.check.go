@@ -19,6 +19,46 @@ func CheckAlwaysBreak(params []interface{}) (pluginapi.Fn, error) {
 	}, nil
 }
 
+func CheckNotExistBreak(params []interface{}) (pluginapi.Fn, error) {
+	var field string = params[0].(string)
+	if !rule.ValidateFullPath(field) {
+		return nil, errors.New("path invalid:" + field)
+	}
+	fieldPaths := rule.SplitFullPath(field)
+	errorKey := params[1].(string)
+	errorMessage := params[2].(string)
+	return func(m pluginapi.Model) error {
+		val := m.GetFieldUnsafe0(fieldPaths)
+		if val == nil {
+			return nil
+		}
+		return &pluginapi.FlowError{
+			Key:     errorKey,
+			Message: errorMessage,
+		}
+	}, nil
+}
+
+func CheckExistBreak(params []interface{}) (pluginapi.Fn, error) {
+	var field string = params[0].(string)
+	if !rule.ValidateFullPath(field) {
+		return nil, errors.New("path invalid:" + field)
+	}
+	fieldPaths := rule.SplitFullPath(field)
+	errorKey := params[1].(string)
+	errorMessage := params[2].(string)
+	return func(m pluginapi.Model) error {
+		val := m.GetFieldUnsafe0(fieldPaths)
+		if val != nil {
+			return nil
+		}
+		return &pluginapi.FlowError{
+			Key:     errorKey,
+			Message: errorMessage,
+		}
+	}, nil
+}
+
 func CheckEmptyBreak(params []interface{}) (pluginapi.Fn, error) {
 	var field string = params[0].(string)
 	if !rule.ValidateFullPath(field) {

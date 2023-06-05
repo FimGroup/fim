@@ -22,7 +22,17 @@ TBD
    exist
     * But both cannot be empty at the same time.
 4. For building the source and target data structure, both will be recursively built based on the nested mapping rule.
-5. Special cases
+5. For mapping rules, there are exactly the same count of array levels in both src and dst
+    * This means field mapping cannot bypass array level, e.g.
+    * ```text
+        ["slv1", "dlv2", [
+          ["sarr1[]", "darr1[]", [
+            ["slv3", "dlv3"]
+          ]]
+        ]]
+      ```
+    * `sarr1[]` and `darr1[]` mapping cannot be omitted, e.g. `slv1/sarr1[]/slv3` cannot be mapped to `dlv2/dlv3`.
+6. Special cases
     * For the case that have multiple layers of arrays, if the number of layers of opposite site does not match it,
       array mapping result may be overwritten due to the multiple layer iteration mapping.
     * For accessing one specific element in an array, filter/aggregation/etc operators should be used

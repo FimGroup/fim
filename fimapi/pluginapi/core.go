@@ -36,6 +36,7 @@ type Container interface {
 	RegisterTargetConnectorGen(connGen TargetConnectorGenerator) error
 
 	NewModel() Model
+	WrapReadonlyModelFromMap(map[string]interface{}) (Model, error)
 
 	LoadFlowModel(tomlContent string) error
 	LoadMerged(content string) error
@@ -45,9 +46,11 @@ type Container interface {
 
 type PipelineProcess func(m Model) error
 type MappingDefinition struct {
-	Req       [][]string
-	Res       [][]string
-	ErrSimple []map[string]string
+	ErrSimple    []map[string]string
+	ReqConverter func(src, dst Model) error
+	ReqArgPaths  []string
+	ResConverter func(src, dst Model) error
+	ResArgPaths  []string
 }
 
 type Connector interface {

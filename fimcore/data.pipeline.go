@@ -7,6 +7,7 @@ import (
 
 	"github.com/FimGroup/fim/fimapi/pluginapi"
 	"github.com/FimGroup/fim/fimapi/rule"
+	"github.com/FimGroup/fim/fimcore/modelinst"
 )
 
 type Pipeline struct {
@@ -24,9 +25,9 @@ type Pipeline struct {
 		SourceConnectors [][][]interface{} `toml:"source_connectors"`
 	} `toml:"pipeline"`
 	ConnectorMapping map[string]struct {
-		Req       [][]string          `toml:"req"`
-		Res       [][]string          `toml:"res"`
-		ErrSimple []map[string]string `toml:"err_simple"`
+		Req       modelinst.MappingRuleRaw `toml:"req"`
+		Res       modelinst.MappingRuleRaw `toml:"res"`
+		ErrSimple []map[string]string      `toml:"err_simple"`
 	} `toml:"connector_mapping"`
 
 	container          *ContainerInst
@@ -91,10 +92,20 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 			if !ok {
 				return nil, errors.New("connect mapping cannot be found:" + connInstName)
 			}
+			resConverter, err := s.Res.ToConverter()
+			if err != nil {
+				return nil, err
+			}
+			reqConverter, err := s.Req.ToConverter()
+			if err != nil {
+				return nil, err
+			}
 			mappdingDef := &pluginapi.MappingDefinition{
-				Req:       s.Req,
-				Res:       s.Res,
-				ErrSimple: s.ErrSimple,
+				ReqConverter: reqConverter.GeneralTransfer,
+				ReqArgPaths:  reqConverter.TargetLeafPathList,
+				ResConverter: resConverter.GeneralTransfer,
+				ResArgPaths:  resConverter.SourceLeafPathList,
+				ErrSimple:    s.ErrSimple,
 			}
 
 			gen, ok := container.registerSourceConnectorGen[connectorName]
@@ -183,10 +194,20 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 				if !ok {
 					return nil, errors.New("connect mapping cannot be found:" + connInstName)
 				}
+				resConverter, err := s.Res.ToConverter()
+				if err != nil {
+					return nil, err
+				}
+				reqConverter, err := s.Req.ToConverter()
+				if err != nil {
+					return nil, err
+				}
 				mappdingDef := &pluginapi.MappingDefinition{
-					Req:       s.Req,
-					Res:       s.Res,
-					ErrSimple: []map[string]string{},
+					ReqConverter: reqConverter.GeneralTransfer,
+					ReqArgPaths:  reqConverter.TargetLeafPathList,
+					ResConverter: resConverter.GeneralTransfer,
+					ResArgPaths:  resConverter.SourceLeafPathList,
+					ErrSimple:    []map[string]string{},
 				}
 				//FIXME support parameter data mapping for target connector
 

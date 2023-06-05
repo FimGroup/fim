@@ -21,6 +21,7 @@ import (
 const (
 	ParamHttpBodyPrefix        = "http/body/"
 	ParamHttpQueryStringPrefix = "http/query_string/"
+	ParamHttpHeaderPrefix      = "http/header/"
 )
 
 type httpRestServerConnector struct {
@@ -181,14 +182,14 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[st
 			}
 
 			// convert request
-			m := container.NewModel()
-			if err := h.convertQueryStringAndJsonRequestModel(request, body, m, mappingDef); err != nil {
+			contextModel := container.NewModel()
+			if err := h.convertQueryStringAndJsonRequestModel(request, body, contextModel, mappingDef, container); err != nil {
 				writer.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 
 			// run process
-			if err := fn(m); err != nil {
+			if err := fn(contextModel); err != nil {
 				// handling error simple
 				if flowErr, ok := err.(*pluginapi.FlowError); ok {
 					errMapping, ok := errSimpleMapping[flowErr.Key]
@@ -246,7 +247,7 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[st
 			}
 
 			// convert response
-			if data, err := h.convertJsonResponseModel(m, mappingDef); err != nil {
+			if data, err := h.convertJsonResponseModel(contextModel, mappingDef, container); err != nil {
 				writer.WriteHeader(http.StatusInternalServerError)
 				return
 			} else {
@@ -275,112 +276,85 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[st
 	}, nil
 }
 
-func (h *HttpRestServerGenerator) convertJsonResponseModel(m pluginapi.Model, def *pluginapi.MappingDefinition) ([]byte, error) {
-	r := map[string]interface{}{}
-	for _, paramPair := range def.Res {
-		if len(paramPair) != 2 {
-			return nil, errors.New("paramPair should contains 2 params")
-		}
-		fp := paramPair[0]
-		cp := paramPair[1]
-		val := m.GetFieldUnsafe0(rule.SplitFullPath(fp))
-		if val == nil {
-			continue
-		}
-		if strings.HasPrefix(cp, ParamHttpBodyPrefix) {
-			destPaths := rule.SplitFullPath(cp[len(ParamHttpBodyPrefix):])
-			m := r
-			for _, p := range destPaths[:len(destPaths)-1] {
-				//FIXME need support the following data types: array
-				nm, ok := m[p]
-				if !ok {
-					nm = map[string]interface{}{}
-					m[p] = nm
-				}
-				if nmv, ok := nm.(map[string]interface{}); !ok {
-					return nil, errors.New("data type is not object")
-				} else {
-					m = nmv
-				}
-			}
-			lastPath := destPaths[len(destPaths)-1]
-			m[lastPath] = val
-		} else {
-			//FIXME support more data access, e.g. headers
-		}
+func (h *HttpRestServerGenerator) convertJsonResponseModel(m pluginapi.Model, def *pluginapi.MappingDefinition, container pluginapi.Container) ([]byte, error) {
+	res := container.NewModel()
+	if err := def.ResConverter(m, res); err != nil {
+		return nil, err
 	}
-	return json.Marshal(r)
-}
-
-func (h *HttpRestServerGenerator) convertQueryStringAndJsonRequestModel(request *http.Request, body []byte, m pluginapi.Model, def *pluginapi.MappingDefinition) error {
-	var b interface{}
-	if len(body) > 0 {
-		if err := json.Unmarshal(body, &b); err != nil {
-			log.Println(err)
-		}
-	}
-	var queryValues url.Values
-
-	for _, paramPair := range def.Req {
-		if len(paramPair) != 2 {
-			return errors.New("paramPair should contains 2 params")
-		}
-		fp := paramPair[0]
-		cp := paramPair[1]
-		if strings.HasPrefix(cp, ParamHttpBodyPrefix) {
-			// http body
-			val, err := h.traverseRetrievingFromGenericJson(b, rule.SplitFullPath(cp[len(ParamHttpBodyPrefix):]))
-			if err != nil {
-				return err
-			}
-			if err := m.AddOrUpdateField0(rule.SplitFullPath(fp), val); err != nil {
-				return err
-			}
-		} else if strings.HasPrefix(cp, ParamHttpQueryStringPrefix) {
-			key := cp[len(ParamHttpQueryStringPrefix):]
-			if queryValues == nil {
-				// lazy parse query string
-				parsed, err := url.ParseRequestURI(request.RequestURI)
-				if err != nil {
-					return err
-				}
-				qparsed, err := url.ParseQuery(parsed.RawQuery)
-				if err != nil {
-					return err
-				}
-				queryValues = qparsed
-			}
-			if v, ok := queryValues[key]; ok && len(v) > 0 {
-				if err := m.AddOrUpdateField0(rule.SplitFullPath(fp), v[0]); err != nil {
-					return err
-				}
-			}
-		} else {
-			//FIXME support more data access, e.g. headers
-		}
-	}
-	return nil
-}
-
-func (h *HttpRestServerGenerator) traverseRetrievingFromGenericJson(o interface{}, paths []string) (interface{}, error) {
-	if o == nil {
+	obj := res.ToGeneralObject()
+	if obj == nil {
 		return nil, nil
 	}
-	//FIXME need support the following data types: array
-	val, ok := o.(map[string]interface{})[paths[0]]
+	objMap, ok := obj.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("response object is not a map[string]interface{}")
+	}
+	httpObj, ok := objMap["http"]
 	if !ok {
 		return nil, nil
 	}
-	if len(paths) == 1 {
-		switch val.(type) {
-		case map[string]interface{}:
-			return nil, errors.New("source object is not a primitive type but got object")
-		case []interface{}:
-			return nil, errors.New("source object is not a primitive type but got array")
-		}
-		//FIXME should check data type
-		return val, nil
-	} else {
-		return h.traverseRetrievingFromGenericJson(val, paths[1:])
+	httpMap, ok := httpObj.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("http object is not a map[string]interface{}")
 	}
+	bodyObject, ok := httpMap["body"]
+	if !ok {
+		return nil, nil
+	}
+	return json.Marshal(bodyObject)
+}
+
+func (h *HttpRestServerGenerator) convertQueryStringAndJsonRequestModel(request *http.Request, body []byte, m pluginapi.Model, def *pluginapi.MappingDefinition, container pluginapi.Container) error {
+	httpObj := map[string]interface{}{}
+	src := map[string]interface{}{
+		"http": httpObj,
+	}
+
+	// prepare body
+	{
+		var b interface{}
+		if len(body) > 0 {
+			if err := json.Unmarshal(body, &b); err != nil {
+				log.Println(err)
+			}
+			httpObj["body"] = b
+		}
+	}
+	// prepare query string
+	{
+		parsed, err := url.ParseRequestURI(request.RequestURI)
+		if err != nil {
+			return err
+		}
+		qparsed, err := url.ParseQuery(parsed.RawQuery)
+		if err != nil {
+			return err
+		}
+		if len(qparsed) > 0 {
+			queryStringMap := map[string]interface{}{}
+			for k, v := range qparsed {
+				if len(v) > 0 {
+					queryStringMap[k] = v[0]
+				}
+			}
+			httpObj["query_string"] = queryStringMap
+		}
+	}
+	// prepare headers
+	{
+		header := request.Header
+		headerMap := map[string]interface{}{}
+		for k, v := range header {
+			if len(v) > 0 {
+				headerMap[k] = v[0]
+			}
+		}
+		httpObj["header"] = headerMap
+	}
+	// convert
+	srcModel, err := container.WrapReadonlyModelFromMap(src)
+	if err != nil {
+		return err
+	}
+	return def.ReqConverter(srcModel, m)
 }

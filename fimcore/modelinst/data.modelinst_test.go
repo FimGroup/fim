@@ -117,6 +117,14 @@ func TestConverterData0(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Log(dst)
+	{
+		obj := dst.ToGeneralObject()
+		if data, err := json.Marshal(obj); err != nil {
+			t.Fatal(err)
+		} else {
+			t.Log(string(data))
+		}
+	}
 }
 
 func BenchmarkConverterData0(b *testing.B) {
@@ -235,7 +243,7 @@ func TestConverterData1(t *testing.T) {
 	}
 
 	m := make(map[string]interface{})
-	src := ModelInstHelper{}.WrapMap(m)
+	src := ModelInstHelper{}.WrapReadonlyMap(m)
 	dst := ModelInstHelper{}.NewInst()
 	if err := c.Transfer(src, dst); err != nil {
 		t.Fatal(err)
