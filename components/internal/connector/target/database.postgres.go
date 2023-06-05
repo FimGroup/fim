@@ -210,10 +210,10 @@ func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[str
 		}
 		{
 			// custom configuration
-			if dbMaxConn > 0 {
+			if int32(dbMaxConn) > 0 {
 				config.MaxConns = int32(dbMaxConn)
 			}
-			if dbMinConn > 0 {
+			if int32(dbMinConn) > 0 {
 				config.MinConns = int32(dbMinConn)
 			}
 		}

@@ -64,6 +64,9 @@ Once the item has been completed, it will be moved to the main document as featu
       connector
 * [ ] Determine whether to support non-single type array
     * values of multiple types(mixed of primitive/object/array) in one single array
+* [ ] Capture panic and handling error in pipeline
+    * blocking error
+    * soft error, can be skipped
 
 ## Before 1st release (planned as v1.0.0)
 
