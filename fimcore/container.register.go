@@ -1,10 +1,9 @@
 package fimcore
 
 import (
-	"log"
-
 	"github.com/FimGroup/fim/fimapi/basicapi"
 	"github.com/FimGroup/fim/fimapi/pluginapi"
+	"github.com/FimGroup/fim/fimapi/providers"
 	"github.com/FimGroup/fim/fimcore/modelinst"
 )
 
@@ -32,6 +31,8 @@ func NewContainer() *ContainerInst {
 		registerTargetConnectorGen: map[string]pluginapi.TargetConnectorGenerator{},
 
 		configureManager: NewNestedConfigureManager(),
+
+		_logger: loggerManager.GetLogger("FimCore.Container"),
 	}
 }
 
@@ -57,6 +58,8 @@ type ContainerInst struct {
 	registerTargetConnectorGen map[string]pluginapi.TargetConnectorGenerator
 
 	configureManager *NestedConfigureManager
+
+	_logger providers.Logger
 }
 
 func (c *ContainerInst) LoadFlowModel(tomlContent string) error {
@@ -95,7 +98,7 @@ func (c *ContainerInst) StartContainer() error {
 	}
 	allInit = true
 
-	log.Println("start container success!")
+	c._logger.Info("start container success!")
 	return nil
 }
 

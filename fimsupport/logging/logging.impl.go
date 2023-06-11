@@ -337,7 +337,7 @@ Loop:
 	return nil
 }
 
-func NewLogrusLoggerHook(filePathPrefix string, maxDays, maxFileSize, maxFilePerDay int, lv logrus.Level, debugFlag bool) (logrus.Hook, error) {
+func newLogrusLoggerHook(filePathPrefix string, maxDays, maxFileSize, maxFilePerDay int, lv logrus.Level, debugFlag bool) (logrus.Hook, error) {
 	if maxDays <= 0 {
 		maxDays = 7
 	}

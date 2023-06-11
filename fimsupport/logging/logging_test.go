@@ -9,7 +9,7 @@ import (
 )
 
 func TestSampleHook(t *testing.T) {
-	manager, err := logging.NewLoggerManager("logs/fim", 1, 1*1024*1024, 2, logrus.TraceLevel, true)
+	manager, err := logging.NewLoggerManager("logs/fim", 1, 1*1024*1024, 2, logrus.TraceLevel, true, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -22,7 +22,7 @@ func TestSampleHook(t *testing.T) {
 }
 
 func TestKeepLogging(t *testing.T) {
-	manager, err := logging.NewLoggerManager("logs/fim", 1, 1*1024*1024, 10, logrus.TraceLevel, true)
+	manager, err := logging.NewLoggerManager("logs/fim", 1, 1*1024*1024, 10, logrus.TraceLevel, true, false)
 	if err != nil {
 		t.Fatal(err)
 	}

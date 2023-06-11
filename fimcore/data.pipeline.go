@@ -2,10 +2,10 @@ package fimcore
 
 import (
 	"errors"
-	"log"
 	"strings"
 
 	"github.com/FimGroup/fim/fimapi/pluginapi"
+	"github.com/FimGroup/fim/fimapi/providers"
 	"github.com/FimGroup/fim/fimapi/rule"
 	"github.com/FimGroup/fim/fimcore/modelinst"
 )
@@ -30,6 +30,7 @@ type Pipeline struct {
 		ErrSimple []map[string]string      `toml:"err_simple"`
 	} `toml:"connector_mapping"`
 
+	_logger            providers.Logger
 	container          *ContainerInst
 	connectorInitFuncs []struct {
 		pluginapi.SourceConnector
@@ -40,6 +41,7 @@ type Pipeline struct {
 
 func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 	p.container = container
+	p._logger = loggerManager.GetLogger("FimCore.Pipeline")
 
 	if len(p.Metadata.Version) == 0 {
 		return nil, errors.New("pipeline version is empty")
@@ -367,6 +369,6 @@ func (p *Pipeline) setupPipeline() error {
 		}
 	}
 
-	log.Println("setupPipeline done.")
+	p._logger.Info("setupPipeline done.")
 	return nil
 }

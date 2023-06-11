@@ -32,6 +32,12 @@ var flowModelFileContent = `
 
 `
 
+func init() {
+	if err := Init(); err != nil {
+		panic(err)
+	}
+}
+
 func loadDef() (*DataTypeDefinitions, error) {
 	def := NewDataTypeDefinitions()
 	if err := def.MergeToml(flowModelFileContent); err != nil {
