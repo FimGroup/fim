@@ -30,6 +30,12 @@ Once the item has been completed, it will be moved to the main document as featu
     * Note: using new file apis
 * [ ] Make connector mapping embedded
     * [ ] convert all flow files
+* [ ] connector lifecycle new approach to support connector level and instance level
+* [ ] make container and connector independent
+    * connector can spawn instances to use containers
+    * when one container is EOL, connector instance should be released and the event should also be delivered to
+      connector
+* [ ] logger
 
 ## Todo List
 
@@ -58,15 +64,14 @@ Once the item has been completed, it will be moved to the main document as featu
     * [x] For plugins including functions and connectors
     * [ ] For core facilities including flow configure static value
     * [ ] Need an automatic way to ensure the types entering or leaving ModelInst2
-* [ ] make container and connector independent
-    * connector can spawn instances to use containers
-    * when one container is EOL, connector instance should be released and the event should also be delivered to
-      connector
 * [ ] Determine whether to support non-single type array
     * values of multiple types(mixed of primitive/object/array) in one single array
 * [ ] Capture panic and handling error in pipeline
     * blocking error
     * soft error, can be skipped
+* [ ] reduce go.mod dependencies
+    * Keep minimum dependencies for plugins
+    * Using builtin implementations for shared and small pieces
 
 ## Before 1st release (planned as v1.0.0)
 
@@ -76,4 +81,15 @@ Once the item has been completed, it will be moved to the main document as featu
     * provide easy-to-read document
 2. clear running/error information
 3. Event driven support and path decision(sync and event)
+
+## Changelogs
+
+#### v0.0.1
+
+* Initial release with basic concepts
+    * Container/FlowModel/Pipeline/Flow/Function/Source and target connector
+* Plugins
+    * http rest source connector
+    * postgresql database connector
+    * builtin functions
 

@@ -220,6 +220,13 @@ Top priority
 * interoperability - java/dotnet agent and java/dotnet/etc. service integration
 * tooling - IDE/debugging/profiling/logging/etc.
 
+Top priority tasks
+
+* optimize knowledge to use fim
+* more connectors
+* Interoperability with existing third party components
+* service forms - standalone, as part of function, peer agent
+
 # A. Version planning
 
 * version format: x.y.z-type
