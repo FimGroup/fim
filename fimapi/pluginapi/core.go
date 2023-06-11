@@ -1,6 +1,8 @@
 package pluginapi
 
-import "github.com/FimGroup/fim/fimapi/basicapi"
+import (
+	"github.com/FimGroup/fim/fimapi/basicapi"
+)
 
 type DataType int
 

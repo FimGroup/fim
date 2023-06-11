@@ -7,6 +7,10 @@ import (
 	"github.com/FimGroup/fim/fimcore/modelinst"
 )
 
+var _ providers.ContainerProvided = new(ContainerInst)
+var _ pluginapi.Container = new(ContainerInst)
+var _ basicapi.BasicContainer = new(ContainerInst)
+
 func NewUseContainer() basicapi.BasicContainer {
 	return NewContainer()
 }
@@ -32,7 +36,8 @@ func NewContainer() *ContainerInst {
 
 		configureManager: NewNestedConfigureManager(),
 
-		_logger: loggerManager.GetLogger("FimCore.Container"),
+		_logger:        loggerManager.GetLogger("FimCore.Container"),
+		_loggerManager: loggerManager,
 	}
 }
 
@@ -59,7 +64,12 @@ type ContainerInst struct {
 
 	configureManager *NestedConfigureManager
 
-	_logger providers.Logger
+	_logger        providers.Logger
+	_loggerManager providers.LoggerManager
+}
+
+func (c *ContainerInst) GetContainerLoggerManager() providers.LoggerManager {
+	return c._loggerManager
 }
 
 func (c *ContainerInst) LoadFlowModel(tomlContent string) error {
