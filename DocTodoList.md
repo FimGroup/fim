@@ -35,7 +35,7 @@ Once the item has been completed, it will be moved to the main document as featu
     * connector can spawn instances to use containers
     * when one container is EOL, connector instance should be released and the event should also be delivered to
       connector
-* [ ] logger
+* [ ] Instance name for connectors
 
 ## Todo List
 
@@ -84,6 +84,10 @@ Once the item has been completed, it will be moved to the main document as featu
 
 ## Changelogs
 
+#### v0.0.2 (in-progress)
+
+* Logger
+
 #### v0.0.1
 
 * Initial release with basic concepts
@@ -92,4 +96,7 @@ Once the item has been completed, it will be moved to the main document as featu
     * http rest source connector
     * postgresql database connector
     * builtin functions
-
+* Data mapping rule
+    * Primitive type
+    * Object
+    * Array

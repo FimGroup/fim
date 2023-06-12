@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -13,7 +12,9 @@ import (
 	"strings"
 
 	"github.com/FimGroup/fim/fimapi/pluginapi"
+	"github.com/FimGroup/fim/fimapi/providers"
 	"github.com/FimGroup/fim/fimapi/rule"
+	"github.com/FimGroup/fim/fimsupport/logging"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -52,11 +53,15 @@ func (h *httpRestServerConnector) ConnectorName() string {
 }
 
 func NewHttpRestServerGenerator() pluginapi.SourceConnectorGenerator {
-	return &HttpRestServerGenerator{listenMap: map[string]struct {
-		net.Listener
-		*http.Server
-		Mux *chi.Mux
-	}{}}
+	return &HttpRestServerGenerator{
+		listenMap: map[string]struct {
+			net.Listener
+			*http.Server
+			Mux *chi.Mux
+		}{},
+
+		_logger: logging.GetLoggerManager().GetLogger("FimGroup.HttpRestServerConnector"),
+	}
 }
 
 type HttpRestServerGenerator struct {
@@ -65,6 +70,8 @@ type HttpRestServerGenerator struct {
 		*http.Server
 		Mux *chi.Mux
 	}
+
+	_logger providers.Logger
 }
 
 func (h *HttpRestServerGenerator) GeneratorNames() []string {
@@ -75,7 +82,7 @@ func (h *HttpRestServerGenerator) Start() error {
 	for _, v := range h.listenMap {
 		go func() {
 			if err := v.Server.Serve(v.Listener); err != nil {
-				log.Println("serving http error:", err)
+				h._logger.Error("serving http error:", err)
 			}
 		}()
 	}
@@ -219,7 +226,7 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[st
 						if ok {
 							code, err := strconv.Atoi(status)
 							if err != nil {
-								log.Println("error processing error simple status code:", err)
+								h._logger.Error("error processing error simple status code:", err)
 								writer.WriteHeader(http.StatusInternalServerError)
 								return
 							}
@@ -233,15 +240,15 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[st
 						if err == nil {
 							_, err := writer.Write(data)
 							if err != nil {
-								log.Println("write response error:", err)
+								h._logger.Error("write response error:", err)
 							}
 							return
 						} else {
-							log.Println("json marshal failed:", err)
+							h._logger.Error("json marshal failed:", err)
 						}
 					}
 				}
-				log.Println("error processing:", err)
+				h._logger.Error("error processing:", err)
 				writer.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -255,7 +262,7 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[st
 				writer.WriteHeader(http.StatusOK)
 				_, err := writer.Write(data)
 				if err != nil {
-					log.Println("write response error:", err)
+					h._logger.Error("write response error:", err)
 				}
 				return
 			}
@@ -315,7 +322,7 @@ func (h *HttpRestServerGenerator) convertQueryStringAndJsonRequestModel(request 
 		var b interface{}
 		if len(body) > 0 {
 			if err := json.Unmarshal(body, &b); err != nil {
-				log.Println(err)
+				h._logger.Error(err)
 			}
 			httpObj["body"] = b
 		}
