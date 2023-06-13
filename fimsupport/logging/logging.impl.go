@@ -17,6 +17,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+
+	"github.com/FimGroup/fim/fimapi/pluginapi"
 )
 
 const spaceByte = byte(' ')
@@ -40,6 +42,11 @@ type logrusLoggerHook struct {
 
 	fs             afero.Fs
 	filePathFormat string
+}
+
+func (l *logrusLoggerHook) Shutdown() error {
+	//FIXME should support shutdown - release all the resources
+	panic(pluginapi.IMPLEMENT_ME)
 }
 
 func (l *logrusLoggerHook) Levels() []logrus.Level {
@@ -293,6 +300,17 @@ func (l *logrusLoggerHook) rotateMaxFileSize(currentFilePath string, entry *logr
 
 func (l *logrusLoggerHook) removeOutOfDateFiles(entry *logrus.Entry) error {
 	//FIXME directly remove oldest files according to MaxDays
+
+	var loggerFilePrefix = l.PathFormatPrefix
+	// extrace file name prefix (parent folder excluded)
+	{
+		i := len(loggerFilePrefix) - 1
+		for i >= 0 && !os.IsPathSeparator(loggerFilePrefix[i]) {
+			i--
+		}
+		loggerFilePrefix = loggerFilePrefix[i+1:] + "."
+	}
+
 	var retainedFilePrefix []string
 	for i := 0; i < l.RetainMaxDays; i++ {
 		curTime := entry.Time.Add(-(time.Duration(i) * 24 * time.Hour))
@@ -323,7 +341,10 @@ Loop:
 					continue Loop
 				}
 			}
-			filesToDelete = append(filesToDelete, v.Name())
+			// avoid deleting other files without the specific prefix
+			if strings.HasPrefix(v.Name(), loggerFilePrefix) {
+				filesToDelete = append(filesToDelete, v.Name())
+			}
 		}
 	}
 

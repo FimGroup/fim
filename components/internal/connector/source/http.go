@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/FimGroup/fim/fimapi/pluginapi"
 	"github.com/FimGroup/fim/fimapi/providers"
@@ -17,6 +18,8 @@ import (
 	"github.com/FimGroup/fim/fimsupport/logging"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -52,7 +55,28 @@ func (h *httpRestServerConnector) ConnectorName() string {
 	return h.instName
 }
 
+type accessLogger struct {
+	loggerManager providers.LoggerManager
+	logger        providers.Logger
+}
+
+func (a *accessLogger) Print(v ...interface{}) {
+	a.logger.Info(v...)
+}
+
+func newAccessLogger() *accessLogger {
+	lm, err := logging.NewLoggerManager("logs/http_access", 7, 10*1024*1024, 5, logrus.InfoLevel, false, false)
+	if err != nil {
+		panic(err)
+	}
+	return &accessLogger{
+		loggerManager: lm,
+		logger:        lm.GetLogger("FimGroup.Component.HttpAccessLog"),
+	}
+}
+
 func NewHttpRestServerGenerator() pluginapi.SourceConnectorGenerator {
+	accessLog := newAccessLogger()
 	return &HttpRestServerGenerator{
 		listenMap: map[string]struct {
 			net.Listener
@@ -60,7 +84,8 @@ func NewHttpRestServerGenerator() pluginapi.SourceConnectorGenerator {
 			Mux *chi.Mux
 		}{},
 
-		_logger: logging.GetLoggerManager().GetLogger("FimGroup.HttpRestServerConnector"),
+		_logger:       logging.GetLoggerManager().GetLogger("FimGroup.Component.HttpRestServerConnector"),
+		_accessLogger: accessLog,
 	}
 }
 
@@ -71,7 +96,8 @@ type HttpRestServerGenerator struct {
 		Mux *chi.Mux
 	}
 
-	_logger providers.Logger
+	_logger       providers.Logger
+	_accessLogger *accessLogger
 }
 
 func (h *HttpRestServerGenerator) GeneratorNames() []string {
@@ -118,6 +144,30 @@ func (h *HttpRestServerGenerator) addHandler(options map[string]string, handleFu
 	lstruct, ok := h.listenMap[ls]
 	if !ok {
 		r := chi.NewRouter()
+
+		// middlewares
+		r.Use(middleware.RequestID)
+		r.Use(middleware.RealIP)
+		// http access log
+		r.Use(func(handler http.Handler) http.Handler {
+			format := &middleware.DefaultLogFormatter{Logger: h._accessLogger, NoColor: true}
+			fn := func(w http.ResponseWriter, r *http.Request) {
+				entry := format.NewLogEntry(r)
+				ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+				t1 := time.Now()
+				defer func() {
+					entry.Write(ww.Status(), ww.BytesWritten(), ww.Header(), time.Since(t1), nil)
+				}()
+				handler.ServeHTTP(ww, middleware.WithLogEntry(r, entry))
+			}
+			return http.HandlerFunc(fn)
+		})
+		// middlewares
+		r.Use(middleware.Recoverer)
+		// Set a timeout value on the request context (ctx), that will signal
+		// through ctx.Done() that the request has timed out and further
+		// processing should be stopped.
+		//r.Use(middleware.Timeout(300 * time.Second))
 
 		l, err := net.Listen("tcp", ls)
 		if err != nil {

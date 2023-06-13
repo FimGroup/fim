@@ -72,6 +72,8 @@ Once the item has been completed, it will be moved to the main document as featu
 * [ ] reduce go.mod dependencies
     * Keep minimum dependencies for plugins
     * Using builtin implementations for shared and small pieces
+* [ ] ResourceManager & InboundAccumulator & application container(lifecycle management)
+* [ ] Add lifecycle management for connector generator
 
 ## Before 1st release (planned as v1.0.0)
 
@@ -87,6 +89,8 @@ Once the item has been completed, it will be moved to the main document as featu
 #### v0.0.2 (in-progress)
 
 * Logger
+    * Logger API
+    * Http access log of source connector
 
 #### v0.0.1
 
