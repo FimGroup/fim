@@ -6,20 +6,6 @@ Once the item has been completed, it will be moved to the main document as featu
 
 ## Task List
 
-* [x] data mapping supports array item converter(mapping each element in the array)
-    * Note: top level array, e.g. top level struct is array in json(like htp body is a json array)
-    * [x] Pipeline mapping
-    * [x] Flow mapping
-    * [x] Functions mapping
-    * [x] Source/Target connector mapping
-    * [x] Check data type of each value when mapping values according to DataTypeStore
-        * Flow in and out parameter type should match DataTypeStore after complete the flow(data assign may happen in
-          the flow)
-    * [x] Implement or update pluginapi.Model interface to allow plugin to assign and retrieve value
-    * [x] Convert all flow files
-        * [x] flows
-        * [x] connectors
-        * [x] verify flow files
 * [ ] new api for files to avoid save files on local disks, for the usecases of cache/temp files/etc, such as large http
   payload temp files in nginx
     * [ ] Support component file loading, e.g. http template files
@@ -27,8 +13,8 @@ Once the item has been completed, it will be moved to the main document as featu
 * [ ] http and http rest - hostname matching + default server
 * [ ] http - file serving / template rendering
     * Note: using new file apis
-* [ ] Make connector mapping embedded
-    * [ ] convert all flow files
+* [x] Make connector mapping embedded
+    * [x] convert all flow files
 * [ ] connector lifecycle new approach to support connector level and instance level
 * [ ] make container and connector independent
     * connector can spawn instances to use containers
@@ -74,6 +60,7 @@ Once the item has been completed, it will be moved to the main document as featu
 * [ ] ResourceManager & InboundAccumulator & application container(lifecycle management)
 * [ ] Add lifecycle management for connector generator
 * [ ] DataType check when accessing ModelInst2
+* [ ] Precise and easy mechanisms for debugging
 
 ## Before 1st release (planned as v1.0.0)
 
@@ -90,6 +77,7 @@ Once the item has been completed, it will be moved to the main document as featu
 
 * Data mapping rule
     * Add flow in/out parameter type matching validation
+    * Embed source/target connector mapping rule in connector definition
 * Logger
     * Logger API
     * Http access log of source connector

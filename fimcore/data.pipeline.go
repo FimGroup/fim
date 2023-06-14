@@ -1,6 +1,7 @@
 package fimcore
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
 
@@ -24,11 +25,6 @@ type Pipeline struct {
 		Steps            [][][]interface{} `toml:"steps"`
 		SourceConnectors [][][]interface{} `toml:"source_connectors"`
 	} `toml:"pipeline"`
-	ConnectorMapping map[string]struct {
-		Req       modelinst.MappingRuleRaw `toml:"req"`
-		Res       modelinst.MappingRuleRaw `toml:"res"`
-		ErrSimple []map[string]string      `toml:"err_simple"`
-	} `toml:"connector_mapping"`
 
 	_logger            providers.Logger
 	container          *ContainerInst
@@ -37,6 +33,28 @@ type Pipeline struct {
 		*pluginapi.MappingDefinition
 	}
 	steps []func() func(global pluginapi.Model) error
+}
+
+func convertToMappingRule(obj interface{}) (modelinst.MappingRuleRaw, error) {
+	//FIXME use json to avoid toml Marshal/Unmarshal issue
+	data, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+	r := modelinst.MappingRuleRaw{}
+	err = json.Unmarshal(data, &r)
+	return r, err
+}
+
+func convertToErrSimple(obj interface{}) ([]map[string]string, error) {
+	//FIXME use json to avoid toml Marshal/Unmarshal issue
+	data, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+	var r []map[string]string
+	err = json.Unmarshal(data, &r)
+	return r, err
 }
 
 func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
@@ -53,9 +71,44 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 	{
 		// build source connector maps
 		var sourceConnectorMapLists []map[string]string
+		var sourceConnectorMappingList []struct {
+			Req       modelinst.MappingRuleRaw
+			Res       modelinst.MappingRuleRaw
+			ErrSimple []map[string]string
+		}
 		for _, v := range p.Pipeline.SourceConnectors {
 			m := map[string]string{}
+			var mapping struct {
+				Req       modelinst.MappingRuleRaw
+				Res       modelinst.MappingRuleRaw
+				ErrSimple []map[string]string
+			}
 			for _, vv := range v {
+				if len(vv) == 4 {
+					// parameter mapping operation: @mapping, req, res, err_simple
+					if vv[0] != "@mapping" {
+						return nil, errors.New("4 parameter operation should apply to @mapping operation only")
+					}
+					// req
+					req, err := convertToMappingRule(vv[1])
+					if err != nil {
+						return nil, err
+					}
+					// res
+					res, err := convertToMappingRule(vv[2])
+					if err != nil {
+						return nil, err
+					}
+					// ErrSimple
+					errSimple, err := convertToErrSimple(vv[3])
+					if err != nil {
+						return nil, err
+					}
+					mapping.Req = req
+					mapping.Res = res
+					mapping.ErrSimple = errSimple
+					continue // process next parameter
+				}
 				if len(vv) != 2 {
 					return nil, errors.New("not k-v pair in source connector definition")
 				}
@@ -77,23 +130,17 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 				}
 			}
 			sourceConnectorMapLists = append(sourceConnectorMapLists, m)
+			sourceConnectorMappingList = append(sourceConnectorMappingList, mapping)
 		}
 		// do source connector
-		for _, v := range sourceConnectorMapLists {
+		for idx, v := range sourceConnectorMapLists {
 			connectorName, ok := v["@connector"]
 			if !ok {
 				return nil, errors.New("no @connector defined")
 			}
 
 			// connector mapping
-			connInstName, ok := v["@mapping"]
-			if !ok {
-				return nil, errors.New("no @mapping defined")
-			}
-			s, ok := p.ConnectorMapping[connInstName]
-			if !ok {
-				return nil, errors.New("connect mapping cannot be found:" + connInstName)
-			}
+			s := sourceConnectorMappingList[idx]
 			resConverter, err := s.Res.ToConverter()
 			if err != nil {
 				return nil, err
@@ -129,10 +176,18 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 	{
 		// build pipeline.steps maps
 		var stepsMapList []map[string]string
+		var stepsMappingList []struct {
+			Req modelinst.MappingRuleRaw
+			Res modelinst.MappingRuleRaw
+		}
 		for _, v := range p.Pipeline.Steps {
 			m := map[string]string{}
+			var mapping struct {
+				Req modelinst.MappingRuleRaw
+				Res modelinst.MappingRuleRaw
+			}
 			for _, vv := range v {
-				if len(vv) != 2 {
+				if len(vv) < 2 {
 					return nil, errors.New("not k-v pair in pipeline.steps definition")
 				}
 				var k, v string
@@ -141,21 +196,44 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 				} else {
 					k = sv
 				}
-				if sv, ok := vv[1].(string); !ok {
-					return nil, errors.New("not string value in pipeline.steps pair")
+
+				if k == "@mapping" {
+					if len(vv) != 3 {
+						return nil, errors.New("@mapping should have req and res sections in pipeline.steps")
+					}
+					// req
+					req, err := convertToMappingRule(vv[1])
+					if err != nil {
+						return nil, err
+					}
+					// res
+					res, err := convertToMappingRule(vv[2])
+					if err != nil {
+						return nil, err
+					}
+					mapping.Req = req
+					mapping.Res = res
 				} else {
-					v = container.configureManager.ReplaceStaticConfigure(sv)
-				}
-				if _, ok := m[k]; ok {
-					return nil, errors.New("duplicated key in pipeline.steps definition")
-				} else {
-					m[k] = v
+					if len(vv) != 2 {
+						return nil, errors.New("2 parameter config is allowed in pipeline.steps definition")
+					}
+					if sv, ok := vv[1].(string); !ok {
+						return nil, errors.New("not string value in pipeline.steps pair")
+					} else {
+						v = container.configureManager.ReplaceStaticConfigure(sv)
+					}
+					if _, ok := m[k]; ok {
+						return nil, errors.New("duplicated key in pipeline.steps definition")
+					} else {
+						m[k] = v
+					}
 				}
 			}
 			stepsMapList = append(stepsMapList, m)
+			stepsMappingList = append(stepsMappingList, mapping)
 		}
 		// do pipeline.steps
-		for _, v := range stepsMapList {
+		for idx, v := range stepsMapList {
 			flowS, okS := v["@flow"]
 			flowA, okA := v["#flow"]
 			var flow string
@@ -188,14 +266,7 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 				}
 
 				// connector mapping
-				connInstName, ok := v["@mapping"]
-				if !ok {
-					return nil, errors.New("no @mapping defined")
-				}
-				s, ok := p.ConnectorMapping[connInstName]
-				if !ok {
-					return nil, errors.New("connect mapping cannot be found:" + connInstName)
-				}
+				s := stepsMappingList[idx]
 				resConverter, err := s.Res.ToConverter()
 				if err != nil {
 					return nil, err

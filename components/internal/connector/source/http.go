@@ -280,10 +280,10 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[st
 								writer.WriteHeader(http.StatusInternalServerError)
 								return
 							}
-							writer.Header().Add("Content-Type", "application/json")
+							writer.Header().Add("Content-Type", "application/json; charset=utf-8")
 							writer.WriteHeader(code)
 						} else {
-							writer.Header().Add("Content-Type", "application/json")
+							writer.Header().Add("Content-Type", "application/json; charset=utf-8")
 							writer.WriteHeader(http.StatusInternalServerError)
 						}
 						data, err := json.Marshal(r)
