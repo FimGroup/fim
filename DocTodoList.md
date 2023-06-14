@@ -6,16 +6,15 @@ Once the item has been completed, it will be moved to the main document as featu
 
 ## Task List
 
-* [ ] data mapping supports array item converter(mapping each element in the array)
+* [x] data mapping supports array item converter(mapping each element in the array)
     * Note: top level array, e.g. top level struct is array in json(like htp body is a json array)
     * [x] Pipeline mapping
     * [x] Flow mapping
     * [x] Functions mapping
     * [x] Source/Target connector mapping
-    * [ ] Check data type of each value when mapping values according to DataTypeStore
+    * [x] Check data type of each value when mapping values according to DataTypeStore
         * Flow in and out parameter type should match DataTypeStore after complete the flow(data assign may happen in
           the flow)
-        * Can check data type in parallel when setting value in ModelInst2
     * [x] Implement or update pluginapi.Model interface to allow plugin to assign and retrieve value
     * [x] Convert all flow files
         * [x] flows
@@ -74,6 +73,7 @@ Once the item has been completed, it will be moved to the main document as featu
     * Using builtin implementations for shared and small pieces
 * [ ] ResourceManager & InboundAccumulator & application container(lifecycle management)
 * [ ] Add lifecycle management for connector generator
+* [ ] DataType check when accessing ModelInst2
 
 ## Before 1st release (planned as v1.0.0)
 
@@ -88,6 +88,8 @@ Once the item has been completed, it will be moved to the main document as featu
 
 #### v0.0.2 (in-progress)
 
+* Data mapping rule
+    * Add flow in/out parameter type matching validation
 * Logger
     * Logger API
     * Http access log of source connector

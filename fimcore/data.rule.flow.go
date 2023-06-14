@@ -2,6 +2,7 @@ package fimcore
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -69,10 +70,44 @@ func (f *Flow) mergeToml(tf *templateFlow) error {
 			return err
 		}
 	}
+	// validation
+	if err := f.validateRule(); err != nil {
+		return err
+	}
 	if err := f.addFlow(tf); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (f *Flow) validateRule() error {
+	// check in/out data type
+	inMap := map[string]string{}
+	for idx, key := range f.inConverter.TargetLeafPathList {
+		inMap[key] = f.inConverter.SourceLeafPathList[idx]
+	}
+	outMap := map[string]string{}
+	for idx, key := range f.outConverter.SourceLeafPathList {
+		outMap[key] = f.outConverter.TargetLeafPathList[idx]
+	}
+	for key, path := range inMap {
+		oPath, ok := outMap[key]
+		if !ok {
+			continue
+		}
+		sdt, _, err := f.dtd.TypeOfPath(path)
+		if err != nil {
+			return err
+		}
+		ddt, _, err := f.dtd.TypeOfPath(oPath)
+		if err != nil {
+			return err
+		}
+		if sdt != ddt {
+			return errors.New(fmt.Sprintf("flow parameter=[%s] input and output mapping types are not the same", key))
+		}
+	}
 	return nil
 }
 
