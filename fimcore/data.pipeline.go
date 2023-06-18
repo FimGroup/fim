@@ -57,7 +57,7 @@ func convertToErrSimple(obj interface{}) ([]map[string]string, error) {
 	return r, err
 }
 
-func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
+func initPipeline(p *Pipeline, container *ContainerInst, application *Application) (*Pipeline, error) {
 	p.container = container
 	p._logger = loggerManager.GetLogger("FimCore.Pipeline")
 
@@ -161,7 +161,11 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 			if !ok {
 				return nil, errors.New("source connector generator cannot be found:" + connectorName)
 			}
-			if f, err := gen.GenerateSourceConnectorInstance(v, p.container); err != nil {
+			if f, err := gen.GenerateSourceConnectorInstance(pluginapi.SourceConnectorGenerateRequest{
+				Options:     v,
+				Container:   p.container,
+				Application: application,
+			}); err != nil {
 				return nil, err
 			} else {
 				container.connectorMap[f.ConnectorName()] = f
@@ -284,7 +288,12 @@ func initPipeline(p *Pipeline, container *ContainerInst) (*Pipeline, error) {
 				}
 				//FIXME support parameter data mapping for target connector
 
-				tConnector, err := g.GenerateTargetConnectorInstance(v, container, mappdingDef)
+				tConnector, err := g.GenerateTargetConnectorInstance(pluginapi.TargetConnectorGenerateRequest{
+					Options:     v,
+					Definition:  mappdingDef,
+					Container:   container,
+					Application: application,
+				})
 				if err != nil {
 					return nil, err
 				}

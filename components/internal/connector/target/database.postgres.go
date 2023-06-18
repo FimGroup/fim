@@ -160,12 +160,12 @@ func (d *dbPgConnectorGenerator) GeneratorNames() []string {
 	return []string{"database_postgres"}
 }
 
-func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[string]string, container pluginapi.Container, definition *pluginapi.MappingDefinition) (pluginapi.TargetConnector, error) {
-	dbConnStr, ok := options["database.connect_string"]
+func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(req pluginapi.TargetConnectorGenerateRequest) (pluginapi.TargetConnector, error) {
+	dbConnStr, ok := req.Options["database.connect_string"]
 	if !ok {
 		return nil, errors.New("database.connect_string is not set")
 	}
-	dbOper, ok := options["database.operation"]
+	dbOper, ok := req.Options["database.operation"]
 	if !ok {
 		return nil, errors.New("database.operation is not set")
 	}
@@ -175,11 +175,11 @@ func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[str
 	default:
 		return nil, errors.New("database.operation is invalid")
 	}
-	dbSql, ok := options["database.sql"]
+	dbSql, ok := req.Options["database.sql"]
 	if !ok {
 		return nil, errors.New("database.sql is not set")
 	}
-	dbMaxConnStr, ok := options["database.max_conns"]
+	dbMaxConnStr, ok := req.Options["database.max_conns"]
 	dbMaxConn := 0
 	if ok {
 		v, err := strconv.Atoi(dbMaxConnStr)
@@ -189,7 +189,7 @@ func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[str
 			dbMaxConn = v
 		}
 	}
-	dbMinConnStr, ok := options["database.min_conns"]
+	dbMinConnStr, ok := req.Options["database.min_conns"]
 	dbMinConn := 0
 	if ok {
 		v, err := strconv.Atoi(dbMinConnStr)
@@ -231,7 +231,7 @@ func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[str
 		d.dbPoolMapping[dbConnStr] = n
 		p = n
 	}
-	maxIdx, err := d.prepareArgMapping(definition)
+	maxIdx, err := d.prepareArgMapping(req.Definition)
 	if err != nil {
 		return nil, err
 	}
@@ -240,11 +240,11 @@ func (d *dbPgConnectorGenerator) GenerateTargetConnectorInstance(options map[str
 		ref:          p,
 		operation:    dbOper,
 		sql:          dbSql,
-		reqConverter: definition.ReqConverter,
+		reqConverter: req.Definition.ReqConverter,
 		reqMaxIdx:    maxIdx,
-		resConverter: definition.ResConverter,
-		definition:   definition,
-		container:    container,
+		resConverter: req.Definition.ResConverter,
+		definition:   req.Definition,
+		container:    req.Container,
 	}
 
 	return connector, nil

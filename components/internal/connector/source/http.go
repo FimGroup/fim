@@ -101,7 +101,7 @@ type HttpRestServerGenerator struct {
 }
 
 func (h *HttpRestServerGenerator) GeneratorNames() []string {
-	return []string{"http_rest"}
+	return []string{"http_rest", "http_template"}
 }
 
 func (h *HttpRestServerGenerator) Start() error {
@@ -211,7 +211,7 @@ func (h *HttpRestServerGenerator) addHandler(options map[string]string, handleFu
 	return nil
 }
 
-func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[string]string, container pluginapi.Container) (pluginapi.SourceConnector, error) {
+func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(req pluginapi.SourceConnectorGenerateRequest) (pluginapi.SourceConnector, error) {
 	entryPoint := func(fn pluginapi.PipelineProcess, mappingDef *pluginapi.MappingDefinition) error {
 		errSimpleMapping := map[string]map[string]string{}
 		for _, v := range mappingDef.ErrSimple {
@@ -239,8 +239,8 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[st
 			}
 
 			// convert request
-			contextModel := container.NewModel()
-			if err := h.convertQueryStringAndJsonRequestModel(request, body, contextModel, mappingDef, container); err != nil {
+			contextModel := req.Container.NewModel()
+			if err := h.convertQueryStringAndJsonRequestModel(request, body, contextModel, mappingDef, req.Container); err != nil {
 				writer.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -280,10 +280,10 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[st
 								writer.WriteHeader(http.StatusInternalServerError)
 								return
 							}
-							writer.Header().Add("Content-Type", "application/json; charset=utf-8")
+							writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 							writer.WriteHeader(code)
 						} else {
-							writer.Header().Add("Content-Type", "application/json; charset=utf-8")
+							writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 							writer.WriteHeader(http.StatusInternalServerError)
 						}
 						data, err := json.Marshal(r)
@@ -304,11 +304,11 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[st
 			}
 
 			// convert response
-			if data, err := h.convertJsonResponseModel(contextModel, mappingDef, container); err != nil {
+			if data, err := h.convertJsonResponseModel(contextModel, mappingDef, req.Container); err != nil {
 				writer.WriteHeader(http.StatusInternalServerError)
 				return
 			} else {
-				writer.Header().Add("Content-Type", "application/json")
+				writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 				writer.WriteHeader(http.StatusOK)
 				_, err := writer.Write(data)
 				if err != nil {
@@ -317,7 +317,7 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(options map[st
 				return
 			}
 		}
-		if err := h.addHandler(options, f); err != nil {
+		if err := h.addHandler(req.Options, f); err != nil {
 			return err
 		}
 		if err := h.Reload(); err != nil {

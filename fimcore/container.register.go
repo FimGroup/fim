@@ -11,11 +11,7 @@ var _ providers.ContainerProvided = new(ContainerInst)
 var _ pluginapi.Container = new(ContainerInst)
 var _ basicapi.BasicContainer = new(ContainerInst)
 
-func NewUseContainer() basicapi.BasicContainer {
-	return NewContainer()
-}
-
-func NewContainer() *ContainerInst {
+func newContainer(application *Application) *ContainerInst {
 	var flowModelMap = NewDataTypeDefinitions()
 
 	return &ContainerInst{
@@ -38,6 +34,7 @@ func NewContainer() *ContainerInst {
 
 		_logger:        loggerManager.GetLogger("FimCore.Container"),
 		_loggerManager: loggerManager,
+		application:    application,
 	}
 }
 
@@ -66,6 +63,7 @@ type ContainerInst struct {
 
 	_logger        providers.Logger
 	_loggerManager providers.LoggerManager
+	application    *Application
 }
 
 func (c *ContainerInst) GetContainerLoggerManager() providers.LoggerManager {

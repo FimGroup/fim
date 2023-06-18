@@ -13,14 +13,16 @@ Once the item has been completed, it will be moved to the main document as featu
 * [ ] http and http rest - hostname matching + default server
 * [ ] http - file serving / template rendering
     * Note: using new file apis
-* [x] Make connector mapping embedded
-    * [x] convert all flow files
+    * [ ] file serving, e.g. js/css/images
+    * [ ] template rendering
 * [ ] connector lifecycle new approach to support connector level and instance level
 * [ ] make container and connector independent
     * connector can spawn instances to use containers
     * when one container is EOL, connector instance should be released and the event should also be delivered to
       connector
 * [ ] Instance name for connectors
+* [ ] Provide init functions for application and container to avoid providing set/add in api
+    * For user to inject plugins
 
 ## Todo List
 
@@ -61,6 +63,8 @@ Once the item has been completed, it will be moved to the main document as featu
 * [ ] Add lifecycle management for connector generator
 * [ ] DataType check when accessing ModelInst2
 * [ ] Precise and easy mechanisms for debugging
+* [ ] Disallow modification to application after started up
+* [ ] Add swagger support for http rest
 
 ## Before 1st release (planned as v1.0.0)
 
@@ -75,6 +79,8 @@ Once the item has been completed, it will be moved to the main document as featu
 
 #### v0.0.2 (in-progress)
 
+* Core
+    * Application now spawns containers. Containers cannot be created without application.
 * Data mapping rule
     * Add flow in/out parameter type matching validation
     * Embed source/target connector mapping rule in connector definition

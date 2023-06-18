@@ -118,13 +118,21 @@ And
           plugins to deal with configure replacement
     * Currently, supports
         * source connector and steps(including target connector) in pipeline
+* Resource management
+    * Resource manager is used for providing different types of resources with the core facilities and the plugins
+    * Types of resources, e.g. files, sockets, etc.
 
 ### Core model
 
+#### Application
+
+* Provide application level lifecycle management
+* Start/Stop with the whole application
+
 #### Container
 
-* Contains all components for a specific tenant/application
-* Maintains lifecycle of tenant/application
+* Contains all components for a specific tenant/app/business
+* Maintains lifecycle of tenant/app/business
 
 #### FlowModel
 
