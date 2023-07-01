@@ -181,6 +181,34 @@ The following apis can be used in projects(for starting container and custom fun
 * components.InitComponent
 * fimcore.NewUseContainer
 
+### Hierarchy and order of core components and trigger points
+
+Note: new type may be added in the future and will be kept the same principles below.
+
+* (Shared/default components)
+    * default LoggingManager
+        * TODO lifecycle
+* Application
+    * FileResourceManager
+        * TODO lifecycle
+    * Source connector definitions
+    * Source connector generator and predefined instance initialization
+        * TODO lifecycle
+    * Target connector definitions
+    * Target connector generator and predefined instance initialization
+        * TODO lifecycle
+    * (Spawn container)
+* Container
+    * ConfigureManager
+        * TODO lifecycle
+    * Builtin and custom functions
+    * Source connector instance or reference
+        * TODO lifecycle
+    * Target connector instance or reference
+        * TODO lifecycle
+    * FlowModel/Pipeline/Flow definitions
+    * (start container)
+
 # 2. Project planning details, Project progress and TODO List
 
 See detailed document: [DocTodoList.md](DocTodoList.md)
