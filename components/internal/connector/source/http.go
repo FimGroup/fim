@@ -15,7 +15,8 @@ import (
 	"github.com/FimGroup/fim/fimapi/pluginapi"
 	"github.com/FimGroup/fim/fimapi/providers"
 	"github.com/FimGroup/fim/fimapi/rule"
-	"github.com/FimGroup/fim/fimsupport/logging"
+
+	"github.com/FimGroup/logging"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -26,6 +27,9 @@ const (
 	ParamHttpBodyPrefix        = "http/body/"
 	ParamHttpQueryStringPrefix = "http/query_string/"
 	ParamHttpHeaderPrefix      = "http/header/"
+
+	TypeHttpRest     = "http_rest"
+	TypeHttpTemplate = "http_template"
 )
 
 type httpRestServerConnector struct {
@@ -101,7 +105,7 @@ type HttpRestServerGenerator struct {
 }
 
 func (h *HttpRestServerGenerator) GeneratorNames() []string {
-	return []string{"http_rest", "http_template"}
+	return []string{TypeHttpRest, TypeHttpTemplate}
 }
 
 func (h *HttpRestServerGenerator) Start() error {
@@ -125,16 +129,16 @@ func (h *HttpRestServerGenerator) Reload() error {
 	return nil
 }
 
-func (h *HttpRestServerGenerator) addHandler(options map[string]string, handleFunc http.HandlerFunc) error {
-	ls, ok := options["http.listen"]
+func (h *HttpRestServerGenerator) addRestHandler(req pluginapi.SourceConnectorGenerateRequest, handleFunc http.HandlerFunc) error {
+	ls, ok := req.Options["http.listen"]
 	if !ok {
 		return errors.New("need provide http.listen for http")
 	}
-	path, ok := options["http.path"]
+	path, ok := req.Options["http.path"]
 	if !ok {
 		return errors.New("need provide http.path for http")
 	}
-	method, ok := options["http.method"]
+	method, ok := req.Options["http.method"]
 	method = strings.ToUpper(method)
 	if !ok {
 		return errors.New("need provide http.method for http")
@@ -211,6 +215,211 @@ func (h *HttpRestServerGenerator) addHandler(options map[string]string, handleFu
 	return nil
 }
 
+func (h *HttpRestServerGenerator) addTemplateHandler(req pluginapi.SourceConnectorGenerateRequest, fn pluginapi.PipelineProcess, def *pluginapi.MappingDefinition, errSimpleMapping map[string]map[string]string) error {
+	ls, ok := req.Options["http.listen"]
+	if !ok {
+		return errors.New("need provide http.listen for http")
+	}
+	path, ok := req.Options["http.path"]
+	if !ok {
+		return errors.New("need provide http.path for http")
+	}
+	method, ok := req.Options["http.method"]
+	method = strings.ToUpper(method)
+	if !ok {
+		return errors.New("need provide http.method for http")
+	}
+	resourceManagerName, ok := req.Options["http.resource_manager"]
+	if !ok {
+		return errors.New("no resource manager found")
+	}
+	templatePath, ok := req.Options["http.template_path"]
+	if !ok {
+		return errors.New("no template path found")
+	}
+	fileMgr := req.Application.GetFileResourceManager(resourceManagerName)
+	if fileMgr == nil {
+		return errors.New("cannot find file resource manager for http template loading:" + resourceManagerName)
+	}
+	tr, err := loadTemplate(templatePath, fileMgr)
+	if err != nil {
+		return err
+	}
+	//FIXME check path and listen duplication
+
+	lstruct, ok := h.listenMap[ls]
+	if !ok {
+		r := chi.NewRouter()
+
+		// middlewares
+		r.Use(middleware.RequestID)
+		r.Use(middleware.RealIP)
+		// http access log
+		r.Use(func(handler http.Handler) http.Handler {
+			format := &middleware.DefaultLogFormatter{Logger: h._accessLogger, NoColor: true}
+			fn := func(w http.ResponseWriter, r *http.Request) {
+				entry := format.NewLogEntry(r)
+				ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+				t1 := time.Now()
+				defer func() {
+					entry.Write(ww.Status(), ww.BytesWritten(), ww.Header(), time.Since(t1), nil)
+				}()
+				handler.ServeHTTP(ww, middleware.WithLogEntry(r, entry))
+			}
+			return http.HandlerFunc(fn)
+		})
+		// middlewares
+		r.Use(middleware.Recoverer)
+		// Set a timeout value on the request context (ctx), that will signal
+		// through ctx.Done() that the request has timed out and further
+		// processing should be stopped.
+		//r.Use(middleware.Timeout(300 * time.Second))
+
+		l, err := net.Listen("tcp", ls)
+		if err != nil {
+			return err
+		}
+		lstruct = struct {
+			net.Listener
+			*http.Server
+			Mux *chi.Mux
+		}{
+			Listener: l,
+			Server:   &http.Server{Handler: r},
+			Mux:      r,
+		}
+		h.listenMap[ls] = lstruct
+	} else {
+		// check duplication
+		//FIXME should use a better alternative
+		if lstruct.Mux.Match(chi.NewRouteContext(), method, path) {
+			return errors.New(fmt.Sprintf("duplicated http path:%s method:%s", path, method))
+		}
+	}
+
+	sendHtml := func(writer http.ResponseWriter, status int, obj interface{}) {
+		writer.Header().Add("Content-Type", "text/html; charset=utf-8")
+		writer.WriteHeader(status)
+		if err := tr.Render(writer, obj); err != nil {
+			h._logger.Error("render and write response error:", err)
+		}
+	}
+	sendError := func(writer http.ResponseWriter, status int) {
+		writer.WriteHeader(status)
+	}
+
+	f := func(writer http.ResponseWriter, request *http.Request) {
+		body, err := io.ReadAll(request.Body)
+		if err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if len(body) > 0 {
+			//FIXME need support more content-types
+			contentType := request.Header.Get("Content-Type")
+			if !strings.HasPrefix(contentType, "application/json") {
+				writer.WriteHeader(http.StatusBadRequest)
+				return
+			}
+		}
+
+		// convert request
+		contextModel := req.Container.NewModel()
+		if err := h.convertQueryStringAndJsonRequestModel(request, body, contextModel, def, req.Container); err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// run process
+		if err := fn(contextModel); err != nil {
+			//FIXME handling error simple
+			//FIXME need support template error rendering
+			if flowErr, ok := err.(*pluginapi.FlowError); ok {
+				errMapping, ok := errSimpleMapping[flowErr.Key]
+				if ok {
+					r := map[string]interface{}{}
+					messagePath, ok := errMapping["error_message"]
+					if ok {
+						if strings.HasPrefix(messagePath, ParamHttpBodyPrefix) {
+							destPaths := rule.SplitFullPath(messagePath[len(ParamHttpBodyPrefix):])
+							m := r
+							for _, p := range destPaths[:len(destPaths)-1] {
+								//FIXME need support the following data types: array
+								nm, ok := m[p]
+								if !ok {
+									nm = map[string]interface{}{}
+									m[p] = nm
+								}
+								m = nm.(map[string]interface{})
+							}
+							lastPath := destPaths[len(destPaths)-1]
+							m[lastPath] = flowErr.Message
+						} else {
+							//FIXME support more data access, e.g. headers
+						}
+					}
+					status, ok := errMapping["http/status"]
+					if ok {
+						code, err := strconv.Atoi(status)
+						if err != nil {
+							h._logger.Error("error processing error simple status code:", err)
+							writer.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+						writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+						writer.WriteHeader(code)
+					} else {
+						writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+						writer.WriteHeader(http.StatusInternalServerError)
+					}
+					data, err := json.Marshal(r)
+					if err == nil {
+						_, err := writer.Write(data)
+						if err != nil {
+							h._logger.Error("write response error:", err)
+						}
+						return
+					} else {
+						h._logger.Error("json marshal failed:", err)
+					}
+				}
+			}
+			h._logger.Error("error processing:", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// convert response
+		if obj, err := h.convertTemplateObjectModel(contextModel, def, req.Container); err != nil {
+			sendError(writer, http.StatusInternalServerError)
+			return
+		} else {
+			sendHtml(writer, http.StatusOK, obj)
+			return
+		}
+	}
+
+	//FIXME may cause concurrent issue on adding new handler while processing requests
+	switch method {
+	case "GET":
+		lstruct.Mux.Get(path, f)
+	case "POST":
+		lstruct.Mux.Post(path, f)
+	case "PUT":
+		lstruct.Mux.Put(path, f)
+	case "DELETE":
+		lstruct.Mux.Delete(path, f)
+	case "HEAD":
+		lstruct.Mux.Head(path, f)
+	case "PATCH":
+		lstruct.Mux.Patch(path, f)
+	default:
+		return errors.New(fmt.Sprintf("unable to register http path:%s method:%s", path, method))
+	}
+	return nil
+}
+
 func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(req pluginapi.SourceConnectorGenerateRequest) (pluginapi.SourceConnector, error) {
 	entryPoint := func(fn pluginapi.PipelineProcess, mappingDef *pluginapi.MappingDefinition) error {
 		errSimpleMapping := map[string]map[string]string{}
@@ -222,104 +431,114 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(req pluginapi.
 			errSimpleMapping[key] = v
 		}
 
-		f := func(writer http.ResponseWriter, request *http.Request) {
-
-			body, err := io.ReadAll(request.Body)
-			if err != nil {
-				writer.WriteHeader(http.StatusInternalServerError)
-				return
+		// handling http template
+		if strings.HasSuffix(req.Options["@connector"], TypeHttpTemplate) {
+			if err := h.addTemplateHandler(req, fn, mappingDef, errSimpleMapping); err != nil {
+				return err
 			}
+		} else if strings.HasSuffix(req.Options["@connector"], TypeHttpRest) {
+			f := func(writer http.ResponseWriter, request *http.Request) {
 
-			if len(body) > 0 {
-				contentType := request.Header.Get("Content-Type")
-				if !strings.HasPrefix(contentType, "application/json") {
-					writer.WriteHeader(http.StatusBadRequest)
+				body, err := io.ReadAll(request.Body)
+				if err != nil {
+					writer.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				if len(body) > 0 {
+					contentType := request.Header.Get("Content-Type")
+					if !strings.HasPrefix(contentType, "application/json") {
+						writer.WriteHeader(http.StatusBadRequest)
+						return
+					}
+				}
+
+				// convert request
+				contextModel := req.Container.NewModel()
+				if err := h.convertQueryStringAndJsonRequestModel(request, body, contextModel, mappingDef, req.Container); err != nil {
+					writer.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				// run process
+				if err := fn(contextModel); err != nil {
+					// handling error simple
+					if flowErr, ok := err.(*pluginapi.FlowError); ok {
+						errMapping, ok := errSimpleMapping[flowErr.Key]
+						if ok {
+							r := map[string]interface{}{}
+							messagePath, ok := errMapping["error_message"]
+							if ok {
+								if strings.HasPrefix(messagePath, ParamHttpBodyPrefix) {
+									destPaths := rule.SplitFullPath(messagePath[len(ParamHttpBodyPrefix):])
+									m := r
+									for _, p := range destPaths[:len(destPaths)-1] {
+										//FIXME need support the following data types: array
+										nm, ok := m[p]
+										if !ok {
+											nm = map[string]interface{}{}
+											m[p] = nm
+										}
+										m = nm.(map[string]interface{})
+									}
+									lastPath := destPaths[len(destPaths)-1]
+									m[lastPath] = flowErr.Message
+								} else {
+									//FIXME support more data access, e.g. headers
+								}
+							}
+							status, ok := errMapping["http/status"]
+							if ok {
+								code, err := strconv.Atoi(status)
+								if err != nil {
+									h._logger.Error("error processing error simple status code:", err)
+									writer.WriteHeader(http.StatusInternalServerError)
+									return
+								}
+								writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+								writer.WriteHeader(code)
+							} else {
+								writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+								writer.WriteHeader(http.StatusInternalServerError)
+							}
+							data, err := json.Marshal(r)
+							if err == nil {
+								_, err := writer.Write(data)
+								if err != nil {
+									h._logger.Error("write response error:", err)
+								}
+								return
+							} else {
+								h._logger.Error("json marshal failed:", err)
+							}
+						}
+					}
+					h._logger.Error("error processing:", err)
+					writer.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				// convert response
+				if data, err := h.convertJsonResponseModel(contextModel, mappingDef, req.Container); err != nil {
+					writer.WriteHeader(http.StatusInternalServerError)
+					return
+				} else {
+					writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+					writer.WriteHeader(http.StatusOK)
+					_, err := writer.Write(data)
+					if err != nil {
+						h._logger.Error("write response error:", err)
+					}
 					return
 				}
 			}
-
-			// convert request
-			contextModel := req.Container.NewModel()
-			if err := h.convertQueryStringAndJsonRequestModel(request, body, contextModel, mappingDef, req.Container); err != nil {
-				writer.WriteHeader(http.StatusInternalServerError)
-				return
+			if err := h.addRestHandler(req, f); err != nil {
+				return err
 			}
-
-			// run process
-			if err := fn(contextModel); err != nil {
-				// handling error simple
-				if flowErr, ok := err.(*pluginapi.FlowError); ok {
-					errMapping, ok := errSimpleMapping[flowErr.Key]
-					if ok {
-						r := map[string]interface{}{}
-						messagePath, ok := errMapping["error_message"]
-						if ok {
-							if strings.HasPrefix(messagePath, ParamHttpBodyPrefix) {
-								destPaths := rule.SplitFullPath(messagePath[len(ParamHttpBodyPrefix):])
-								m := r
-								for _, p := range destPaths[:len(destPaths)-1] {
-									//FIXME need support the following data types: array
-									nm, ok := m[p]
-									if !ok {
-										nm = map[string]interface{}{}
-										m[p] = nm
-									}
-									m = nm.(map[string]interface{})
-								}
-								lastPath := destPaths[len(destPaths)-1]
-								m[lastPath] = flowErr.Message
-							} else {
-								//FIXME support more data access, e.g. headers
-							}
-						}
-						status, ok := errMapping["http/status"]
-						if ok {
-							code, err := strconv.Atoi(status)
-							if err != nil {
-								h._logger.Error("error processing error simple status code:", err)
-								writer.WriteHeader(http.StatusInternalServerError)
-								return
-							}
-							writer.Header().Set("Content-Type", "application/json; charset=utf-8")
-							writer.WriteHeader(code)
-						} else {
-							writer.Header().Set("Content-Type", "application/json; charset=utf-8")
-							writer.WriteHeader(http.StatusInternalServerError)
-						}
-						data, err := json.Marshal(r)
-						if err == nil {
-							_, err := writer.Write(data)
-							if err != nil {
-								h._logger.Error("write response error:", err)
-							}
-							return
-						} else {
-							h._logger.Error("json marshal failed:", err)
-						}
-					}
-				}
-				h._logger.Error("error processing:", err)
-				writer.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			// convert response
-			if data, err := h.convertJsonResponseModel(contextModel, mappingDef, req.Container); err != nil {
-				writer.WriteHeader(http.StatusInternalServerError)
-				return
-			} else {
-				writer.Header().Set("Content-Type", "application/json; charset=utf-8")
-				writer.WriteHeader(http.StatusOK)
-				_, err := writer.Write(data)
-				if err != nil {
-					h._logger.Error("write response error:", err)
-				}
-				return
-			}
+		} else {
+			return errors.New("unknown connector type of http source connector:" + req.Options["@connector"])
 		}
-		if err := h.addHandler(req.Options, f); err != nil {
-			return err
-		}
+
 		if err := h.Reload(); err != nil {
 			return err
 		}
@@ -331,6 +550,34 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(req pluginapi.
 		generator:  h,
 		entryPoint: entryPoint,
 	}, nil
+}
+
+func (h *HttpRestServerGenerator) convertTemplateObjectModel(m pluginapi.Model, def *pluginapi.MappingDefinition, container pluginapi.Container) (interface{}, error) {
+	res := container.NewModel()
+	if err := def.ResConverter(m, res); err != nil {
+		return nil, err
+	}
+	obj := res.ToGeneralObject()
+	if obj == nil {
+		return nil, nil
+	}
+	objMap, ok := obj.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("response object is not a map[string]interface{}")
+	}
+	httpObj, ok := objMap["http"]
+	if !ok {
+		return nil, nil
+	}
+	httpMap, ok := httpObj.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("http object is not a map[string]interface{}")
+	}
+	bodyObject, ok := httpMap["body"]
+	if !ok {
+		return nil, nil
+	}
+	return bodyObject, nil
 }
 
 func (h *HttpRestServerGenerator) convertJsonResponseModel(m pluginapi.Model, def *pluginapi.MappingDefinition, container pluginapi.Container) ([]byte, error) {

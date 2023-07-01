@@ -4,9 +4,9 @@ import (
 	"errors"
 	"io"
 
-	"github.com/spf13/afero"
-
 	"github.com/FimGroup/fim/fimapi/pluginapi"
+
+	"github.com/spf13/afero"
 )
 
 type OsFileResourceManager struct {

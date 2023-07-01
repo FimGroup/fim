@@ -11,10 +11,9 @@ Once the item has been completed, it will be moved to the main document as featu
     * [ ] Support component file loading, e.g. http template files
     * [ ] Local disk readonly impl / mem fs impl with memory limit / S3 fs impl / etc.
 * [ ] http and http rest - hostname matching + default server
-* [ ] http - file serving / template rendering
+* [x] http - file serving / template rendering
     * Note: using new file apis
-    * [ ] file serving, e.g. js/css/images
-    * [ ] template rendering
+    * [x] template rendering
 * [ ] connector lifecycle new approach to support connector level and instance level
 * [ ] make container and connector independent
     * connector can spawn instances to use containers
@@ -65,6 +64,7 @@ Once the item has been completed, it will be moved to the main document as featu
 * [ ] Precise and easy mechanisms for debugging
 * [ ] Disallow modification to application after started up
 * [ ] Add swagger support for http rest
+* [ ] http file serving, e.g. js/css/images
 
 ## Before 1st release (planned as v1.0.0)
 
@@ -87,6 +87,9 @@ Once the item has been completed, it will be moved to the main document as featu
 * Logger
     * Logger API
     * Http access log of source connector
+    * Standalone logging package
+* Http connector
+    * Template rendering
 
 #### v0.0.1
 

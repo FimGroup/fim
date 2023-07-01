@@ -1,11 +1,10 @@
 package fimcore
 
 import (
-	"github.com/FimGroup/fim/fimapi/providers"
-	"github.com/FimGroup/fim/fimsupport/logging"
+	"github.com/FimGroup/logging"
 )
 
-var loggerManager providers.LoggerManager
+var loggerManager logging.LoggerManager
 
 func Init() error {
 	loggerManager = logging.GetLoggerManager()
