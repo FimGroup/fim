@@ -5,3 +5,9 @@ type ConfigureManager interface {
 	ReplaceDynamicConfigure(placeholder string) string
 	SupportDynamicConfigure(placeholder string) bool
 }
+
+type FullConfigureManager interface {
+	ConfigureManager
+	Startup() error
+	Stop() error
+}

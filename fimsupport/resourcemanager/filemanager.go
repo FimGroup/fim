@@ -14,6 +14,14 @@ type OsFileResourceManager struct {
 	name string
 }
 
+func (o *OsFileResourceManager) Startup() error {
+	return nil
+}
+
+func (o *OsFileResourceManager) Stop() error {
+	return nil
+}
+
 func (o *OsFileResourceManager) Name() string {
 	return o.name
 }

@@ -4,8 +4,8 @@ import (
 	"github.com/FimGroup/fim/fimapi/pluginapi"
 )
 
-func InitTarget(container pluginapi.Container) error {
-	if err := registerTargetConnectorGen(container, []pluginapi.TargetConnectorGenerator{
+func InitTarget(a pluginapi.ApplicationSupport) error {
+	if err := registerTargetConnectorGen(a, []pluginapi.TargetConnectorGenerator{
 		NewDatabasePostgresGenerator(),
 	}); err != nil {
 		return err
@@ -13,9 +13,9 @@ func InitTarget(container pluginapi.Container) error {
 	return nil
 }
 
-func registerTargetConnectorGen(container pluginapi.Container, li []pluginapi.TargetConnectorGenerator) error {
+func registerTargetConnectorGen(a pluginapi.ApplicationSupport, li []pluginapi.TargetConnectorGenerator) error {
 	for _, connGen := range li {
-		if err := container.RegisterTargetConnectorGen(connGen); err != nil {
+		if err := a.AddTargetConnectorGenerator(connGen); err != nil {
 			return err
 		}
 	}

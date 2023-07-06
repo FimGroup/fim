@@ -58,10 +58,6 @@ func (c *dbPgConnector) Reload() error {
 	return nil
 }
 
-func (c *dbPgConnector) ConnectorName() string {
-	return c.instName
-}
-
 func (c *dbPgConnector) InvokeFlow(s, d pluginapi.Model) error {
 	//FIXME allow to configure timeout
 	switch c.operation {
@@ -156,7 +152,21 @@ type dbPgConnectorGenerator struct {
 	}
 }
 
-func (d *dbPgConnectorGenerator) GeneratorNames() []string {
+func (d *dbPgConnectorGenerator) InitializeSubGeneratorInstance(req pluginapi.CommonTargetConnectorGenerateRequest) (pluginapi.TargetConnectorGenerator, error) {
+	return nil, errors.New("InitializeSubGeneratorInstance is not supported by postgres connector")
+}
+
+func (d *dbPgConnectorGenerator) Startup() error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d *dbPgConnectorGenerator) Stop() error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d *dbPgConnectorGenerator) OriginalGeneratorNames() []string {
 	return []string{"database_postgres"}
 }
 

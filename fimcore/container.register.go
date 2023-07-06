@@ -26,9 +26,7 @@ func newContainer(application *Application) *ContainerInst {
 		builtinGenFnMap: map[string]pluginapi.FnGen{},
 		customGenFnMap:  map[string]pluginapi.FnGen{},
 
-		connectorMap:               map[string]pluginapi.Connector{},
-		registerSourceConnectorGen: map[string]pluginapi.SourceConnectorGenerator{},
-		registerTargetConnectorGen: map[string]pluginapi.TargetConnectorGenerator{},
+		connectorMap: map[string]pluginapi.Connector{},
 
 		configureManager: NewNestedConfigureManager(),
 
@@ -55,15 +53,25 @@ type ContainerInst struct {
 	builtinGenFnMap map[string]pluginapi.FnGen
 	customGenFnMap  map[string]pluginapi.FnGen
 
-	connectorMap               map[string]pluginapi.Connector
-	registerSourceConnectorGen map[string]pluginapi.SourceConnectorGenerator
-	registerTargetConnectorGen map[string]pluginapi.TargetConnectorGenerator
+	connectorMap map[string]pluginapi.Connector
+
+	lifecycleListeners []pluginapi.LifecycleListener
 
 	configureManager *NestedConfigureManager
 
 	_logger        providers.Logger
 	_loggerManager providers.LoggerManager
 	application    *Application
+
+	stopFunction func() error
+}
+
+func (c *ContainerInst) AddApplicationListener(listener pluginapi.LifecycleListener) {
+	c.lifecycleListeners = append(c.lifecycleListeners, listener)
+}
+
+func (c *ContainerInst) StopContainer() error {
+	return c.stopFunction()
 }
 
 func (c *ContainerInst) GetContainerLoggerManager() providers.LoggerManager {
@@ -83,12 +91,13 @@ func (c *ContainerInst) LoadFlowModel(tomlContent string) error {
 func (c *ContainerInst) StartContainer() error {
 	// setup pipelines
 	for _, p := range c.pipelineMap {
-		if err := p.setupPipeline(); err != nil {
+		if err := p.combinePipelineAndSourceConnector(); err != nil {
 			return err
 		}
 	}
 
 	allInit := false
+	// cleanup unfinished initializations to avoid resource leak
 	defer func() {
 		if !allInit {
 			for _, c := range c.connectorMap {
@@ -98,7 +107,8 @@ func (c *ContainerInst) StartContainer() error {
 			}
 		}
 	}()
-	// last step: start connectors to accept requests
+
+	// start connectors to accept requests
 	for _, c := range c.connectorMap {
 		if err := c.Start(); err != nil {
 			return err
@@ -106,7 +116,33 @@ func (c *ContainerInst) StartContainer() error {
 	}
 	allInit = true
 
+	// trigger lifecycle listeners at end
+	for _, v := range c.lifecycleListeners {
+		if err := v.OnStart(); err != nil {
+			return err
+		}
+	}
+
 	c._logger.Info("start container success!")
+
+	c.stopFunction = func() error {
+		// trigger lifecycle listeners at start
+		for _, v := range c.lifecycleListeners {
+			if err := v.OnStop(); err != nil {
+				return err
+			}
+		}
+
+		// stop connectors
+		for _, v := range c.connectorMap {
+			if err := v.Stop(); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
 	return nil
 }
 

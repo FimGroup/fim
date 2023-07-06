@@ -6,20 +6,25 @@ Once the item has been completed, it will be moved to the main document as featu
 
 ## Task List
 
+* [ ] http path parameter
 * [ ] new api for files to avoid save files on local disks, for the usecases of cache/temp files/etc, such as large http
   payload temp files in nginx
-    * [ ] Support component file loading, e.g. http template files
+    * [x] Support component file loading, e.g. http template files
     * [ ] Local disk readonly impl / mem fs impl with memory limit / S3 fs impl / etc.
 * [ ] http and http rest - hostname matching + default server
-* [ ] connector lifecycle new approach to support connector level and instance level
+* [x] connector lifecycle new approach to support connector level and instance level
     * According to the document of hierarchy of components
-* [ ] make container and connector independent
+* [x] make container and connector independent
     * connector can spawn instances to use containers
     * when one container is EOL, connector instance should be released and the event should also be delivered to
       connector
-* [ ] Instance name for connectors
+* [x] Instance name for connectors in container level
 * [ ] Provide init functions for application and container to avoid providing set/add in api
     * For user to inject plugins
+* [ ] Migrate container connectors to app connectors
+    * container logic
+    * connector logic
+* [ ] Should merge source and target connector?
 
 ## Todo List
 
@@ -76,8 +81,10 @@ Once the item has been completed, it will be moved to the main document as featu
     * https and HSTS
 * [ ] Connector plugin support
 * [ ] graceful shutdown and restart
-* [ ] Design pattern and DDD design support
+* [ ] Design pattern, SOA and DDD design support
 * [ ] Testing/Reliability verification
+* [ ] version support - keep a single pipeline stuck to a specific version - can be used for upgrade
+* [ ] special connector of such behaviors like zookeeper client
 
 ## Before 1st release (planned as v1.0.0)
 
@@ -90,7 +97,17 @@ Once the item has been completed, it will be moved to the main document as featu
 
 ## Changelogs
 
-#### v0.0.2 (in-progress)
+#### v0.0.3 (in progress)
+
+TODO change file -> version
+TODO remove in progress in the changelogs
+
+* Core
+    * Update core models of application/container/connector
+    * define lifecycle of each type of components
+* Http connector
+
+#### v0.0.2
 
 * Core
     * Application now spawns containers. Containers cannot be created without application.

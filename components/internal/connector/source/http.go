@@ -36,11 +36,11 @@ type httpRestServerConnector struct {
 	instName  string
 	generator *HttpRestServerGenerator
 
-	entryPoint func(process pluginapi.PipelineProcess, definition *pluginapi.MappingDefinition) error
+	entryPoint func(process pluginapi.PipelineProcess) error
 }
 
-func (h *httpRestServerConnector) InvokeProcess(process pluginapi.PipelineProcess, definition *pluginapi.MappingDefinition) error {
-	return h.entryPoint(process, definition)
+func (h *httpRestServerConnector) BindPipeline(process pluginapi.PipelineProcess) error {
+	return h.entryPoint(process)
 }
 
 func (h *httpRestServerConnector) Start() error {
@@ -53,10 +53,6 @@ func (h *httpRestServerConnector) Stop() error {
 
 func (h *httpRestServerConnector) Reload() error {
 	return h.generator.Reload()
-}
-
-func (h *httpRestServerConnector) ConnectorName() string {
-	return h.instName
 }
 
 type accessLogger struct {
@@ -104,7 +100,16 @@ type HttpRestServerGenerator struct {
 	_accessLogger *accessLogger
 }
 
-func (h *HttpRestServerGenerator) GeneratorNames() []string {
+func (h *HttpRestServerGenerator) InitializeSubGeneratorInstance(req pluginapi.CommonSourceConnectorGenerateRequest) (pluginapi.SourceConnectorGenerator, error) {
+	return nil, errors.New("InitializeSubGeneratorInstance is not supported by http source connector")
+}
+
+func (h *HttpRestServerGenerator) Startup() error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (h *HttpRestServerGenerator) OriginalGeneratorNames() []string {
 	return []string{TypeHttpRest, TypeHttpTemplate}
 }
 
@@ -421,7 +426,9 @@ func (h *HttpRestServerGenerator) addTemplateHandler(req pluginapi.SourceConnect
 }
 
 func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(req pluginapi.SourceConnectorGenerateRequest) (pluginapi.SourceConnector, error) {
-	entryPoint := func(fn pluginapi.PipelineProcess, mappingDef *pluginapi.MappingDefinition) error {
+	entryPoint := func(fn pluginapi.PipelineProcess) error {
+		mappingDef := req.Definition
+
 		errSimpleMapping := map[string]map[string]string{}
 		for _, v := range mappingDef.ErrSimple {
 			key, ok := v["error_key"]

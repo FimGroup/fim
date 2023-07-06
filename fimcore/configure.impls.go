@@ -55,6 +55,14 @@ type SettableConfigureManager struct {
 	configures map[string]string
 }
 
+func (s *SettableConfigureManager) Startup() error {
+	return nil
+}
+
+func (s *SettableConfigureManager) Stop() error {
+	return nil
+}
+
 func (s *SettableConfigureManager) ReplaceStaticConfigure(placeholder string) string {
 	if strings.HasPrefix(placeholder, ConfigurePrefixStatic) {
 		key := placeholder[len(ConfigurePrefixStatic):]
@@ -89,6 +97,14 @@ func NewSettableConfigureManager() *SettableConfigureManager {
 }
 
 type EnvConfigureManager struct {
+}
+
+func (e *EnvConfigureManager) Startup() error {
+	return nil
+}
+
+func (e *EnvConfigureManager) Stop() error {
+	return nil
 }
 
 func (e *EnvConfigureManager) ReplaceStaticConfigure(placeholder string) string {

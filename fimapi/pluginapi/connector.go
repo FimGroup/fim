@@ -1,26 +1,43 @@
 package pluginapi
 
 type SourceConnectorGenerateRequest struct {
-	Options map[string]string
+	CommonSourceConnectorGenerateRequest
+	InstanceName string
+	Definition   *MappingDefinition
+	Container    Container
+}
 
-	Container   Container
+type CommonSourceConnectorGenerateRequest struct {
+	Options     map[string]string
 	Application ApplicationSupport
 }
 
 type SourceConnectorGenerator interface {
-	GeneratorNames() []string
+	OriginalGeneratorNames() []string
 	GenerateSourceConnectorInstance(req SourceConnectorGenerateRequest) (SourceConnector, error)
+
+	InitializeSubGeneratorInstance(req CommonSourceConnectorGenerateRequest) (SourceConnectorGenerator, error)
+	Startup() error
+	Stop() error
 }
 
 type TargetConnectorGenerateRequest struct {
-	Options    map[string]string
-	Definition *MappingDefinition
+	CommonTargetConnectorGenerateRequest
+	InstanceName string
+	Definition   *MappingDefinition
+	Container    Container
+}
 
-	Container   Container
+type CommonTargetConnectorGenerateRequest struct {
+	Options     map[string]string
 	Application ApplicationSupport
 }
 
 type TargetConnectorGenerator interface {
-	GeneratorNames() []string
+	OriginalGeneratorNames() []string
 	GenerateTargetConnectorInstance(req TargetConnectorGenerateRequest) (TargetConnector, error)
+
+	InitializeSubGeneratorInstance(req CommonTargetConnectorGenerateRequest) (TargetConnectorGenerator, error)
+	Startup() error
+	Stop() error
 }

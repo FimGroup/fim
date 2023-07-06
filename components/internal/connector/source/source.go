@@ -4,8 +4,8 @@ import (
 	"github.com/FimGroup/fim/fimapi/pluginapi"
 )
 
-func InitSource(container pluginapi.Container) error {
-	if err := registerSourceConnectorGen(container, []pluginapi.SourceConnectorGenerator{
+func InitSource(a pluginapi.ApplicationSupport) error {
+	if err := registerSourceConnectorGen(a, []pluginapi.SourceConnectorGenerator{
 		NewHttpRestServerGenerator(),
 	}); err != nil {
 		return err
@@ -13,9 +13,9 @@ func InitSource(container pluginapi.Container) error {
 	return nil
 }
 
-func registerSourceConnectorGen(container pluginapi.Container, li []pluginapi.SourceConnectorGenerator) error {
+func registerSourceConnectorGen(a pluginapi.ApplicationSupport, li []pluginapi.SourceConnectorGenerator) error {
 	for _, connGen := range li {
-		if err := container.RegisterSourceConnectorGen(connGen); err != nil {
+		if err := a.AddSourceConnectorGenerator(connGen); err != nil {
 			return err
 		}
 	}

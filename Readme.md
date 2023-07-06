@@ -183,31 +183,41 @@ The following apis can be used in projects(for starting container and custom fun
 
 ### Hierarchy and order of core components and trigger points
 
-Note: new type may be added in the future and will be kept the same principles below.
+* Note: new type may be added in the future and will be kept the same principles below.
+* Note2: since go doesn't have isolation mechanism such as classload in java, some components that provide resources
+  like connectors have to be in Application level in order to be shared across all containers.
+
+Details
 
 * (Shared/default components)
     * default LoggingManager
-        * TODO lifecycle
+        * no lifecycle
 * Application
+    * (Add the following components)
+    * ConfigureManager
     * FileResourceManager
-        * TODO lifecycle
-    * Source connector definitions
-    * Source connector generator and predefined instance initialization
-        * TODO lifecycle
-    * Target connector definitions
-    * Target connector generator and predefined instance initialization
-        * TODO lifecycle
+    * Target connector generator
+    * Source connector generator
+    * Source/Target connector pre-initialized generator definition
+    * (start application)
+        * Do lifecycle management of the items above
+            * ConfigureManager
+            * FileResourceManager
+            * Target connector generator
+            * Source connector generator
+            * Target connector pre-initialized generator initialization
+            * Source connector pre-initialized generator initialization
     * (Spawn container)
 * Container
-    * ConfigureManager
-        * TODO lifecycle
+    * (Add the following components)
+    * ConfigureManager (separate from Application level)
+        * no lifecycle (may change in the future)
     * Builtin and custom functions
-    * Source connector instance or reference
-        * TODO lifecycle
-    * Target connector instance or reference
-        * TODO lifecycle
     * FlowModel/Pipeline/Flow definitions
+    * Spawn source and target connector
     * (start container)
+        * Combining pipeline and source connector
+        * Source and target connector lifecycle
 
 # 2. Project planning details, Project progress and TODO List
 
@@ -216,7 +226,6 @@ See detailed document: [DocTodoList.md](DocTodoList.md)
 * Timeout for synchronous flow + timeout accumulation when processing each step of the flow
     * Plus context
 * Data constraints: e.g. not empty/greater than/less than/etc.
-* version support - keep a single pipeline stuck to a specific version - can be used for upgrade
 * specific node - run specific connector/flow/etc. - e.g. accessing internet may require few nodes and this requires the
   flow to be able to run on those nodes other than any node in the cluster
 * support assign one FlowModel field to different local fields(but not vice versa, for the reason that only one value
@@ -224,8 +233,6 @@ See detailed document: [DocTodoList.md](DocTodoList.md)
 * external shared service integration: configuration/service discovery/credential+cert/etc.
 * Detail and precise error information
 * standard event handling(send and entrypoint without mq vendor spec)
-* special connector like zookeeper client
-* compatible to design patterns, e.g. soa/ddd/etc.
 * unit test on each piece of config
 * new connector: imap/pop3/smtp, file, scheduling
 * platform specific agent: jee/dotnet/etc...

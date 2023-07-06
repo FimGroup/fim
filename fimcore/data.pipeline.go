@@ -28,9 +28,8 @@ type Pipeline struct {
 
 	_logger            providers.Logger
 	container          *ContainerInst
-	connectorInitFuncs []struct {
+	connectorBindFuncs []struct {
 		pluginapi.SourceConnector
-		*pluginapi.MappingDefinition
 	}
 	steps []func() func(global pluginapi.Model) error
 }
@@ -138,6 +137,13 @@ func initPipeline(p *Pipeline, container *ContainerInst, application *Applicatio
 			if !ok {
 				return nil, errors.New("no @connector defined")
 			}
+			instanceName, ok := v["@instance"]
+			if !ok {
+				return nil, errors.New("no @instance defined for source connector:" + connectorName)
+			}
+			if _, ok := container.connectorMap[instanceName]; ok {
+				return nil, errors.New("already defined connector with name:" + instanceName)
+			}
 
 			// connector mapping
 			s := sourceConnectorMappingList[idx]
@@ -157,22 +163,13 @@ func initPipeline(p *Pipeline, container *ContainerInst, application *Applicatio
 				ErrSimple:    s.ErrSimple,
 			}
 
-			gen, ok := container.registerSourceConnectorGen[connectorName]
-			if !ok {
-				return nil, errors.New("source connector generator cannot be found:" + connectorName)
-			}
-			if f, err := gen.GenerateSourceConnectorInstance(pluginapi.SourceConnectorGenerateRequest{
-				Options:     v,
-				Container:   p.container,
-				Application: application,
-			}); err != nil {
+			if f, err := container.application.internalGenerateSourceConnectorInstance(connectorName, instanceName, container, v, mappdingDef); err != nil {
 				return nil, err
 			} else {
-				container.connectorMap[f.ConnectorName()] = f
-				p.connectorInitFuncs = append(p.connectorInitFuncs, struct {
+				container.connectorMap[instanceName] = f
+				p.connectorBindFuncs = append(p.connectorBindFuncs, struct {
 					pluginapi.SourceConnector
-					*pluginapi.MappingDefinition
-				}{SourceConnector: f, MappingDefinition: mappdingDef})
+				}{SourceConnector: f})
 			}
 		}
 	}
@@ -264,9 +261,12 @@ func initPipeline(p *Pipeline, container *ContainerInst, application *Applicatio
 
 			if strings.HasPrefix(flow, "&") {
 				// target connector
-				g, ok := container.registerTargetConnectorGen[flow]
+				instanceName, ok := v["@instance"]
 				if !ok {
-					return nil, errors.New("target connector cannot be found:" + flow)
+					return nil, errors.New("no @instance defined for target connector:" + flow)
+				}
+				if _, ok := container.connectorMap[instanceName]; ok {
+					return nil, errors.New("already defined connector with name:" + instanceName)
 				}
 
 				// connector mapping
@@ -288,19 +288,14 @@ func initPipeline(p *Pipeline, container *ContainerInst, application *Applicatio
 				}
 				//FIXME support parameter data mapping for target connector
 
-				tConnector, err := g.GenerateTargetConnectorInstance(pluginapi.TargetConnectorGenerateRequest{
-					Options:     v,
-					Definition:  mappdingDef,
-					Container:   container,
-					Application: application,
-				})
+				tConnector, err := container.application.internalGenerateTargetConnectorInstance(flow, instanceName, container, v, mappdingDef)
 				if err != nil {
 					return nil, err
 				}
 				flowInst := tConnector.InvokeFlow
-				if _, ok := container.connectorMap[tConnector.ConnectorName()]; !ok {
+				if _, ok := container.connectorMap[instanceName]; !ok {
 					// add connector lifecycle map if new
-					container.connectorMap[tConnector.ConnectorName()] = tConnector
+					container.connectorMap[instanceName] = tConnector
 				}
 				// assemble flow
 				if okS {
@@ -440,15 +435,15 @@ func (p *Pipeline) toPipelineFn() pluginapi.PipelineProcess {
 	}
 }
 
-func (p *Pipeline) setupPipeline() error {
+func (p *Pipeline) combinePipelineAndSourceConnector() error {
 	// start source connector
 	process := p.toPipelineFn()
-	for _, f := range p.connectorInitFuncs {
-		if err := f.InvokeProcess(process, f.MappingDefinition); err != nil {
+	for _, f := range p.connectorBindFuncs {
+		if err := f.BindPipeline(process); err != nil {
 			return err
 		}
 	}
 
-	p._logger.Info("setupPipeline done.")
+	p._logger.Info("combinePipelineAndSourceConnector done.")
 	return nil
 }

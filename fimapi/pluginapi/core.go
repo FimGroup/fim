@@ -34,8 +34,6 @@ type Model = basicapi.Model
 type Container interface {
 	RegisterBuiltinFn(name string, fnGen FnGen) error
 	RegisterCustomFn(name string, fnGen FnGen) error
-	RegisterSourceConnectorGen(connGen SourceConnectorGenerator) error
-	RegisterTargetConnectorGen(connGen TargetConnectorGenerator) error
 
 	NewModel() Model
 	WrapReadonlyModelFromMap(map[string]interface{}) (Model, error)
@@ -43,7 +41,9 @@ type Container interface {
 	LoadFlowModel(tomlContent string) error
 	LoadMerged(content string) error
 
+	AddApplicationListener(listener LifecycleListener)
 	StartContainer() error
+	StopContainer() error
 }
 
 type PipelineProcess func(m Model) error
@@ -59,14 +59,12 @@ type Connector interface {
 	Start() error
 	Stop() error
 	Reload() error
-
-	ConnectorName() string
 }
 
 type SourceConnector interface {
 	Connector
 
-	InvokeProcess(PipelineProcess, *MappingDefinition) error
+	BindPipeline(PipelineProcess) error
 }
 
 type TargetConnector interface {

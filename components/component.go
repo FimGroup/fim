@@ -10,18 +10,22 @@ import (
 	"github.com/FimGroup/fim/fimapi/pluginapi"
 )
 
-func InitComponent(c basicapi.BasicContainer) error {
+func InitConnectors(a pluginapi.ApplicationSupport) error {
+	if err := source.InitSource(a); err != nil {
+		return err
+	}
+	if err := target.InitTarget(a); err != nil {
+		return err
+	}
+	return nil
+}
+
+func InitFunctions(c basicapi.BasicContainer) error {
 	container, ok := c.(pluginapi.Container)
 	if !ok {
 		return errors.New("container type is not supported")
 	}
 	if err := fn.InitFn(container); err != nil {
-		return err
-	}
-	if err := source.InitSource(container); err != nil {
-		return err
-	}
-	if err := target.InitTarget(container); err != nil {
 		return err
 	}
 	return nil
