@@ -6,7 +6,7 @@ import (
 
 func InitTarget(a pluginapi.ApplicationSupport) error {
 	if err := registerTargetConnectorGen(a, []pluginapi.TargetConnectorGenerator{
-		NewDatabasePostgresGenerator(),
+		NewPostgresConnectorGenerator(),
 	}); err != nil {
 		return err
 	}

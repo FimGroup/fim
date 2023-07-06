@@ -141,9 +141,6 @@ func initPipeline(p *Pipeline, container *ContainerInst, application *Applicatio
 			if !ok {
 				return nil, errors.New("no @instance defined for source connector:" + connectorName)
 			}
-			if _, ok := container.connectorMap[instanceName]; ok {
-				return nil, errors.New("already defined connector with name:" + instanceName)
-			}
 
 			// connector mapping
 			s := sourceConnectorMappingList[idx]
@@ -264,9 +261,6 @@ func initPipeline(p *Pipeline, container *ContainerInst, application *Applicatio
 				instanceName, ok := v["@instance"]
 				if !ok {
 					return nil, errors.New("no @instance defined for target connector:" + flow)
-				}
-				if _, ok := container.connectorMap[instanceName]; ok {
-					return nil, errors.New("already defined connector with name:" + instanceName)
 				}
 
 				// connector mapping

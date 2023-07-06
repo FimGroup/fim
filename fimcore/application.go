@@ -68,7 +68,7 @@ func (a *Application) Startup() error {
 		}
 	}
 	for _, v := range a.targetConnectorGeneratorDefinitions {
-		if err := a.setupAndStoreSubSourceConnectorGenerator(v); err != nil {
+		if err := a.setupAndStoreSubTargetConnectorGenerator(v); err != nil {
 			return err
 		}
 	}

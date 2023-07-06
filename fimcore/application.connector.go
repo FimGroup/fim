@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/FimGroup/fim/fimapi/pluginapi"
 
@@ -18,12 +19,12 @@ type connectorGeneratorDefinition struct {
 func (a *Application) internalGenerateSourceConnectorInstance(name, instanceName string, container pluginapi.Container, options map[string]string, mappingDef *pluginapi.MappingDefinition) (pluginapi.SourceConnector, error) {
 	req := pluginapi.SourceConnectorGenerateRequest{
 		CommonSourceConnectorGenerateRequest: pluginapi.CommonSourceConnectorGenerateRequest{
-			Options:     options,
-			Application: a,
+			Options:      options,
+			Application:  a,
+			InstanceName: instanceName,
 		},
-		InstanceName: instanceName,
-		Definition:   mappingDef,
-		Container:    container,
+		Definition: mappingDef,
+		Container:  container,
 	}
 	if gen, ok := a.preInitializedSourceConnectorGenerator[name]; ok {
 		return gen.GenerateSourceConnectorInstance(req)
@@ -37,12 +38,12 @@ func (a *Application) internalGenerateSourceConnectorInstance(name, instanceName
 func (a *Application) internalGenerateTargetConnectorInstance(name, instanceName string, container pluginapi.Container, options map[string]string, mappingDef *pluginapi.MappingDefinition) (pluginapi.TargetConnector, error) {
 	req := pluginapi.TargetConnectorGenerateRequest{
 		CommonTargetConnectorGenerateRequest: pluginapi.CommonTargetConnectorGenerateRequest{
-			Options:     options,
-			Application: a,
+			Options:      options,
+			Application:  a,
+			InstanceName: instanceName,
 		},
-		InstanceName: instanceName,
-		Definition:   mappingDef,
-		Container:    container,
+		Definition: mappingDef,
+		Container:  container,
 	}
 	if gen, ok := a.preInitializedTargetConnectorGenerator[name]; ok {
 		return gen.GenerateTargetConnectorInstance(req)
@@ -85,7 +86,7 @@ func (a *Application) setupAndStoreSubSourceConnectorGenerator(def map[string]ma
 		if err != nil {
 			return err
 		} else {
-			a.preInitializedSourceConnectorGenerator[parent] = subGen
+			a.preInitializedSourceConnectorGenerator[name] = subGen
 		}
 	}
 	return nil
@@ -93,6 +94,9 @@ func (a *Application) setupAndStoreSubSourceConnectorGenerator(def map[string]ma
 
 func (a *Application) setupAndStoreSubTargetConnectorGenerator(def map[string]map[string]string) error {
 	for name, options := range def {
+		if !strings.HasPrefix(name, "&") {
+			name = "&" + name
+		}
 		if newOptions, err := a.dealWithConfigurableOptions(options); err != nil {
 			return err
 		} else {
@@ -113,7 +117,7 @@ func (a *Application) setupAndStoreSubTargetConnectorGenerator(def map[string]ma
 		if err != nil {
 			return err
 		} else {
-			a.preInitializedTargetConnectorGenerator[parent] = subGen
+			a.preInitializedTargetConnectorGenerator[name] = subGen
 		}
 	}
 	return nil

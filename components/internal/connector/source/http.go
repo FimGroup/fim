@@ -105,8 +105,7 @@ func (h *HttpRestServerGenerator) InitializeSubGeneratorInstance(req pluginapi.C
 }
 
 func (h *HttpRestServerGenerator) Startup() error {
-	//TODO implement me
-	panic("implement me")
+	return nil
 }
 
 func (h *HttpRestServerGenerator) OriginalGeneratorNames() []string {

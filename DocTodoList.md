@@ -24,6 +24,7 @@ Once the item has been completed, it will be moved to the main document as featu
 * [ ] Migrate container connectors to app connectors
     * container logic
     * connector logic
+    * business definitions
 * [ ] Should merge source and target connector?
 
 ## Todo List

@@ -2,14 +2,14 @@ package pluginapi
 
 type SourceConnectorGenerateRequest struct {
 	CommonSourceConnectorGenerateRequest
-	InstanceName string
-	Definition   *MappingDefinition
-	Container    Container
+	Definition *MappingDefinition
+	Container  Container
 }
 
 type CommonSourceConnectorGenerateRequest struct {
-	Options     map[string]string
-	Application ApplicationSupport
+	Options      map[string]string
+	Application  ApplicationSupport
+	InstanceName string
 }
 
 type SourceConnectorGenerator interface {
@@ -23,14 +23,14 @@ type SourceConnectorGenerator interface {
 
 type TargetConnectorGenerateRequest struct {
 	CommonTargetConnectorGenerateRequest
-	InstanceName string
-	Definition   *MappingDefinition
-	Container    Container
+	Definition *MappingDefinition
+	Container  Container
 }
 
 type CommonTargetConnectorGenerateRequest struct {
-	Options     map[string]string
-	Application ApplicationSupport
+	Options      map[string]string
+	Application  ApplicationSupport
+	InstanceName string
 }
 
 type TargetConnectorGenerator interface {

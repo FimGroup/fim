@@ -217,7 +217,7 @@ Details
     * Spawn source and target connector
     * (start container)
         * Combining pipeline and source connector
-        * Source and target connector lifecycle
+        * Source and target connector lifecycle. Same instance name may be shared in several places.
 
 # 2. Project planning details, Project progress and TODO List
 
