@@ -331,6 +331,7 @@ func (h *HttpRestServerGenerator) addTemplateHandler(req pluginapi.SourceConnect
 		// convert request
 		contextModel := req.Container.NewModel()
 		if err := h.convertQueryStringAndJsonRequestModel(request, body, contextModel, def, req.Container); err != nil {
+			h._logger.Error("convert http request model failed:", err)
 			writer.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -462,6 +463,7 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(req pluginapi.
 				// convert request
 				contextModel := req.Container.NewModel()
 				if err := h.convertQueryStringAndJsonRequestModel(request, body, contextModel, mappingDef, req.Container); err != nil {
+					h._logger.Error("convert http request model failed:", err)
 					writer.WriteHeader(http.StatusInternalServerError)
 					return
 				}
@@ -660,6 +662,15 @@ func (h *HttpRestServerGenerator) convertQueryStringAndJsonRequestModel(request 
 			}
 		}
 		httpObj["header"] = headerMap
+	}
+	// prepare url parameeter
+	{
+		paramMap := map[string]interface{}{}
+		params := chi.RouteContext(request.Context()).URLParams
+		for idx, k := range params.Keys {
+			paramMap[k] = params.Values[idx]
+		}
+		httpObj["parameter"] = paramMap
 	}
 	// convert
 	srcModel, err := container.WrapReadonlyModelFromMap(src)

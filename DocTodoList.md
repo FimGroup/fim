@@ -6,7 +6,7 @@ Once the item has been completed, it will be moved to the main document as featu
 
 ## Task List
 
-* [ ] http path parameter
+* [x] http path parameter
 * [ ] new api for files to avoid save files on local disks, for the usecases of cache/temp files/etc, such as large http
   payload temp files in nginx
     * [x] Support component file loading, e.g. http template files
@@ -21,7 +21,7 @@ Once the item has been completed, it will be moved to the main document as featu
 * [x] Instance name for connectors in container level
 * [ ] Provide init functions for application and container to avoid providing set/add in api
     * For user to inject plugins
-* [ ] Migrate container connectors to app connectors
+* [x] Migrate container connectors to app connectors
     * container logic
     * connector logic
     * business definitions
@@ -86,6 +86,9 @@ Once the item has been completed, it will be moved to the main document as featu
 * [ ] Testing/Reliability verification
 * [ ] version support - keep a single pipeline stuck to a specific version - can be used for upgrade
 * [ ] special connector of such behaviors like zookeeper client
+* [ ] DAG flow
+* [ ] Transaction support
+* [ ] refactor of http connector
 
 ## Before 1st release (planned as v1.0.0)
 
@@ -107,6 +110,9 @@ TODO remove in progress in the changelogs
     * Update core models of application/container/connector
     * define lifecycle of each type of components
 * Http connector
+    * Support path parameter
+* Postgres connector
+    * Migrate to new lifecycle
 
 #### v0.0.2
 

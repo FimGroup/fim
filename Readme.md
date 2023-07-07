@@ -237,8 +237,6 @@ See detailed document: [DocTodoList.md](DocTodoList.md)
 * new connector: imap/pop3/smtp, file, scheduling
 * platform specific agent: jee/dotnet/etc...
 * metrics/tracing/etc...
-* DAG flow
-* Transaction support
 * as a function integrated into serverless apis, such as aws lambda
 * path/configure literal key format validation
 * pre-generated logic for flows/conversions optimization
