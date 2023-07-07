@@ -6,25 +6,13 @@ Once the item has been completed, it will be moved to the main document as featu
 
 ## Task List
 
-* [x] http path parameter
 * [ ] new api for files to avoid save files on local disks, for the usecases of cache/temp files/etc, such as large http
   payload temp files in nginx
     * [x] Support component file loading, e.g. http template files
     * [ ] Local disk readonly impl / mem fs impl with memory limit / S3 fs impl / etc.
 * [ ] http and http rest - hostname matching + default server
-* [x] connector lifecycle new approach to support connector level and instance level
-    * According to the document of hierarchy of components
-* [x] make container and connector independent
-    * connector can spawn instances to use containers
-    * when one container is EOL, connector instance should be released and the event should also be delivered to
-      connector
-* [x] Instance name for connectors in container level
 * [ ] Provide init functions for application and container to avoid providing set/add in api
     * For user to inject plugins
-* [x] Migrate container connectors to app connectors
-    * container logic
-    * connector logic
-    * business definitions
 * [ ] Should merge source and target connector?
 
 ## Todo List
@@ -101,10 +89,7 @@ Once the item has been completed, it will be moved to the main document as featu
 
 ## Changelogs
 
-#### v0.0.3 (in progress)
-
-TODO change file -> version
-TODO remove in progress in the changelogs
+#### v0.0.3
 
 * Core
     * Update core models of application/container/connector
