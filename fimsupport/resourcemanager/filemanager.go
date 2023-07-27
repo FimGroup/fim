@@ -3,15 +3,22 @@ package resourcemanager
 import (
 	"errors"
 	"io"
+	"net/http"
 
 	"github.com/FimGroup/fim/fimapi/pluginapi"
 
 	"github.com/spf13/afero"
 )
 
+var _ http.FileSystem = new(OsFileResourceManager)
+
 type OsFileResourceManager struct {
 	fs   afero.Fs
 	name string
+}
+
+func (o *OsFileResourceManager) Open(name string) (http.File, error) {
+	return afero.NewHttpFs(o.fs).Open(name)
 }
 
 func (o *OsFileResourceManager) Startup() error {

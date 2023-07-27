@@ -6,6 +6,7 @@ Once the item has been completed, it will be moved to the main document as featu
 
 ## Task List
 
+* [x] http connector static file
 * [ ] new api for files to avoid save files on local disks, for the usecases of cache/temp files/etc, such as large http
   payload temp files in nginx
     * [x] Support component file loading, e.g. http template files
@@ -13,7 +14,13 @@ Once the item has been completed, it will be moved to the main document as featu
 * [ ] http and http rest - hostname matching + default server
 * [ ] Provide init functions for application and container to avoid providing set/add in api
     * For user to inject plugins
+* [ ] Connector plugin support
+    * [ ] http auth plugin
 * [ ] Should merge source and target connector?
+* [ ] standard event handling(send and entrypoint without mq vendor spec)
+* [ ] Demo project
+    * [ ] Forum
+    * [ ] Realworld https://github.com/gothinkster/realworld
 
 ## Todo List
 
@@ -29,6 +36,8 @@ Once the item has been completed, it will be moved to the main document as featu
     * used for pipeline/flow/connector/function/etc
 * [ ] Multidimensional array in mapping
     * Prefer to regard such type of array as single dimensional array for convenience
+    * protocol that support this: json
+    * protocol that not support this: protobuf
 * [ ] Array operators for mapping
     * Split into array / merge into object or primitives
     * Read/Write single index, leaving untouched indexes default values(primitive default value or null object)
@@ -50,7 +59,7 @@ Once the item has been completed, it will be moved to the main document as featu
 * [ ] reduce go.mod dependencies
     * Keep minimum dependencies for plugins
     * Using builtin implementations for shared and small pieces
-* [ ] ResourceManager & InboundAccumulator & application container(lifecycle management)
+* [ ] InboundAccumulator
 * [ ] Add lifecycle management for connector generator
 * [ ] DataType check when accessing ModelInst2
 * [ ] Precise and easy mechanisms for debugging
@@ -68,15 +77,31 @@ Once the item has been completed, it will be moved to the main document as featu
     * header filters - content encodings/content types/charset/no cache
     * ratelimit
     * https and HSTS
-* [ ] Connector plugin support
 * [ ] graceful shutdown and restart
 * [ ] Design pattern, SOA and DDD design support
+    * updated model for design and architecture
 * [ ] Testing/Reliability verification
 * [ ] version support - keep a single pipeline stuck to a specific version - can be used for upgrade
 * [ ] special connector of such behaviors like zookeeper client
 * [ ] DAG flow
 * [ ] Transaction support
 * [ ] refactor of http connector
+* Timeout for synchronous flow + timeout accumulation when processing each step of the flow
+    * Plus context
+* Data constraints: e.g. not empty/greater than/less than/etc.
+* specific node - run specific connector/flow/etc. - e.g. accessing internet may require few nodes and this requires the
+  flow to be able to run on those nodes other than any node in the cluster
+* support assign one FlowModel field to different local fields(but not vice versa, for the reason that only one value
+  can be assigned and effective to one single field)
+* external shared service integration: configuration/service discovery/credential+cert/etc.
+* Detail and precise error information
+* unit test on each piece of config
+* new connector: imap/pop3/smtp, file, scheduling
+* platform specific agent: jee/dotnet/etc...
+* metrics/tracing/etc...
+* as a function integrated into serverless apis, such as aws lambda
+* path/configure literal key format validation
+* pre-generated logic for flows/conversions optimization
 
 ## Before 1st release (planned as v1.0.0)
 
@@ -87,7 +112,21 @@ Once the item has been completed, it will be moved to the main document as featu
 2. clear running/error information
 3. Event driven support and path decision(sync and event)
 
+Top priority
+
+4. allow step to run independently from each other to support async invoking
+5. loop
+6. entry point - http(done)/messaging/scheduling
+
 ## Changelogs
+
+#### v0.0.4 (in progress)
+
+TODO version file
+TODO changelog
+
+* http connector
+    * static file
 
 #### v0.0.3
 

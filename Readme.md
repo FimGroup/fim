@@ -223,30 +223,6 @@ Details
 
 See detailed document: [DocTodoList.md](DocTodoList.md)
 
-* Timeout for synchronous flow + timeout accumulation when processing each step of the flow
-    * Plus context
-* Data constraints: e.g. not empty/greater than/less than/etc.
-* specific node - run specific connector/flow/etc. - e.g. accessing internet may require few nodes and this requires the
-  flow to be able to run on those nodes other than any node in the cluster
-* support assign one FlowModel field to different local fields(but not vice versa, for the reason that only one value
-  can be assigned and effective to one single field)
-* external shared service integration: configuration/service discovery/credential+cert/etc.
-* Detail and precise error information
-* standard event handling(send and entrypoint without mq vendor spec)
-* unit test on each piece of config
-* new connector: imap/pop3/smtp, file, scheduling
-* platform specific agent: jee/dotnet/etc...
-* metrics/tracing/etc...
-* as a function integrated into serverless apis, such as aws lambda
-* path/configure literal key format validation
-* pre-generated logic for flows/conversions optimization
-
-Top priority
-
-4. allow step to run independently from each other to support async invoking
-5. loop
-7. entry point - http(done)/messaging/scheduling
-
 # 3. Work groups
 
 * core - key components and extensibility

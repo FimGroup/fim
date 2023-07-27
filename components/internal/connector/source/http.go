@@ -28,8 +28,9 @@ const (
 	ParamHttpQueryStringPrefix = "http/query_string/"
 	ParamHttpHeaderPrefix      = "http/header/"
 
-	TypeHttpRest     = "http_rest"
-	TypeHttpTemplate = "http_template"
+	TypeHttpRest       = "http_rest"
+	TypeHttpTemplate   = "http_template"
+	TypeHttpStaticFile = "http_static_file"
 )
 
 type httpRestServerConnector struct {
@@ -109,7 +110,7 @@ func (h *HttpRestServerGenerator) Startup() error {
 }
 
 func (h *HttpRestServerGenerator) OriginalGeneratorNames() []string {
-	return []string{TypeHttpRest, TypeHttpTemplate}
+	return []string{TypeHttpRest, TypeHttpTemplate, TypeHttpStaticFile}
 }
 
 func (h *HttpRestServerGenerator) Start() error {
@@ -439,7 +440,11 @@ func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(req pluginapi.
 		}
 
 		// handling http template
-		if strings.HasSuffix(req.Options["@connector"], TypeHttpTemplate) {
+		if strings.HasSuffix(req.Options["@connector"], TypeHttpStaticFile) {
+			if err := h.addStaticFileHandler(req); err != nil {
+				return err
+			}
+		} else if strings.HasSuffix(req.Options["@connector"], TypeHttpTemplate) {
 			if err := h.addTemplateHandler(req, fn, mappingDef, errSimpleMapping); err != nil {
 				return err
 			}
@@ -678,4 +683,94 @@ func (h *HttpRestServerGenerator) convertQueryStringAndJsonRequestModel(request 
 		return err
 	}
 	return def.ReqConverter(srcModel, m)
+}
+
+func (h *HttpRestServerGenerator) addStaticFileHandler(req pluginapi.SourceConnectorGenerateRequest) error {
+	ls, ok := req.Options["http.listen"]
+	if !ok {
+		return errors.New("need provide http.listen for http")
+	}
+	path, ok := req.Options["http.path"]
+	if !ok {
+		return errors.New("need provide http.path for http")
+	}
+	{
+		// http path
+		if path[len(path)-1] != '/' {
+			path += "/*"
+		} else {
+			path += "*"
+		}
+	}
+	resourceManagerName, ok := req.Options["http.resource_manager"]
+	if !ok {
+		return errors.New("no resource manager found")
+	}
+	fileMgr := req.Application.GetFileResourceManager(resourceManagerName)
+	if fileMgr == nil {
+		return errors.New("cannot find file resource manager for http template loading:" + resourceManagerName)
+	}
+	httpFileManager, ok := fileMgr.(http.FileSystem)
+	if !ok {
+		return errors.New("resource file manager does not support http.FileSystem")
+	}
+	//FIXME check path and listen duplication
+
+	lstruct, ok := h.listenMap[ls]
+	if !ok {
+		r := chi.NewRouter()
+
+		// middlewares
+		r.Use(middleware.RequestID)
+		r.Use(middleware.RealIP)
+		// http access log
+		r.Use(func(handler http.Handler) http.Handler {
+			format := &middleware.DefaultLogFormatter{Logger: h._accessLogger, NoColor: true}
+			fn := func(w http.ResponseWriter, r *http.Request) {
+				entry := format.NewLogEntry(r)
+				ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+				t1 := time.Now()
+				defer func() {
+					entry.Write(ww.Status(), ww.BytesWritten(), ww.Header(), time.Since(t1), nil)
+				}()
+				handler.ServeHTTP(ww, middleware.WithLogEntry(r, entry))
+			}
+			return http.HandlerFunc(fn)
+		})
+		// middlewares
+		r.Use(middleware.Recoverer)
+		// Set a timeout value on the request context (ctx), that will signal
+		// through ctx.Done() that the request has timed out and further
+		// processing should be stopped.
+		//r.Use(middleware.Timeout(300 * time.Second))
+
+		l, err := net.Listen("tcp", ls)
+		if err != nil {
+			return err
+		}
+		lstruct = struct {
+			net.Listener
+			*http.Server
+			Mux *chi.Mux
+		}{
+			Listener: l,
+			Server:   &http.Server{Handler: r},
+			Mux:      r,
+		}
+		h.listenMap[ls] = lstruct
+	} else {
+		// check duplication
+		//FIXME should use a better alternative
+		if lstruct.Mux.Match(chi.NewRouteContext(), http.MethodGet, path) {
+			return errors.New(fmt.Sprintf("duplicated http path:%s method:%s", path, http.MethodGet))
+		}
+	}
+
+	lstruct.Mux.Get(path, func(writer http.ResponseWriter, request *http.Request) {
+		chiCtx := chi.RouteContext(request.Context())
+		pathPrefix := strings.TrimSuffix(chiCtx.RoutePattern(), "/*")
+		fs := http.StripPrefix(pathPrefix, http.FileServer(httpFileManager))
+		fs.ServeHTTP(writer, request)
+	})
+	return nil
 }
