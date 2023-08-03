@@ -1,10 +1,14 @@
 package modelinst
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 
+	"github.com/FimGroup/fim/fimapi/pluginapi"
 	"github.com/FimGroup/fim/fimapi/rule"
+
+	"github.com/pelletier/go-toml/v2"
 )
 
 const (
@@ -20,6 +24,72 @@ type modelInst2MapImpl struct {
 	primitiveArr []interface{}
 	value        interface{}
 	valueType    byte
+}
+
+func (m *modelInst2MapImpl) ToToml() ([]byte, error) {
+	return toml.Marshal(m.ToGeneralObject())
+}
+
+func (m *modelInst2MapImpl) FromToml(data []byte) error {
+	var val interface{}
+	if err := toml.NewDecoder(bytes.NewBuffer(data)).DisallowUnknownFields().Decode(&val); err != nil {
+		return err
+	}
+
+	objMap, ok := val.(map[string]interface{})
+	if !ok {
+		return errors.New("FromToml produces unexpected data type")
+	}
+
+	return ModelInstHelper{}.WrapReadonlyMap(objMap).(pluginapi.ModelCopy).Transfer(m)
+}
+
+func (m *modelInst2MapImpl) Transfer(dst pluginapi.Model) error {
+	dstModelInst2, ok := dst.(*modelInst2MapImpl)
+	if !ok {
+		return errors.New("dst Model should have the same type to src Model")
+	}
+	m.copy(dstModelInst2)
+	return nil
+}
+
+func (m *modelInst2MapImpl) copy(dst *modelInst2MapImpl) {
+	//FIXME: currently use src field to overwrite dst field with the same field name, but may not be precise
+	dst.primitiveArr = m.primitiveArr
+	dst.value = m.value
+	dst.valueType = m.valueType
+	// copy field: data
+	if m.data != nil {
+		if dst.data == nil {
+			dst.data = map[string]*modelInst2MapImpl{}
+		}
+		for k, v := range m.data {
+			newSub := new(modelInst2MapImpl)
+			if v != nil {
+				v.copy(newSub)
+			} else {
+				newSub = nil
+			}
+			dst.data[k] = newSub
+		}
+	}
+	// copy field: array
+	if len(m.array) > 0 {
+		if len(dst.array) < len(m.array) {
+			newArr := make([]*modelInst2MapImpl, len(m.array))
+			copy(newArr, dst.array)
+			dst.array = newArr
+		}
+		for idx, v := range m.array {
+			newSub := new(modelInst2MapImpl)
+			if v != nil {
+				v.copy(newSub)
+			} else {
+				newSub = nil
+			}
+			dst.array[idx] = newSub
+		}
+	}
 }
 
 func (m *modelInst2MapImpl) ToGeneralObject() interface{} {

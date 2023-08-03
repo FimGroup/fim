@@ -84,7 +84,7 @@ And
     * For the purpose to validate data/break flow/respond error information
     * Two types of check functions
         * break current flow: check_XXX_break - break current flow and respond error
-            * General error is returned: FlowError
+            * General error is returned: *FlowError
         * non-breaking: check_XXX - check and set error information in local parameter for branching logic
 * Lifecycle of requests
     * Start of requests: user request or scheduled job
@@ -121,6 +121,18 @@ And
 * Resource management
     * Resource manager is used for providing different types of resources with the core facilities and the plugins
     * Types of resources, e.g. files, sockets, etc.
+* Distributed support
+    * About distributed support:
+        * Enabling the possibility to run a request from a source connector to be processed on distributed cluster
+    * Naming:
+        * Pipeline level: "ContainerName(business name)/PipelineName"
+        * Flow level: (currently not supported)
+    * Type of distribution:
+        * RPC: realtime call
+        * Event: trigger asynchronous flow without response, e.g. message/delayed message/job
+    * Level of distribution:
+        * Pipeline level: source connector -> (dispatch) -> pipeline handler
+        * Flow level: previous flow -> (dispatch) -> next flow
 
 ### Core model
 
@@ -128,11 +140,15 @@ And
 
 * Provide application level lifecycle management
 * Start/Stop with the whole application
+* Name property: physical application that provides environment for businesses running on
+    * Name convention: same as path format
 
 #### Container
 
 * Contains all components for a specific tenant/app/business
 * Maintains lifecycle of tenant/app/business
+* Name property: container name or business name that defines a set of business flows
+    * Name convention: same as path format
 
 #### FlowModel
 

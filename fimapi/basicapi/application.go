@@ -1,5 +1,5 @@
 package basicapi
 
 type Application interface {
-	SpawnUseContainer() BasicContainer
+	SpawnUseContainer(businessName string) BasicContainer
 }

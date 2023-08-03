@@ -30,6 +30,13 @@ const (
 )
 
 type Model = basicapi.Model
+type ModelCopy interface {
+	Transfer(dst Model) error
+}
+type ModelEncoding interface {
+	ToToml() ([]byte, error)
+	FromToml([]byte) error
+}
 
 type Container interface {
 	RegisterBuiltinFn(name string, fnGen FnGen) error
@@ -41,7 +48,8 @@ type Container interface {
 	LoadFlowModel(tomlContent string) error
 	LoadMerged(content string) error
 
-	AddApplicationListener(listener LifecycleListener)
+	SetupDispatchDecider(decider DispatchDecider) error //TODO Temp solution: container level, due to lifecycle management
+	AddLifecycleListener(listener LifecycleListener)
 	StartContainer() error
 	StopContainer() error
 }

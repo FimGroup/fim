@@ -11,10 +11,12 @@ var _ providers.ContainerProvided = new(ContainerInst)
 var _ pluginapi.Container = new(ContainerInst)
 var _ basicapi.BasicContainer = new(ContainerInst)
 
-func newContainer(application *Application) *ContainerInst {
+func newContainer(application *Application, businessName string) *ContainerInst {
 	var flowModelMap = NewDataTypeDefinitions()
 
 	return &ContainerInst{
+		businessName: businessName,
+
 		flowModelRawContents: [][]byte{},
 		flowRawMap:           map[string]struct{ tf *templateFlow }{},
 		flowMap:              map[string]*Flow{},
@@ -37,6 +39,9 @@ func newContainer(application *Application) *ContainerInst {
 }
 
 type ContainerInst struct {
+	businessName    string
+	dispatchDecider pluginapi.DispatchDecider
+
 	flowRawMap map[string]struct {
 		tf *templateFlow
 	}
@@ -66,7 +71,12 @@ type ContainerInst struct {
 	stopFunction func() error
 }
 
-func (c *ContainerInst) AddApplicationListener(listener pluginapi.LifecycleListener) {
+func (c *ContainerInst) SetupDispatchDecider(decider pluginapi.DispatchDecider) error {
+	c.dispatchDecider = decider
+	return nil
+}
+
+func (c *ContainerInst) AddLifecycleListener(listener pluginapi.LifecycleListener) {
 	c.lifecycleListeners = append(c.lifecycleListeners, listener)
 }
 
@@ -88,7 +98,26 @@ func (c *ContainerInst) LoadFlowModel(tomlContent string) error {
 	return nil
 }
 
+type containerDispatchDeciderLifecycleListener struct {
+	c *ContainerInst
+}
+
+func (c containerDispatchDeciderLifecycleListener) OnStart() error {
+	return c.c.dispatchDecider.StartDispatcher()
+}
+
+func (c containerDispatchDeciderLifecycleListener) OnStop() error {
+	return c.c.dispatchDecider.StopDispatcher()
+}
+
+func generateDispatchDeciderLifecycleListener(c *ContainerInst) pluginapi.LifecycleListener {
+	return containerDispatchDeciderLifecycleListener{c}
+}
+
 func (c *ContainerInst) StartContainer() error {
+	// internal mechanism registration
+	c.AddLifecycleListener(generateDispatchDeciderLifecycleListener(c))
+
 	// setup pipelines
 	for _, p := range c.pipelineMap {
 		if err := p.combinePipelineAndSourceConnector(); err != nil {

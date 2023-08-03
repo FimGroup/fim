@@ -6,7 +6,13 @@ Once the item has been completed, it will be moved to the main document as featu
 
 ## Task List
 
-* [x] http connector static file
+* [ ] entry point - http(done)/messaging/scheduling
+* [ ] Connector plugin support
+    * [ ] http auth plugin
+* [ ] Distributed processing pipeline
+    * [x] pipeline dispatch
+    * [ ] flow dispatch
+* [ ] Flow type support - event type: trigger another Fim flow(pipeline)
 * [ ] new api for files to avoid save files on local disks, for the usecases of cache/temp files/etc, such as large http
   payload temp files in nginx
     * [x] Support component file loading, e.g. http template files
@@ -14,13 +20,15 @@ Once the item has been completed, it will be moved to the main document as featu
 * [ ] http and http rest - hostname matching + default server
 * [ ] Provide init functions for application and container to avoid providing set/add in api
     * For user to inject plugins
-* [ ] Connector plugin support
-    * [ ] http auth plugin
 * [ ] Should merge source and target connector?
 * [ ] standard event handling(send and entrypoint without mq vendor spec)
 * [ ] Demo project
     * [ ] Forum
     * [ ] Realworld https://github.com/gothinkster/realworld
+* [ ] http static file: caching headers for browser/CDN
+* [ ] error handling
+    * Error information
+    * Panic handling
 
 ## Todo List
 
@@ -102,6 +110,7 @@ Once the item has been completed, it will be moved to the main document as featu
 * as a function integrated into serverless apis, such as aws lambda
 * path/configure literal key format validation
 * pre-generated logic for flows/conversions optimization
+* container name duplication check when spawning new container
 
 ## Before 1st release (planned as v1.0.0)
 
@@ -111,12 +120,12 @@ Once the item has been completed, it will be moved to the main document as featu
     * provide easy-to-read document
 2. clear running/error information
 3. Event driven support and path decision(sync and event)
+4. accurate lifecycle control
 
 Top priority
 
 4. allow step to run independently from each other to support async invoking
 5. loop
-6. entry point - http(done)/messaging/scheduling
 
 ## Changelogs
 
@@ -124,9 +133,15 @@ Top priority
 
 TODO version file
 TODO changelog
+TODO update main doc on: distribution
 
 * http connector
     * static file
+* Core facility changes
+    * Add Application name / Container name(business name)
+* Distributed processing pipeline
+    * pipeline dispatch
+    * Event implementation by nats
 
 #### v0.0.3
 

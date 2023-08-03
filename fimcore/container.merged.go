@@ -36,6 +36,7 @@ func (c *ContainerInst) loadMerged0(m *MergedDefinition) error {
 			return errors.New(fmt.Sprintf("pipeline exists:%s", name))
 		}
 
+		pipeline.name = name
 		p, err := initPipeline(pipeline, c, c.application)
 		if err != nil {
 			return err

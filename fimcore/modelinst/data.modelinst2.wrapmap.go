@@ -5,13 +5,82 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/FimGroup/fim/fimapi/pluginapi"
 	"github.com/FimGroup/fim/fimapi/rule"
+
+	"github.com/pelletier/go-toml/v2"
 )
 
 type readonlyMapWrapper struct {
 	m map[string]interface{}
 
 	defaultModelInst2
+}
+
+func (m readonlyMapWrapper) Transfer(dst pluginapi.Model) error {
+	fieldPath := make([]string, 0, 16)
+	for key, val := range m.m {
+		if err := m.copy(append(fieldPath, key), val, dst); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m readonlyMapWrapper) copy(fieldPath []string, obj interface{}, dst pluginapi.Model) error {
+	switch v := obj.(type) {
+	case []interface{}:
+		// array: primitive array & object array
+		if len(v) == 0 {
+			return nil
+		}
+		var objectArray bool
+		var primitiveArray bool
+		for _, val := range v {
+			if val == nil {
+				continue
+			} else if _, ok := val.(map[string]interface{}); ok {
+				objectArray = true
+				break
+			} else if _, ok := val.([]interface{}); ok {
+				return errors.New("nested array is not supported")
+			} else {
+				primitiveArray = true
+				break
+			}
+		}
+		if objectArray || primitiveArray {
+			var origLastPath = fieldPath[len(fieldPath)-1]
+			for i, val := range v {
+				fieldPath[len(fieldPath)-1] = fmt.Sprint(origLastPath, "[", i, "]")
+				if err := m.copy(fieldPath, val, dst); err != nil {
+					return err
+				}
+			}
+			return nil
+		} else {
+			return errors.New("cannot determine concrete array type when copy readonly map Model")
+		}
+	case map[string]interface{}:
+		// object
+		for key, val := range v {
+			if err := m.copy(append(fieldPath, key), val, dst); err != nil {
+				return err
+			}
+		}
+		return nil
+	default:
+		// field
+		return dst.AddOrUpdateField0(fieldPath, v)
+	}
+}
+
+func (m readonlyMapWrapper) ToToml() ([]byte, error) {
+	return toml.Marshal(m.m)
+}
+
+func (m readonlyMapWrapper) FromToml(data []byte) error {
+	return errors.New("FromToml is not supported")
 }
 
 func (m readonlyMapWrapper) ToGeneralObject() interface{} {

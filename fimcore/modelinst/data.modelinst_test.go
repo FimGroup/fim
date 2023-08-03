@@ -250,3 +250,70 @@ func TestConverterData1(t *testing.T) {
 	}
 	t.Log(dst)
 }
+
+func TestReadonlyMapWrapperModelCopy(t *testing.T) {
+	m := map[string]interface{}{
+		"hello": "world",
+		"new":   1,
+		"good":  true,
+		"struct": map[string]interface{}{
+			"sub1": "sub11",
+			"sub2": 2,
+			"sub3": false,
+		},
+	}
+
+	wrapper1 := readonlyMapWrapper{m: m}
+	if data, err := wrapper1.ToToml(); err != nil {
+		t.Fatal(err)
+	} else {
+		t.Log(string(data))
+	}
+}
+
+func TestReadonlyMapWrapperModelCopy2(t *testing.T) {
+	m := map[string]interface{}{
+		"hello": "world",
+		"new":   1,
+		"good":  true,
+		"struct": map[string]interface{}{
+			"sub1": "sub11",
+			"sub2": 2,
+			"sub3": false,
+		},
+		"arr1": []interface{}{
+			map[string]interface{}{
+				"hello": "world",
+			},
+			map[string]interface{}{
+				"hello": "world2",
+			},
+		},
+		"arr2": []interface{}{
+			1, 2, 3, 4,
+		},
+	}
+
+	wrapper1 := readonlyMapWrapper{m: m}
+	modelInst2 := ModelInstHelper{}.NewInst()
+	if err := wrapper1.Transfer(modelInst2); err != nil {
+		t.Fatal(err)
+	}
+	t.Log(modelInst2.ToGeneralObject())
+
+	if modelInst2.GetFieldUnsafe0([]string{"hello"}).(string) != "world" {
+		t.Fatal("string field not match")
+	}
+	if modelInst2.GetFieldUnsafe0([]string{"new"}).(int64) != 1 {
+		t.Fatal("int64 field not match")
+	}
+	if modelInst2.GetFieldUnsafe0([]string{"struct", "sub3"}).(bool) != false {
+		t.Fatal("struct bool field not match")
+	}
+	if modelInst2.GetFieldUnsafe0([]string{"arr1[1]", "hello"}).(string) != "world2" {
+		t.Fatal("array value field not match")
+	}
+	if modelInst2.GetFieldUnsafe0([]string{"arr2[3]"}).(int64) != 4 {
+		t.Fatal("array primitive value field not match")
+	}
+}

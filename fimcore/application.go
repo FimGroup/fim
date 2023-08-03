@@ -9,6 +9,8 @@ import (
 )
 
 type Application struct {
+	applicationName string
+
 	fileManagerMap       map[string]pluginapi.FileResourceManager
 	configureManagerList []basicapi.FullConfigureManager
 	configureManager     *NestedConfigureManager
@@ -176,24 +178,26 @@ func (a *Application) AddTargetConnectorGenerator(gen pluginapi.TargetConnectorG
 	return nil
 }
 
-func (a *Application) SpawnUseContainer() basicapi.BasicContainer {
-	return a.spawnContainer()
+func (a *Application) SpawnUseContainer(businessName string) basicapi.BasicContainer {
+	return a.spawnContainer(businessName)
 }
 
-func (a *Application) spawnContainer() *ContainerInst {
-	return newContainer(a)
+func (a *Application) spawnContainer(businessName string) *ContainerInst {
+	return newContainer(a, businessName)
 }
 
-func NewApplication() basicapi.Application {
-	return newApplication()
+func NewApplication(applicationName string) basicapi.Application {
+	return newApplication(applicationName)
 }
 
-func NewPluginApplication() pluginapi.ApplicationSupport {
-	return newApplication()
+func NewPluginApplication(applicationName string) pluginapi.ApplicationSupport {
+	return newApplication(applicationName)
 }
 
-func newApplication() *Application {
+func newApplication(applicationName string) *Application {
 	return &Application{
+		applicationName: applicationName,
+
 		fileManagerMap:   map[string]pluginapi.FileResourceManager{},
 		configureManager: NewNestedConfigureManager(),
 

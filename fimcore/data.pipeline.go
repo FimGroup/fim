@@ -12,6 +12,8 @@ import (
 )
 
 type Pipeline struct {
+	name string
+
 	Metadata struct {
 		Version string `toml:"version"`
 	} `toml:"metadata"`
@@ -57,6 +59,9 @@ func convertToErrSimple(obj interface{}) ([]map[string]string, error) {
 }
 
 func initPipeline(p *Pipeline, container *ContainerInst, application *Application) (*Pipeline, error) {
+	if p.name == "" {
+		return nil, errors.New("pipeline name is empty")
+	}
 	p.container = container
 	p._logger = loggerManager.GetLogger("FimCore.Pipeline")
 
@@ -430,8 +435,15 @@ func (p *Pipeline) toPipelineFn() pluginapi.PipelineProcess {
 }
 
 func (p *Pipeline) combinePipelineAndSourceConnector() error {
-	// start source connector
+	// wrap pipeline with DispatchDecider
 	process := p.toPipelineFn()
+	pipelineFullName := pluginapi.ConcatFullPipelineName(p.container.businessName, p.name)
+	if err := p.container.dispatchDecider.InjectLocalPipeline(pipelineFullName, process); err != nil {
+		return err
+	}
+	process = p.container.dispatchDecider.PipelineDispatcher(pipelineFullName)
+
+	// start source connector
 	for _, f := range p.connectorBindFuncs {
 		if err := f.BindPipeline(process); err != nil {
 			return err
