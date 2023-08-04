@@ -6,9 +6,9 @@ Once the item has been completed, it will be moved to the main document as featu
 
 ## Task List
 
-* [ ] entry point
+* [x] entry point
     * [x] http
-    * [ ] messaging
+    * [x] messaging
     * [x] scheduling
 * [ ] Connector plugin support
     * [ ] http auth plugin
@@ -155,6 +155,10 @@ TODO update main doc on: distribution
     * static file
 * Job scheduler connector
     * cron scheduler support
+* Messaging connector
+    * Messaging source connector
+    * Messaging target connector
+    * Implementation by nats
 
 #### v0.0.3
 
