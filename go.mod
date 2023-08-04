@@ -10,6 +10,7 @@ require (
 	github.com/nats-io/nats.go v1.28.0
 	github.com/pelletier/go-toml/v2 v2.0.9
 	github.com/rabbitmq/amqp091-go v1.8.1
+	github.com/reugn/go-quartz v0.7.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/afero v1.9.5
 	golang.org/x/crypto v0.11.0

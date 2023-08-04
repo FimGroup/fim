@@ -6,7 +6,10 @@ Once the item has been completed, it will be moved to the main document as featu
 
 ## Task List
 
-* [ ] entry point - http(done)/messaging/scheduling
+* [ ] entry point
+    * [x] http
+    * [ ] messaging
+    * [x] scheduling
 * [ ] Connector plugin support
     * [ ] http auth plugin
 * [ ] Distributed processing pipeline
@@ -29,6 +32,9 @@ Once the item has been completed, it will be moved to the main document as featu
 * [ ] error handling
     * Error information
     * Panic handling
+* [ ] Context support
+    * go context and framework context
+    * connector/flows/components/async/etc.
 
 ## Todo List
 
@@ -111,6 +117,11 @@ Once the item has been completed, it will be moved to the main document as featu
 * path/configure literal key format validation
 * pre-generated logic for flows/conversions optimization
 * container name duplication check when spawning new container
+* [ ] serialization method support
+    * json
+    * protobuf
+    * xml
+    * etc.
 
 ## Before 1st release (planned as v1.0.0)
 
@@ -135,13 +146,15 @@ TODO version file
 TODO changelog
 TODO update main doc on: distribution
 
-* http connector
-    * static file
 * Core facility changes
     * Add Application name / Container name(business name)
 * Distributed processing pipeline
     * pipeline dispatch
     * Event implementation by nats
+* http connector
+    * static file
+* Job scheduler connector
+    * cron scheduler support
 
 #### v0.0.3
 

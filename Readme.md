@@ -23,7 +23,7 @@ And
         * On Bare metal machines
         * On VMs on both local or cloud
         * On containers with/without scheduler(e.g. k8s/docker compose)
-    * Cloud PaaS/Local APPs on cloud providers
+    * Cloud PaaS/Local APPs on cloud providers / Embedded in APPs
     * Function/Serverless on cloud providers
     * As API provider
     * Support flexible scaling out and scaling up
