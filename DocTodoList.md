@@ -6,12 +6,17 @@ Once the item has been completed, it will be moved to the main document as featu
 
 ## Task List
 
-* [x] entry point
-    * [x] http
-    * [x] messaging
-    * [x] scheduling
-* [ ] Connector plugin support
-    * [ ] http auth plugin
+* [ ] Http connector plugin support
+    * [x] request id/real ip/logging/recover
+    * [x] http auth jwt plugin
+    * [ ] http session
+    * [ ] timeout
+    * [ ] anti-spam
+    * [ ] cors
+    * [ ] compression
+    * [ ] header filters - content encodings/content types/charset/no cache
+    * [ ] ratelimit
+    * [ ] https and HSTS
 * [ ] Distributed processing pipeline
     * [x] pipeline dispatch
     * [ ] flow dispatch
@@ -35,6 +40,7 @@ Once the item has been completed, it will be moved to the main document as featu
 * [ ] Context support
     * go context and framework context
     * connector/flows/components/async/etc.
+* [ ] simple object as parameter for flow/custom function
 
 ## Todo List
 
@@ -80,17 +86,6 @@ Once the item has been completed, it will be moved to the main document as featu
 * [ ] Disallow modification to application after started up
 * [ ] Add swagger support for http rest
 * [ ] http file serving, e.g. js/css/images
-* [ ] http template/rest production ready plugins
-    * [x] request id/real ip/logging/recover
-    * timeout
-    * session
-    * token auth
-    * anti-spam
-    * cors
-    * compression
-    * header filters - content encodings/content types/charset/no cache
-    * ratelimit
-    * https and HSTS
 * [ ] graceful shutdown and restart
 * [ ] Design pattern, SOA and DDD design support
     * updated model for design and architecture
@@ -122,6 +117,11 @@ Once the item has been completed, it will be moved to the main document as featu
     * protobuf
     * xml
     * etc.
+* Connectors
+    * Http connector
+        * Auth module
+            * Key rotate
+            * More options: expire time / etc..
 
 ## Before 1st release (planned as v1.0.0)
 
@@ -148,11 +148,16 @@ TODO update main doc on: distribution
 
 * Core facility changes
     * Add Application name / Container name(business name)
+    * Connector plugin
+        * Option/configure
+        * Builtin plugin(embedded in connector)
 * Distributed processing pipeline
     * pipeline dispatch
     * Event implementation by nats
 * http connector
     * static file
+    * plugin
+        * auth jwt
 * Job scheduler connector
     * cron scheduler support
 * Messaging connector

@@ -148,6 +148,10 @@ func (h *HttpRestServerGenerator) addRestHandler(req pluginapi.SourceConnectorGe
 	if !ok {
 		return errors.New("need provide http.method for http")
 	}
+	pluginInitializer, err := InitializePlugin(req.Options)
+	if err != nil {
+		return err
+	}
 	//FIXME check path and listen duplication
 
 	lstruct, ok := h.listenMap[ls]
@@ -201,19 +205,41 @@ func (h *HttpRestServerGenerator) addRestHandler(req pluginapi.SourceConnectorGe
 	}
 
 	//FIXME may cause concurrent issue on adding new handler while processing requests
+	return addChiHandler(method, lstruct.Mux, pluginInitializer, path, handleFunc)
+}
+
+func addChiHandler(method string, mux *chi.Mux, pluginInitializer PluginInitializer, path string, handleFunc http.HandlerFunc) error {
 	switch method {
 	case "GET":
-		lstruct.Mux.Get(path, handleFunc)
+		mux.Group(func(r chi.Router) {
+			pluginInitializer.InjectRouter(r)
+			r.Get(path, handleFunc)
+		})
 	case "POST":
-		lstruct.Mux.Post(path, handleFunc)
+		mux.Group(func(r chi.Router) {
+			pluginInitializer.InjectRouter(r)
+			r.Post(path, handleFunc)
+		})
 	case "PUT":
-		lstruct.Mux.Put(path, handleFunc)
+		mux.Group(func(r chi.Router) {
+			pluginInitializer.InjectRouter(r)
+			r.Put(path, handleFunc)
+		})
 	case "DELETE":
-		lstruct.Mux.Delete(path, handleFunc)
+		mux.Group(func(r chi.Router) {
+			pluginInitializer.InjectRouter(r)
+			r.Delete(path, handleFunc)
+		})
 	case "HEAD":
-		lstruct.Mux.Head(path, handleFunc)
+		mux.Group(func(r chi.Router) {
+			pluginInitializer.InjectRouter(r)
+			r.Head(path, handleFunc)
+		})
 	case "PATCH":
-		lstruct.Mux.Patch(path, handleFunc)
+		mux.Group(func(r chi.Router) {
+			pluginInitializer.InjectRouter(r)
+			r.Patch(path, handleFunc)
+		})
 	default:
 		return errors.New(fmt.Sprintf("unable to register http path:%s method:%s", path, method))
 	}
@@ -247,6 +273,10 @@ func (h *HttpRestServerGenerator) addTemplateHandler(req pluginapi.SourceConnect
 		return errors.New("cannot find file resource manager for http template loading:" + resourceManagerName)
 	}
 	tr, err := loadTemplate(templatePath, fileMgr)
+	if err != nil {
+		return err
+	}
+	pluginInitializer, err := InitializePlugin(req.Options)
 	if err != nil {
 		return err
 	}
@@ -407,23 +437,7 @@ func (h *HttpRestServerGenerator) addTemplateHandler(req pluginapi.SourceConnect
 	}
 
 	//FIXME may cause concurrent issue on adding new handler while processing requests
-	switch method {
-	case "GET":
-		lstruct.Mux.Get(path, f)
-	case "POST":
-		lstruct.Mux.Post(path, f)
-	case "PUT":
-		lstruct.Mux.Put(path, f)
-	case "DELETE":
-		lstruct.Mux.Delete(path, f)
-	case "HEAD":
-		lstruct.Mux.Head(path, f)
-	case "PATCH":
-		lstruct.Mux.Patch(path, f)
-	default:
-		return errors.New(fmt.Sprintf("unable to register http path:%s method:%s", path, method))
-	}
-	return nil
+	return addChiHandler(method, lstruct.Mux, pluginInitializer, path, f)
 }
 
 func (h *HttpRestServerGenerator) GenerateSourceConnectorInstance(req pluginapi.SourceConnectorGenerateRequest) (pluginapi.SourceConnector, error) {
@@ -714,6 +728,10 @@ func (h *HttpRestServerGenerator) addStaticFileHandler(req pluginapi.SourceConne
 	if !ok {
 		return errors.New("resource file manager does not support http.FileSystem")
 	}
+	pluginInitializer, err := InitializePlugin(req.Options)
+	if err != nil {
+		return err
+	}
 	//FIXME check path and listen duplication
 
 	lstruct, ok := h.listenMap[ls]
@@ -766,11 +784,14 @@ func (h *HttpRestServerGenerator) addStaticFileHandler(req pluginapi.SourceConne
 		}
 	}
 
-	lstruct.Mux.Get(path, func(writer http.ResponseWriter, request *http.Request) {
-		chiCtx := chi.RouteContext(request.Context())
-		pathPrefix := strings.TrimSuffix(chiCtx.RoutePattern(), "/*")
-		fs := http.StripPrefix(pathPrefix, http.FileServer(httpFileManager))
-		fs.ServeHTTP(writer, request)
+	lstruct.Mux.Group(func(r chi.Router) {
+		pluginInitializer.InjectRouter(r)
+		r.Get(path, func(writer http.ResponseWriter, request *http.Request) {
+			chiCtx := chi.RouteContext(request.Context())
+			pathPrefix := strings.TrimSuffix(chiCtx.RoutePattern(), "/*")
+			fs := http.StripPrefix(pathPrefix, http.FileServer(httpFileManager))
+			fs.ServeHTTP(writer, request)
+		})
 	})
 	return nil
 }

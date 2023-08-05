@@ -133,6 +133,9 @@ And
     * Level of distribution:
         * Pipeline level: source connector -> (dispatch) -> pipeline handler
         * Flow level: previous flow -> (dispatch) -> next flow
+* Connector
+    * Source & Target connector
+    * (Refer to below section)
 
 ### Core model
 
@@ -178,6 +181,19 @@ And
 * Note: the lifecycle of connector generally speaking is independent to container. But for the instance of connector,
   since it should be unique within one container, the lifecycle of connector instance should be tight to container
   lifecycle.
+* connector plugin
+    * types
+        * builtin plugin - provided by connector by default and can be used directly
+        * custom plugin - user customized plugin for the specific connector which providing plugin feature
+    * plugin customization capabilities
+        * plugin options + logging/configure manager/resource manager/etc.(fundamental mechanisms)
+        * custom code/logic
+        * lifecycle
+        * in/out parameter per request
+        * order
+    * Implementation solution
+        * embedded in connector
+        * standard mechanism provided by framework
 
 ### Supporting model
 
@@ -245,7 +261,7 @@ See detailed document: [DocTodoList.md](DocTodoList.md)
 * clustering - support any form and type cluster
 * components - connector/functions/plugin/etc.
 * optimization - performance/operational
-* experience - feedback/improvement/i18n/l10n/error information
+* experience - feedback/improvement/i18n/l10n/error information/documentation
 * research - experimental research
 * observation - operational features
 * usecase - project based
