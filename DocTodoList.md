@@ -141,11 +141,7 @@ Top priority
 
 ## Changelogs
 
-#### v0.0.4 (in progress)
-
-TODO version file
-TODO changelog
-TODO update main doc on: distribution
+#### v0.0.4
 
 * Core facility changes
     * Add Application name / Container name(business name)
