@@ -3,16 +3,24 @@ package source
 import (
 	"errors"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 	"github.com/go-chi/jwtauth"
 )
 
 type PluginInitializer struct {
 	authJwtPlugin *AuthJwtPlugin
+	corsPlugin    *CorsPlugin
 }
 
 func (p PluginInitializer) InjectRouter(r chi.Router) {
+	//Note: order of each plugin
+	if p.corsPlugin != nil {
+		r.Use(p.corsPlugin.ChiMiddleware())
+	}
 	if p.authJwtPlugin != nil {
 		r.Use(p.authJwtPlugin.ChiMiddleware()...)
 	}
@@ -32,12 +40,108 @@ func InitializePlugin(options map[string]string) (PluginInitializer, error) {
 			}
 		}
 	}
+	// cors module
+	{
+		enableCors, ok := options["http.plugin.cors.enable"]
+		if ok && enableCors == "true" {
+			if plugin, err := NewCorsPlugin(options); err != nil {
+				return p, err
+			} else {
+				p.corsPlugin = plugin
+			}
+		}
+	}
 
 	return p, nil
 }
 
+const (
+	ConfCorsAllowAll         = "cors.allow_all"
+	ConfCorsOrigin           = "cors.allowed_origin"
+	ConfCorsMethod           = "cors.allowed_method"
+	ConfCorsHeader           = "cors.allowed_header"
+	ConfCorsExposedHeader    = "cors.exposed_header"
+	ConfCorsAllowCredentials = "cors.allow_credentials"
+	ConfCorsMaxAge           = "cors.max_age"
+)
+
 type CorsPlugin struct {
-	//TODO 1. handling options request
+	cors *cors.Cors
+	// 1. handling options request
+}
+
+func NewCorsPlugin(options map[string]string) (*CorsPlugin, error) {
+	var allowAll string
+	var originString string
+	var methodString string
+	var headerString string
+	var exposedHeaderString string
+	var allowCredentialString string
+	var maxAgeString string
+
+	OptionalOptions(options, []OptionReq{
+		{ConfCorsAllowAll, &allowAll},
+		{ConfCorsOrigin, &originString},
+		{ConfCorsMethod, &methodString},
+		{ConfCorsHeader, &headerString},
+		{ConfCorsExposedHeader, &exposedHeaderString},
+		{ConfCorsAllowCredentials, &allowCredentialString},
+		{ConfCorsMaxAge, &maxAgeString},
+	})
+	if v := strings.TrimSpace(allowAll); v == "true" {
+		return &CorsPlugin{
+			cors: cors.AllowAll(),
+		}, nil
+	}
+
+	corsOption := cors.Options{}
+	if v := strings.TrimSpace(originString); v != "" {
+		items := strings.Split(originString, ",")
+		for i, v := range items {
+			items[i] = strings.TrimSpace(v)
+		}
+		corsOption.AllowedOrigins = items
+	}
+	if v := strings.TrimSpace(methodString); v != "" {
+		items := strings.Split(methodString, ",")
+		for i, v := range items {
+			items[i] = strings.TrimSpace(v)
+		}
+		corsOption.AllowedMethods = items
+	}
+	if v := strings.TrimSpace(headerString); v != "" {
+		items := strings.Split(headerString, ",")
+		for i, v := range items {
+			items[i] = strings.TrimSpace(v)
+		}
+		corsOption.AllowedHeaders = items
+	}
+	if v := strings.TrimSpace(exposedHeaderString); v != "" {
+		items := strings.Split(exposedHeaderString, ",")
+		for i, v := range items {
+			items[i] = strings.TrimSpace(v)
+		}
+		corsOption.ExposedHeaders = items
+	}
+	if v := strings.TrimSpace(allowCredentialString); v == "true" {
+		corsOption.AllowCredentials = true
+	}
+	if v := strings.TrimSpace(maxAgeString); v != "" {
+		i, err := strconv.Atoi(v)
+		if err != nil {
+			return nil, err
+		}
+		corsOption.MaxAge = i
+	}
+	corsOption.Debug = true /////////////////////////
+
+	return &CorsPlugin{
+		cors: cors.New(corsOption),
+	}, nil
+}
+
+func (c *CorsPlugin) ChiMiddleware() func(http.Handler) http.Handler {
+	return c.cors.Handler
 }
 
 const (

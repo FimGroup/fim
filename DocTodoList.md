@@ -12,11 +12,12 @@ Once the item has been completed, it will be moved to the main document as featu
     * [ ] http session
     * [ ] timeout
     * [ ] anti-spam
-    * [ ] cors
+    * [x] cors
     * [ ] compression
     * [ ] header filters - content encodings/content types/charset/no cache
     * [ ] ratelimit
     * [ ] https and HSTS
+    * [ ] csrf
 * [ ] Distributed processing pipeline
     * [x] pipeline dispatch
     * [ ] flow dispatch
@@ -117,7 +118,7 @@ Once the item has been completed, it will be moved to the main document as featu
     * protobuf
     * xml
     * etc.
-* Connectors
+* Connectors enhancement
     * Http connector
         * Auth module
             * Key rotate
@@ -158,6 +159,7 @@ TODO update main doc on: distribution
     * static file
     * plugin
         * auth jwt
+        * CORS
 * Job scheduler connector
     * cron scheduler support
 * Messaging connector
